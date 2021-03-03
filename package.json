@@ -1,0 +1,25 @@
+{
+  "name": "graphics",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "dev": "webpack serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sajid-haniff/graphics.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sajid-haniff/graphics/issues"
+  },
+  "homepage": "https://github.com/sajid-haniff/graphics#readme",
+  "devDependencies": {
+    "webpack": "^5.24.2",
+    "webpack-cli": "^4.5.0",
+    "webpack-dev-server": "^3.11.2"
+  }
+}
