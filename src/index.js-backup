@@ -1,0 +1,33 @@
+import * as p5 from './lib/p5';
+import {rosetteBuilder} from './rosette_builder'
+
+let p = (sk) => {
+
+    let rosette;
+
+    sk.setup = () =>{
+
+        const width = 400;
+        const height = 400;
+
+        //  sk.pixelDensity(1);
+        const canvas = sk.createCanvas(width,height);
+        canvas.id('canvas');
+        sk.background(40);
+
+        rosette = rosetteBuilder(5, sk);
+    }
+
+    sk.draw = () =>{
+
+        
+
+        rosette.draw(sk);
+    }
+
+
+
+
+}
+
+const P5 = new p5(p);

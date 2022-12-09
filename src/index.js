@@ -1,63 +1,36 @@
 import * as p5 from './lib/p5';
-import {rosetteBuilder} from './rosette_builder'
+//import {sketchBuilder} from './bouncing_ball_no_vectors'
+//import {sketchBuilder} from './bouncing_ball_vector'
+//import {sketchBuilder} from './bouncing_ball_acceleration'
+import {sketchBuilder} from './bouncing_ball_force'
 
 let p = (sk) => {
 
-    let rosette;
+    let sketch = sketchBuilder(sk);
 
-    sk.setup = () =>{
+    sk.setup = () => {
 
-        const width = 400;
-        const height = 400;
-
-        //  sk.pixelDensity(1);
-        const canvas = sk.createCanvas(width,height);
-        canvas.id('canvas');
-        sk.background(40);
-
-        rosette = rosetteBuilder(5, sk);
+        sketch.setup();
     }
 
     sk.draw = () =>{
 
-        /*onst width = 400;
-        const height = 400;
+        //sketch.draw();
 
-        let win = {
-            left:   -10,
-            right:   10,
-            top:     10,
-            bottom: -10
+        let gravity = sk.createVector(0, -0.01);
+        sketch.applyForce(gravity);
+
+        if (sk.mouseIsPressed) {
+            let wind = sk.createVector(0.1, 0);
+            sketch.applyForce(wind);
         }
 
-        let viewport = {
-            left:   0,
-            right:   1,
-            top:    1,
-            bottom: 0
-        }
 
-        let tmp1 = (win.right - win.left);
-        let tmp2 = (win.top - win.bottom);
 
-        let sx = (viewport.right - viewport.left) / tmp1;
-        let sy = (viewport.top - viewport.bottom) / tmp2;
-
-        let tx = (viewport.left * win.right - viewport.right * win.left) / tmp1;
-        let ty = (viewport.bottom * win.top - viewport.top * win.bottom) / tmp2;
-
-        sk.drawingContext.transform(1, 0, 0, -1, 0, height);
-        sk.drawingContext.transform(width, 0, 0, height,0, 0);
-        sk.drawingContext.transform(sx, 0, 0, sy, tx, ty);
-
-         */
-
-        rosette.draw(sk);
+        sketch.update();
+        sketch.checkEdges();
+        sketch.display();
     }
-
-
-
-
 }
 
 const P5 = new p5(p);

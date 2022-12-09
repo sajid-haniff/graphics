@@ -76,6 +76,7 @@ export const rosetteBuilder = (NUM_VERTEX, sk) => {
                 sk.circle(X[i], Y[i], 0.2);
             }
             //sk.push();
+
         }
     }
 }

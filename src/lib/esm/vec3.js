@@ -98,8 +98,8 @@ export function set(out, x, y, z) {
  * Adds two vec3's
  *
  * @param {vec3} out the receiving vector
- * @param {ReadonlyVec3} a the first operand
- * @param {ReadonlyVec3} b the second operand
+ * @param {Vec3} a the first operand
+ * @param {vec3} b the second operand
  * @returns {vec3} out
  */
 
@@ -230,7 +230,7 @@ export function round(out, a) {
  * Scales a vec3 by a scalar number
  *
  * @param {vec3} out the receiving vector
- * @param {ReadonlyVec3} a the vector to scale
+ * @param {vec3} a the vector to scale
  * @param {Number} b amount to scale the vector by
  * @returns {vec3} out
  */
@@ -512,8 +512,8 @@ export function transformMat4(out, a, m) {
  * Transforms the vec3 with a mat3.
  *
  * @param {vec3} out the receiving vector
- * @param {ReadonlyVec3} a the vector to transform
- * @param {ReadonlyMat3} m the 3x3 matrix to transform with
+ * @param {vec3} a the vector to transform
+ * @param {mat3} m the 3x3 matrix to transform with
  * @returns {vec3} out
  */
 

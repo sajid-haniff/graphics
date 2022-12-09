@@ -200,7 +200,7 @@ export function transpose(out, a) {
  * Inverts a mat3
  *
  * @param {mat3} out the receiving matrix
- * @param {ReadonlyMat3} a the source matrix
+ * @param {mat3} a the source matrix
  * @returns {mat3} out
  */
 
