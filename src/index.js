@@ -3,12 +3,15 @@ import * as p5 from './lib/p5';
 //import {sketchBuilder} from './bouncing_ball_vector'
 //import {sketchBuilder} from './bouncing_ball_acceleration'
 //import {sketchBuilder} from './bouncing_ball_force'
-import {circleRecursionBuilder} from './circle_recursion'
+//import {circleRecursionBuilder} from './recursion/circle_recursion'
+import {hTreeBuilder} from './recursion/htree'
+
 
 let p = (sk) => {
 
     //let sketch = sketchBuilder(sk);
-    let sketch = circleRecursionBuilder(sk);
+    //let sketch = circleRecursionBuilder(sk);
+    let sketch = hTreeBuilder(sk);
 
     sk.setup = () => {
 

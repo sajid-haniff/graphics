@@ -1,4 +1,4 @@
-import {createGraphicsContext} from "./graphics_context";
+import {createGraphicsContext} from "../graphics_context";
 
 export const circleRecursionBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
 
@@ -19,6 +19,8 @@ export const circleRecursionBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 4
             sk.noStroke();
             sk.noLoop();
             sk.background(40);
+
+            console.log(this);
         },
         display: function() {
 
@@ -26,7 +28,9 @@ export const circleRecursionBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 4
             sk.applyMatrix(CANVAS_WIDTH, 0, 0, CANVAS_HEIGHT, 0, 0);
             sk.applyMatrix(sx, 0, 0, sy, tx, ty);
 
-            this.drawCircle(0, 99, 6);
+            console.log(this);
+
+            this.drawCircle(0, 100, 5);
         },
         drawCircle: function(x, radius, level) {
 
