@@ -20,7 +20,7 @@ export const circleRecursionBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 4
             sk.noLoop();
             sk.background(40);
         },
-        display: () => {
+        display: function() {
 
             sk.applyMatrix(1, 0, 0, -1, 0, CANVAS_HEIGHT);
             sk.applyMatrix(CANVAS_WIDTH, 0, 0, CANVAS_HEIGHT, 0, 0);
@@ -28,11 +28,11 @@ export const circleRecursionBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 4
 
             this.drawCircle(0, 99, 6);
         },
-        drawCircle: (x, radius, level) => {
+        drawCircle: function(x, radius, level) {
 
             const tt = (126 * level) / 4.0;
             sk.fill(tt);
-            sk.ellipse(x, 200 / 2, radius * 2, radius * 2);
+            sk.ellipse(x, 0, radius * 2, radius * 2);
             if (level > 1) {
                 // 'level' decreases by 1 at every step and thus makes the terminating condition
                 // attainable
