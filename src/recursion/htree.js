@@ -1,6 +1,6 @@
 import {createGraphicsContext} from "../graphics_context";
 
-export const hTreeBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
+export const hTreeBuilder = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 800) => {
 
     /* setup drawing area */
     let win = {left: -100, right: 100, top: 100, bottom: -100}
@@ -12,12 +12,12 @@ export const hTreeBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
 
         setup: () => {
 
-            const canvas = sk.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-            canvas.id('canvas');
+           // const canvas = sk.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+           // canvas.id('canvas');
 
             sk.pixelDensity(1);
             sk.noStroke();
-            sk.noLoop();
+           // sk.noLoop();
             sk.background(40);
 
             sk.strokeWeight(1.5);
@@ -25,11 +25,13 @@ export const hTreeBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
         },
         display: function() {
 
+            sk.push();
             sk.applyMatrix(1, 0, 0, -1, 0, CANVAS_HEIGHT);
             sk.applyMatrix(CANVAS_WIDTH, 0, 0, CANVAS_HEIGHT, 0, 0);
             sk.applyMatrix(sx, 0, 0, sy, tx, ty);
 
             this.drawHTree(4, 100, 0, 0);
+            sk.pop()
         },
         drawHTree: function(n, lineLength, x, y) {
 
