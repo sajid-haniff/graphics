@@ -1,1 +1,1 @@
-# graphics p5 template
+p5 template
