@@ -1,10 +1,10 @@
-import {createGraphicsContext} from "./graphics_context";
+import {createGraphicsContext} from "../graphics_context";
 
 export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
 
     let position     = sk.createVector(0, 100);
     let velocity     = sk.createVector();
-    let acceleration = sk.createVector(-0.01, -0.1);
+    let acceleration = sk.createVector(0.1, -0.1);
     let top_speed = 10;
 
     /* setup drawing area */
@@ -33,7 +33,6 @@ export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
             sk.applyMatrix(1, 0, 0, -1, 0, CANVAS_HEIGHT);
             sk.applyMatrix(CANVAS_WIDTH, 0, 0, CANVAS_HEIGHT, 0, 0);
             sk.applyMatrix(sx, 0, 0, sy, tx, ty);
-
 
 
             sk.stroke(1);

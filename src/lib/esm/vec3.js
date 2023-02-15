@@ -38,7 +38,7 @@ export function clone(a) {
 /**
  * Calculates the length of a vec3
  *
- * @param {ReadonlyVec3} a vector to calculate length of
+ * @param {vec3} a vector to calculate length of
  * @returns {Number} length of a
  */
 
@@ -98,7 +98,7 @@ export function set(out, x, y, z) {
  * Adds two vec3's
  *
  * @param {vec3} out the receiving vector
- * @param {Vec3} a the first operand
+ * @param {vec3} a the first operand
  * @param {vec3} b the second operand
  * @returns {vec3} out
  */
@@ -113,8 +113,8 @@ export function add(out, a, b) {
  * Subtracts vector b from vector a
  *
  * @param {vec3} out the receiving vector
- * @param {ReadonlyVec3} a the first operand
- * @param {ReadonlyVec3} b the second operand
+ * @param {vec3} a the first operand
+ * @param {vec3} b the second operand
  * @returns {vec3} out
  */
 
@@ -386,8 +386,9 @@ export function cross(out, a, b) {
  * Performs a linear interpolation between two vec3's
  *
  * @param {vec3} out the receiving vector
- * @param {ReadonlyVec3} a the first operand
- * @param {ReadonlyVec3} b the second operand
+ * @param {vec3} a the first operand
+ * @param {vec3} b the second operand
+ *
  * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
  * @returns {vec3} out
  */
