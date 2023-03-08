@@ -3104,7 +3104,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
   /**
    * Determine which filetypes are supported (inspired by buzz.js)
-   * The audio element (el) will only be used to test browser support for various audio formats
+   * The audio element (el) will only be used to line_clipping browser support for various audio formats
    */
 
   var el = document.createElement('audio');

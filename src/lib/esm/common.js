@@ -31,8 +31,8 @@ export function toRadian(a) {
  * or relative tolerance of glMatrix.EPSILON (an absolute tolerance is used for values less
  * than or equal to 1.0, and a relative tolerance is used for larger values)
  *
- * @param {Number} a The first number to test.
- * @param {Number} b The second number to test.
+ * @param {Number} a The first number to line_clipping.
+ * @param {Number} b The second number to line_clipping.
  * @returns {Boolean} True if the numbers are approximately equal, false otherwise.
  */
 

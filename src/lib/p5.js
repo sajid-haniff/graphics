@@ -18047,7 +18047,7 @@
                 typeof process !== 'undefined' &&
                 {}.toString.call(process) === '[object process]';
 
-              // test for web worker but not in IE10
+              // line_clipping for web worker but not in IE10
               var isWorker =
                 typeof Uint8ClampedArray !== 'undefined' &&
                 typeof importScripts !== 'undefined' &&
@@ -35394,7 +35394,7 @@
 	* xScale, yScale and rotation is currently ignored.
 	*
 	* A few non-trivial instructions are missing as I didn't encounter yet
-	* a font that used them to test a possible implementation.
+	* a font that used them to line_clipping a possible implementation.
 	*
 	* Some fonts seem to use undocumented features regarding the twilight zone.
 	* Only some of them are implemented as they were encountered.
@@ -35859,7 +35859,7 @@
               /*
 	* Returns the next touched point on the contour.
 	*
-	* v  ... unit vector to test touch axis.
+	* v  ... unit vector to line_clipping touch axis.
 	*/
               HPoint.prototype.nextTouched = function(v) {
                 var p = this.nextPointOnContour;
@@ -35874,7 +35874,7 @@
               /*
 	* Returns the previous touched point on the contour
 	*
-	* v  ... unit vector to test touch axis.
+	* v  ... unit vector to line_clipping touch axis.
 	*/
               HPoint.prototype.prevTouched = function(v) {
                 var p = this.prevPointOnContour;
@@ -37503,7 +37503,7 @@
                 stack.push(Math.trunc(n) % 2 ? 0 : 1);
               }
 
-              // IF[] IF test
+              // IF[] IF line_clipping
               // 0x58
               function IF(state) {
                 var test = state.stack.pop();
@@ -37512,7 +37512,7 @@
                   console.log(state.step, 'IF[]', test);
                 }
 
-                // if test is true it just continues
+                // if line_clipping is true it just continues
                 // if not the ip is skipped until matching ELSE or EIF
                 if (!test) {
                   skip(state, true);
@@ -40520,7 +40520,7 @@
           // shim for using process in browser
           var process = (module.exports = {});
 
-          // cached from whatever global is present so that test runners that stub it
+          // cached from whatever global is present so that line_clipping runners that stub it
           // don't break things.  But we need to wrap it in a try catch in case it is
           // wrapped in strict mode code which doesn't define any globals.  It's inside a
           // function because try/catches deoptimize in certain engines.
@@ -49113,7 +49113,7 @@
             misusedAtTopLevelCode.some(function(symbol) {
               // Note that while just checking for the occurrence of the
               // symbol name in the error message could result in false positives,
-              // a more rigorous test is difficult because different browsers
+              // a more rigorous line_clipping is difficult because different browsers
               // log different messages, and the format of those messages may
               // change over time.
               //
@@ -50381,8 +50381,8 @@
 
             // if a function is called with some set of wrong arguments, and then called
             // again with the same set of arguments, the messages due to the second call
-            // will be supressed. If two tests test on the same wrong arguments, the
-            // second test won't see the validationError. clearing argumentTree solves it
+            // will be supressed. If two tests line_clipping on the same wrong arguments, the
+            // second line_clipping won't see the validationError. clearing argumentTree solves it
             _main.default._clearValidateParamsCache = function clearValidateParamsCache() {
               for (
                 var _i2 = 0, _Object$keys2 = Object.keys(argumentTree);
@@ -51428,7 +51428,7 @@
                   _this._lastFrameTime = now;
 
                   // If the user is actually using mouse module, then update
-                  // coordinates, otherwise skip. We can test this by simply
+                  // coordinates, otherwise skip. We can line_clipping this by simply
                   // checking if any of the mouse functions are available or not.
                   // NOTE : This reflects only in complete build or modular build.
                   if (typeof _this._updateMouseCoords !== 'undefined') {
@@ -52559,7 +52559,7 @@
            * @chainable
            * @example
            * <div><code>
-           * // To test this sketch, simply drag a
+           * // To line_clipping this sketch, simply drag a
            * // file over the canvas
            * function setup() {
            *   let c = createCanvas(100, 100);
@@ -52597,7 +52597,7 @@
            * @chainable
            * @example
            * <div><code>
-           * // To test this sketch, simply drag a file
+           * // To line_clipping this sketch, simply drag a file
            * // over and then out of the canvas area
            * function setup() {
            *   let c = createCanvas(100, 100);
@@ -63128,7 +63128,7 @@
              * }
              *
              * function mouseClicked() {
-             *   //here we test if the mouse is over the
+             *   //here we line_clipping if the mouse is over the
              *   //canvas element when it's clicked
              *   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
              *     //Show our p5.MediaElement's src field
@@ -63190,7 +63190,7 @@
            * }
            *
            * function mouseClicked() {
-           *   //here we test if the mouse is over the
+           *   //here we line_clipping if the mouse is over the
            *   //canvas element when it's clicked
            *   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
            *     //Here we call the play() function on
@@ -63260,7 +63260,7 @@
            * }
            *
            * function mouseClicked() {
-           *   //here we test if the mouse is over the
+           *   //here we line_clipping if the mouse is over the
            *   //canvas element when it's clicked
            *   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
            *     background(200);
@@ -63324,7 +63324,7 @@
            * }
            *
            * function mouseClicked() {
-           *   //here we test if the mouse is over the
+           *   //here we line_clipping if the mouse is over the
            *   //canvas element when it's clicked
            *   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
            *     background(200);
@@ -63386,7 +63386,7 @@
            * }
            *
            * function mouseClicked() {
-           *   //here we test if the mouse is over the
+           *   //here we line_clipping if the mouse is over the
            *   //canvas element when it's clicked
            *   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
            *     background(200);
@@ -63442,7 +63442,7 @@
            * }
            *
            * function mouseClicked() {
-           *   //here we test if the mouse is over the
+           *   //here we line_clipping if the mouse is over the
            *   //canvas element when it's clicked
            *   if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
            *     background(200);
@@ -71131,7 +71131,7 @@
     * <div><code>
     * let result;
     * function preload() {
-    *   result = loadStrings('assets/test.txt');
+    *   result = loadStrings('assets/line_clipping.txt');
     * }
    
     * function setup() {
@@ -71145,7 +71145,7 @@
     *
     * <div><code>
     * function setup() {
-    *   loadStrings('assets/test.txt', pickString);
+    *   loadStrings('assets/line_clipping.txt', pickString);
     * }
     *
     * function pickString(result) {
@@ -85801,7 +85801,7 @@
 
             // start by removing existing 'post' registered debug methods
             for (var i = this._registeredMethods.post.length - 1; i >= 0; i--) {
-              // test for equality...
+              // line_clipping for equality...
               if (
                 this._registeredMethods.post[i].toString() === this._grid().toString() ||
                 this._registeredMethods.post[i].toString() === this._axesIcon().toString()
@@ -85869,7 +85869,7 @@
 
             // start by removing existing 'post' registered debug methods
             for (var i = this._registeredMethods.post.length - 1; i >= 0; i--) {
-              // test for equality...
+              // line_clipping for equality...
               if (
                 this._registeredMethods.post[i].toString() === this._grid().toString() ||
                 this._registeredMethods.post[i].toString() === this._axesIcon().toString()
@@ -93548,7 +93548,7 @@
             // libtess will take 3d verts and flatten to a plane for tesselation
             // since only doing 2d tesselation here, provide z=1 normal to skip
             // iterating over verts only to get the same answer.
-            // comment out to test normal-generation code
+            // comment out to line_clipping normal-generation code
             this._tessy.gluTessNormal(0, 0, 1);
 
             var triangleVerts = [];
@@ -95083,7 +95083,7 @@
                       var t0 = (-B - Q) / (2 * A); // the first inflection point
                       var t1 = (-B + Q) / (2 * A); // the second inflection point
 
-                      // test if the first inflection point lies on the curve
+                      // line_clipping if the first inflection point lies on the curve
                       if (t0 > 0 && t0 < 1) {
                         // split at the first inflection point
                         cubics.push(this.split(t0));
@@ -95091,7 +95091,7 @@
                         t1 = 1 - (1 - t1) / (1 - t0);
                       }
 
-                      // test if the second inflection point lies on the curve
+                      // line_clipping if the second inflection point lies on the curve
                       if (t1 > 0 && t1 < 1) {
                         // split at the second inflection point
                         cubics.push(this.split(t1));

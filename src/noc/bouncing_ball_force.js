@@ -1,7 +1,7 @@
-import {createGraphicsContext} from "./graphics_context";
-import * as p5 from './lib/p5';
-import * as mat3 from "./lib/esm/mat3";
-import * as vec3 from "./lib/esm/vec3";
+import {createGraphicsContext} from "../graphics_context";
+import * as p5 from '../lib/p5';
+import * as mat3 from "../lib/esm/mat3";
+import * as vec3 from "../lib/esm/vec3";
 
 export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
 

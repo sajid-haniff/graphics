@@ -42,9 +42,6 @@ export const mouseToWindowCoordinates = (sk) => {
 
 }
 
-
-
-
 export const createGraphicsContext = (window, viewport, WIDHT = 400, HEIGHT= 400) => {
 
     /* destructure */
@@ -67,5 +64,52 @@ export const createGraphicsContext = (window, viewport, WIDHT = 400, HEIGHT= 400
         sy,
         tx,
         ty
+    }
+}
+
+export const clipper = (window) => {
+
+    /*
+
+    1001    |  0001    |  0101
+    --------+----------+---------
+    1000    |  0000    |  0100
+   ---------+----------+---------
+   1010     |  0010    |  0110
+
+     */
+
+    const {left: x_min,  right: x_max,  top: y_max,  bottom: y_min} = window;
+
+    const clip_code = (x, y) =>  {
+        return ((x < x_min) << 3) | ((x > x_max) << 2) | ((y < y_min) << 1) | (y > y_max);
+    }
+
+    const clip = (xP, yP, xQ, yQ) => {
+
+        let cP = clip_code(xP, yP);
+        let cQ = clip_code(xQ, yQ);
+
+        while (cP | cQ) {
+            if( cP & cQ ) return
+
+            let dx = xQ - xP;
+            let dy = yQ - yP;
+
+            if (cP) {
+                if (cP & 8) yP += (x_min-xP)*dy/dx, xP=x_min; else
+                if (cP & 4) yP += (x_max-xP)*dy/dx, xP=x_max; else
+                if (cP & 2) xP += (y_min-yP)*dx/dy, yP=y_min; else
+                if (cP & 1) xP += (y_max-yP)*dx/dy, yP=y_max;
+                cP = clip_code(xP, yP);
+            } else
+            {
+                if (cQ & 8) yQ += (x_min-xQ)*dy/dx, xQ=x_min; else
+                if (cQ & 4) yQ += (x_max-xQ)*dy/dx, xQ=x_max; else
+                if (cQ & 2) xQ += (y_min-yQ)*dx/dy, yQ=y_min; else
+                if (cQ & 1) xQ += (y_max-yQ)*dx/dy, yQ=y_max;
+                cQ=clip_code(xQ, yQ);
+            }
+        }
     }
 }
