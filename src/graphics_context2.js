@@ -128,7 +128,14 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
         clip_draw,
         moveTo,
-        lineTo: (x, y) => lineTo(x, y, sk)
+        lineTo: (x, y) => lineTo(x, y, sk),
+
+        moveRel,
+        lineRel: (dx, dy) => lineRel(dx, dy, sk),
         //clip: (xP, yP, xQ, yQ) => clip_draw(xP, yP, xQ, yQ)
+
+        turn,
+        turnTo,
+        forward
     }
 }

@@ -9,6 +9,16 @@ export const sketchBuilder2 = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
     const ctx = createGraphicsContext2(win, view, CANVAS_WIDTH, CANVAS_HEIGHT, sk);
     const {sx, sy, tx, ty} = ctx.viewport;
 
+    const arrow = (f, h, t, w) => {
+        ctx.lineRel(-w - t / 2, -f);
+        ctx.lineRel(w, 0);
+        ctx.lineRel(0, -h);
+        ctx.lineRel(t, 0);
+        ctx.lineRel(0, h);
+        ctx.lineRel(w, 0);
+        ctx.lineRel(-w - t / 2, f);
+    }
+
     return {
 
         setup: () => {
@@ -43,6 +53,12 @@ export const sketchBuilder2 = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
             ctx.clip_draw(-155, 0, 155, 0);
             ctx.clip_draw(-155, 0, 0, 120);
             ctx.clip_draw(0,120, 155, 0);
+
+            sk.stroke(25, 204, 123);
+            sk.strokeWeight(2);
+
+            ctx.moveTo(0, -30);
+            arrow(30, 30, 10, 15);
         }
     }
 }
