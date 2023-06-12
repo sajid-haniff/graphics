@@ -1,4 +1,5 @@
 import {createGraphicsContext} from "../graphics_context";
+import {shuffle} from "../algorithm/fischer_yates"
 
 
 export const regexTester = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 800) => {
@@ -23,9 +24,15 @@ export const regexTester = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 800) => {
             sk.noCanvas();
             // join() joins the elements of an array
             // Here we pass in a line break to retain formatting
-            txt = sk.join(lines, '<br/>');
-            let par = sk.createP(txt);
-            par.id('text');
+            //txt = sk.join(lines, '<br/>');
+            //let par = sk.createP(txt);
+            //par.id('text');
+
+            const array = [];
+            for (let i = 1; i <= 50; i++) {
+                array.push(i);
+            }
+            console.log(shuffle(array))
 
 
         }
