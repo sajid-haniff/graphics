@@ -1,5 +1,6 @@
 import {createGraphicsContext} from "../graphics_context";
-import {shuffle} from "../algorithm/fischer_yates"
+import {shuffle} from "../algorithm/shuffle"
+import {quick_sort} from "../algorithm/quicksort"
 
 
 export const regexTester = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 800) => {
@@ -29,10 +30,17 @@ export const regexTester = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 800) => {
             //par.id('text');
 
             const array = [];
-            for (let i = 1; i <= 50; i++) {
+            for (let i = 1; i <= 20; i++) {
                 array.push(i);
             }
-            console.log(shuffle(array))
+
+            //console.log(array);
+            let shuffled = shuffle(array);
+
+
+            console.log(shuffled);
+            quick_sort(shuffled, 0, array.length-1);
+            console.log(shuffled);
 
 
         }

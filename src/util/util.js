@@ -6,6 +6,8 @@ export const compare = {
 
 export const DOES_NOT_EXIST = -1;
 
+
+
 export const lesserEquals = (a, b, compareFn) => {
     const comp = compareFn(a, b);
     return comp === Compare.LESS_THAN || comp === Compare.EQUALS;
