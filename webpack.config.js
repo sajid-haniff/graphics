@@ -1,7 +1,7 @@
 module.exports = {
     mode: "development",
 
-    entry: './src/index-heap.js',
+    entry: './src/index-recursion.js',
 
     devServer: {
         contentBase: "./dist"
