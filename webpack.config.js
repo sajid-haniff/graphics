@@ -1,7 +1,7 @@
 module.exports = {
     mode: "development",
 
-    entry: './src/index-recursion.js',
+    entry: './src/index-clipper.js',
 
     devServer: {
         contentBase: "./dist"
