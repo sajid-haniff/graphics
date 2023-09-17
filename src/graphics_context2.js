@@ -1,0 +1,346 @@
+import * as vec3 from "./lib/esm/vec3";
+
+export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 400, sk) => {
+
+    /** global current position **/
+    let CP = vec3.fromValues(0.0, 0.0, 1.0 );
+
+    /** global current direction **/
+    let CD = 0.0;
+
+    const turn = (angle) => { CD += angle };
+
+    const turnTo = (angle) => { CD = angle };
+
+    const forward = (dist, isVisible = true) => {
+
+        const RadPerDegree = 0.017453393;
+        let x = CP[0] + dist * Math.cos(RadPerDegree * CD);
+        let y = CP[1] + dist * Math.sin(RadPerDegree * CD);
+
+        if(isVisible)
+            lineTo(x, y);
+        else
+            moveTo(x, y);
+    }
+
+    const moveTo = (x, y) => {
+        CP = vec3.fromValues(x, y, 1.0);
+    }
+
+    const lineTo = (x, y) => {
+
+        /* accept is true if line was clipped */
+        const {accept, ...rest} = clip(CP[0], CP[1], x, y);
+        const [xP, yP, xQ, yQ] = Object.values(rest);
+
+        if (accept) {
+            sk.line(xP,yP,xQ,yQ);
+            CP = vec3.fromValues(x,y,1.0);
+        }
+    }
+
+    const moveRel = (dx, dy) => {
+        CP = vec3.fromValues(CP[0] + dx, CP[1] + dy, 1);
+    }
+
+    //XXX - Add clipping - possibly also use moveTo, lineTo
+    const lineRel = (dx, dy) => {
+
+        let end = vec3.fromValues(CP[0] + dx, CP[1] + dy, 1);
+        sk.line(CP[0], CP[1], end[0], end[1]);
+
+        CP = end;
+    }
+
+    const mouseToWindowCoordinates = (sk) => {
+
+        const currentTransformationMatrix   = sk.drawingContext.getTransform();
+        const deviceToWindow = currentTransformationMatrix.invertSelf();
+        const point = new DOMPoint(sk.mouseX, sk.mouseY);
+        return point.matrixTransform(deviceToWindow);
+    }
+
+    /* Viewport Transformation */
+
+    const {left: win_left,  right: win_right,  top: win_top,  bottom: win_bottom} = window;
+    const {left: view_left, right: view_right, top: view_top, bottom: view_bottom} = viewport;
+
+    let tmp1 = (win_right - win_left);
+    let tmp2 = (win_top - win_bottom);
+
+    let sx = (view_right - view_left) / tmp1;
+    let sy = (view_top - view_bottom) / tmp2;
+
+    let tx = (view_left * win_right - view_right * win_left) / tmp1;
+    let ty = (view_bottom * win_top - view_top * win_bottom) / tmp2;
+
+    /* ===================================================  */
+
+    /* ================================ */
+    /* Cohen Sutherland Line Clipper    */
+    /* =================================*/
+    /*                                  */
+    /*    1001    |  0001    |  0101    */
+    /*    --------+----------+--------- */
+    /*    1000    |  0000    |  0100    */
+    /*   ---------+----------+--------- */
+    /*    1010    |  0010    |  0110    */
+    /* ================================ */
+
+    const {left: x_min,  right: x_max,  top: y_max,  bottom: y_min} = window;
+
+    const code = (x, y) =>  {
+        return ((x < x_min) << 3) | ((x > x_max) << 2) | ((y < y_min) << 1) | (y > y_max);
+    }
+
+
+
+    const clip = (xP, yP, xQ, yQ) => {
+
+        let cP = code(xP, yP);
+        let cQ = code(xQ, yQ);
+
+        while (cP | cQ) {
+            if( cP & cQ ) return { accept: false }
+
+            let dx = xQ - xP;
+            let dy = yQ - yP;
+
+            if (cP) {
+                if (cP & 8) yP += (x_min-xP)*dy/dx, xP=x_min; else
+                if (cP & 4) yP += (x_max-xP)*dy/dx, xP=x_max; else
+                if (cP & 2) xP += (y_min-yP)*dx/dy, yP=y_min; else
+                if (cP & 1) xP += (y_max-yP)*dx/dy, yP=y_max;
+                cP = code(xP, yP);
+            } else
+            {
+                if (cQ & 8) yQ += (x_min-xQ)*dy/dx, xQ=x_min; else
+                if (cQ & 4) yQ += (x_max-xQ)*dy/dx, xQ=x_max; else
+                if (cQ & 2) xQ += (y_min-yQ)*dx/dy, yQ=y_min; else
+                if (cQ & 1) xQ += (y_max-yQ)*dx/dy, yQ=y_max;
+                cQ = code(xQ, yQ);
+            }
+        }
+
+        drawEllipse(xP, yP);
+        drawEllipse(xQ, yQ);
+
+        return {
+            xP,
+            yP,
+            xQ,
+            yQ,
+            accept: true
+        }
+    }
+
+    const drawEllipse = (x, y) => {
+        if (x === x_min || x === x_max || y === y_min || y === y_max) {
+            sk.push();
+            sk.stroke(1);
+            sk.strokeWeight(2);
+            sk.fill(227);
+            sk.ellipse(x, y, 8, 8);
+            sk.pop();
+        }
+    };
+
+    const polySpiral = (dist, angle, incr, n) => {
+
+        for(let i=0; i<n; i++) {
+
+            forward(dist);
+            turn(angle);
+            dist += incr;
+        }
+    }
+
+    const drawArc = (cX, cY, radius, startAngle, sweep) => {
+        const n = 30;
+        let angle = startAngle * sk.PI / 180;
+        let angleInc = sweep * sk.PI / (180 * n);
+        moveTo(cX + radius * Math.cos(angle), cY + radius * Math.sin(angle));
+        for(let k = 0; k <= n; k++, angle += angleInc)
+        {
+            lineTo(cX + radius * Math.cos(angle), cY + radius * Math.sin(angle));
+        }
+    }
+
+    const turtle = (n, angle, Fn) => {
+        for(let i = 0; i < n; i++)
+        {
+            Fn();
+            turn(angle);
+        }
+    }
+
+    const makeNGon = (R, N) => {
+
+        const deltaAngle = 2 * Math.PI / N;
+
+        return Array.from({ length: N }, (_, i) => {
+            const angle = i * deltaAngle;
+            return { x: R * Math.cos(angle), y: R * Math.sin(angle) };
+        });
+    };
+
+    /* returns a unit vector from P -> Q */
+    const createDirectionVector = (P, Q) => {
+
+        let out = vec3.sub(vec3.create(), Q, P);
+        return vec3.normalize(vec3.create(), out);
+    }
+
+    const affineCombination = (P, U, scale) => {
+        return vec3.scaleAndAdd(vec3.create(), P, U, scale);
+    }
+
+    //const radsToDegs = rad => rad * 180 / Math.PI;
+    const radsToDegs = (rad, normalize = false) => {
+        return normalize === true ? ((rad * 180 / Math.PI) + 360) % 360 : rad * 180 / Math.PI;
+    }
+
+    const degsToRads = deg => (deg * Math.PI) / 180.0;
+
+    const lerp = (a, b, t) => {
+
+        let dir = vec3.sub(vec3.create(), b, a);
+        return vec3.scaleAndAdd(vec3.create(), a, dir, t);
+    }
+
+    const bisector = (U, V, t) =>
+    {
+        const bisector = vec3.lerp(vec3.create(), U, V, 0.5);
+        return vec3.normalize(vec3.create(), bisector);
+    }
+
+    // 0 - colinear
+    // -1 - clockwise
+    // 1 - ccw
+    const orientation = (p1, p2, p3) => {
+        let val = (p2[1] - p1[1]) * (p3[0] - p2[0]) - (p2[0] - p1[0]) * (p3[1] - p2[1]);
+        return val === 0 ? 0 : val > 0 ? -1 : 1;
+    }
+
+    const arcTo = (P, Q, R) => {
+
+        sk.stroke(255, 20, 12);
+        sk.strokeWeight(2);
+
+        /* normalized vector from P to Q */
+        const U = createDirectionVector(P, CP);
+        const V = createDirectionVector(P, Q);
+
+        const U_dot_V = vec3.dot(U, V); // cosine of angle since U & V are normalized
+        const tanHalfTheta = Math.sqrt((1 - U_dot_V)/(1 + U_dot_V) ); // half angle
+        const length = R / tanHalfTheta;
+
+        const A = affineCombination(P, U, length);
+        const B = affineCombination(P, V, length);
+
+        const h = Math.sqrt(length**2 + R**2);
+
+        let bisector = lerp(U, V, 0.5);
+        bisector = vec3.normalize(vec3.create(), bisector);
+
+        const C = affineCombination(P, bisector, h);
+
+        moveTo(CP[0], CP[1]);
+        //sk.ellipse(CP[0], CP[1], 8, 8);
+
+        //sk.stroke(255, 20, 255);
+        lineTo(A[0], A[1]);
+
+        let a = vec3.subtract(vec3.create(), A, C);
+        let b = vec3.subtract(vec3.create(), B, C);
+
+        const getAngles = (a, b) => [
+            radsToDegs(Math.atan2(a[1], a[0])),
+            radsToDegs(Math.atan2(b[1], b[0])),
+        ];
+
+        const [COLLINEAR, CLOCKWISE, COUNTERCLOCKWISE] = [0, -1, 1];
+
+        const orientationVal = orientation(CP, P, Q);
+
+        if (orientationVal === COLLINEAR) return;
+
+        /* arc will always be drawn ccw */
+        /* determine startAngle, endAngle based on orientation */
+        const [startAngle, endAngle] = getAngles(
+            orientationVal === COUNTERCLOCKWISE ? a : b,
+            orientationVal === COUNTERCLOCKWISE ? b : a);
+
+        const sweepAngle = (endAngle < startAngle ? endAngle + 360 : endAngle) - startAngle;
+
+        console.log(startAngle);
+        console.log(endAngle);
+        console.log(sweepAngle);
+
+        //sk.ellipse(C[0]+b[0], C[1]+b[1], 8, 8);
+        //sk.ellipse(C[0]+a[0], C[1]+a[1], 2, 2);
+
+
+        //sk.stroke(255, 20, 12);
+        drawArc(C[0], C[1], R, startAngle, sweepAngle);
+        //sk.stroke(255, 20, 255);
+        if(orientationVal === CLOCKWISE)  moveTo(B[0], B[1]);
+        lineTo(Q[0], Q[1]);
+    }
+
+    const perp = (out, a) => {
+        out[0] = -a[1];
+        out[1] = a[0];
+        out[2] = 0;
+        return out;
+    }
+
+    const line = (line) => {
+
+        const {initial, terminal} = line;
+        const dir = createDirectionVector(initial, terminal);
+
+        return {
+            initial,
+            dir
+        }
+    }
+
+    const isBetweenZeroAndOne = (num) => num >= 0 && num <= 1;
+
+    const intersect = (L1, L2) => {
+        let A = L1.initial;
+        let b = L1.dir;
+
+        let C = L2.initial;
+        let d = L2.dir;
+
+        let c = vec3.sub(vec3.create(), C, A);
+        let denom = vec3.dot(perp(d), b);
+
+        let t = vec3.dot(perp(d), c) / denom;
+        let u = vec3.dot(perp(b), c) / denom;
+
+        if(isBetweenZeroAndOne(t) && isBetweenZeroAndOne(u)) {
+            let intersection = affineCombination(A, b, t);
+        }
+    }
+
+
+
+    return {
+        viewport: { sx, sy, tx, ty },
+
+        moveTo,
+        lineTo,
+        moveRel,
+        lineRel,
+        turn,
+        turnTo,
+        forward,
+        polySpiral,
+        drawArc,
+        arcTo
+    }
+}
