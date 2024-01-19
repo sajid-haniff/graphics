@@ -1,4 +1,4 @@
-import {createGraphicsContext} from "../graphics_context";
+import {createGraphicsContext} from "../../graphics_context";
 
 export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
 

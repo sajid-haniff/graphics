@@ -1,5 +1,5 @@
-import * as p5 from './lib/p5';
-import {sketchBuilder2} from './cg_algorithms/clipping/csClipDemo'
+import * as p5 from '../../lib/p5';
+import {sketchBuilder2} from './csClipDemo'
 
 let p = (sk) => {
 

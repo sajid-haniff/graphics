@@ -1,11 +1,11 @@
-import {createGraphicsContext2} from "../graphics_context2";
-import * as vec3 from "../lib/esm/vec3";
+import {createGraphicsContext2} from "../../graphics_context2";
+import * as vec3 from "../../lib/esm/vec3";
 
 export const sketchBuilder2 = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) => {
 
     /* setup drawing area */
-    let win  = { left: -100, right: 100, top: 100, bottom: -100}
-    let view = { left:   0.1, right:  0.9, top:  0.9, bottom:   0.1}
+    let win = {left: -100, right: 100, top: 100, bottom: -100}
+    let view = {left: 0.1, right: 0.9, top: 0.9, bottom: 0.1}
 
     const ctx = createGraphicsContext2(win, view, CANVAS_WIDTH, CANVAS_HEIGHT, sk);
     const {sx, sy, tx, ty} = ctx.viewport;
@@ -19,7 +19,6 @@ export const sketchBuilder2 = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) => {
         ctx.lineRel(w, 0);
         ctx.lineRel(-w - t / 2, f);
     }
-
 
 
     return {
@@ -48,10 +47,10 @@ export const sketchBuilder2 = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) => {
 
             /* Draw Window */
             ctx.moveTo(-100, 100);
-            ctx.lineTo(100,100);
+            ctx.lineTo(100, 100);
             ctx.lineTo(100, -100);
-            ctx.lineTo(-100,-100);
-            ctx.lineTo(-100,100)
+            ctx.lineTo(-100, -100);
+            ctx.lineTo(-100, 100)
 
             //sk.stroke(1);
             //sk.strokeWeight(2);
@@ -77,49 +76,44 @@ export const sketchBuilder2 = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) => {
             //ctx.polySpiral(3, 87, 2, 100);
 
 
-
-
-            let P = vec3.fromValues(99, 99, 1.0 );
-            let Q = vec3.fromValues(99, -50, 1.0 );
+            let P = vec3.fromValues(99, 99, 1.0);
+            let Q = vec3.fromValues(99, -50, 1.0);
             let R = 20;
             ctx.moveTo(-0, 99);
-            ctx.arcTo(P,Q, R);
+            ctx.arcTo(P, Q, R);
 
 
-             P = vec3.fromValues(99, -99, 1.0 );
-             Q = vec3.fromValues(0, -99, 1.0 );
-             R = 20;
-            ctx.arcTo(P,Q, R);
+            P = vec3.fromValues(99, -99, 1.0);
+            Q = vec3.fromValues(0, -99, 1.0);
+            R = 20;
+            ctx.arcTo(P, Q, R);
 
 
-            P = vec3.fromValues(-99, -99, 1.0 );
-            Q = vec3.fromValues(-99, 0, 1.0 );
+            P = vec3.fromValues(-99, -99, 1.0);
+            Q = vec3.fromValues(-99, 0, 1.0);
             R = 20;
             //ctx.moveTo(o, -99);
-            ctx.arcTo(P,Q, R);
+            ctx.arcTo(P, Q, R);
 
-            P = vec3.fromValues(-99, 99, 1.0 );
-            Q = vec3.fromValues(0, 99, 1.0 );
+            P = vec3.fromValues(-99, 99, 1.0);
+            Q = vec3.fromValues(0, 99, 1.0);
             R = 20;
             //ctx.moveTo(o, -99);
-            ctx.arcTo(P,Q, R);
+            ctx.arcTo(P, Q, R);
 
 
-/*
-            let P = vec3.fromValues(0, 0, 1.0 );
-            let Q = vec3.fromValues(-60, 80.0, 1.0 );
-            let R = 15;
-            ctx.moveTo(80, 85);
-            ctx.arcTo(P,Q, R);
-*/
-
-
+            /*
+                        let P = vec3.fromValues(0, 0, 1.0 );
+                        let Q = vec3.fromValues(-60, 80.0, 1.0 );
+                        let R = 15;
+                        ctx.moveTo(80, 85);
+                        ctx.arcTo(P,Q, R);
+            */
 
 
             //ctx.drawArc(67, 42, 10, 117, 2*117);
             //ctx.drawArc(-100, -100, 200, 0, 90);
             //ctx.drawArc(100, -100, 200, -180, -90);
-
 
 
         }
