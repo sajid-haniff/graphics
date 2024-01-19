@@ -1,4 +1,4 @@
-import {createGraphicsContext} from "../../graphics_context";
+import {createGraphicsContext2} from "../../graphics_context2";
 
 export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
 
@@ -11,7 +11,8 @@ export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
     let win  = { left: -100, right: 100, top: 100, bottom: -100}
     let view = { left:   0, right:  1, top:  1, bottom:   0}
 
-    const {sx, sy, tx, ty} = createGraphicsContext(win, view, CANVAS_WIDTH, CANVAS_HEIGHT);
+    const ctx = createGraphicsContext2(win, view, CANVAS_WIDTH, CANVAS_HEIGHT, sk);
+    const {sx, sy, tx, ty} = ctx.viewport;
 
     return {
 
