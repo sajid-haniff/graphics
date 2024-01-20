@@ -1,5 +1,5 @@
 import {operators, constants, methods, operation} from './postfix';
-import {createStack} from "../datastructure/stack";
+import {createStack} from "../datastructures/stack";
 
 
 const infixToPostfixBuilder = () => {
