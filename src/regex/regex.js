@@ -1,6 +1,6 @@
 import {createGraphicsContext} from "../graphics_context";
 import {shuffle} from "../algorithm/shuffle"
-import {quick_sort} from "../algorithm/quicksort"
+import {quick_sort} from "../algorithm/sorting/quicksort"
 
 
 export const regexTester = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 800) => {
