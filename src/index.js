@@ -1,74 +1,44 @@
 import * as p5 from './lib/p5';
-//import {sketchBuilder} from './bouncing_ball_no_vectors'
-//import {sketchBuilder} from './bouncing_ball_vector'
-//import {sketchBuilder} from './noc/bouncing_ball_acceleration'
-//import {sketchBuilder} from './bouncing_ball_force'
-//import {circleRecursionBuilder} from './recursion/circle_recursion'
-//import {hTreeBuilder} from './recursion/htree'
-//import {brownianBuilder} from "./recursion/brownian";
-//import {pythagorasTreeBuilder} from "./recursion/pythagoras";
 
-import {regexTester} from "./regex/regex";
+const demos = {
+    'createTriangleCirclesDemo': () => import('./geometric/triangle-circles')
+    // Add more demos here as needed
+};
 
+const demoName = 'createTriangleCirclesDemo';
 
+const runDemo = async (demoName) => {
+    try {
+        // Dynamically import the module corresponding to the demoName
+        // and extract the exported function using a computed property name.
+        //
+        // - `await demos[demoName]();` dynamically imports the module.
+        //   For example, if demoName is 'createTriangleCirclesDemo', this will import from './geometric/triangle-circles'.
+        //
+        // - `const { [demoName]: demoFunction } = module;` uses object destructuring with a computed property name to extract
+        //   the function named `demoName` from the imported module.
+        //   For instance, if demoName is 'createTriangleCirclesDemo', it is equivalent to:
+        //   const demoFunction = module.createTriangleCirclesDemo;
+        //
+        // This syntax allows us to dynamically determine which property to extract based on the value of demoName.
+        const { [demoName]: demoFunction } = await demos[demoName]();
 
-let p = (sk) => {
+        //const module = await demos[demoName]();
+        //const demoFunction = module[demoName];
 
-    //let sketch = sketchBuilder(sk);
-    //let sketch1 = circleRecursionBuilder(sk);
-    //let sketch2 = hTreeBuilder(sk);
-    //let sketch3 = brownianBuilder(sk);
-    //let sketch4 = pythagorasTreeBuilder(sk);
-    let sketch5 = regexTester(sk);
-
-    sk.preload = () => {
-        sketch5.preload();
-    }
-
-    sk.setup = () => {
-
-        //sketch.setup();
-        //sketch1.setup();
-        //sketch2.setup();
-        //sketch3.setup();
-        //sketch4.setup();
-        sketch5.setup();
-
-        //sk.frameRate(1);
-    }
-
-    sk.draw = () =>{
-
-        //sketch.draw();
-
-        /*
-        let gravity = sk.createVector(0, -0.01);
-        sketch.applyForce(gravity);
-
-        if (sk.mouseIsPressed) {
-            let wind = sk.createVector(0.1, 0);
-            sketch.applyForce(wind);
+        if (typeof demoFunction !== 'function') {
+            throw new Error(`Demo ${demoName} is not a valid function`);
         }
 
+        new p5((sk) => {
+            const sketch = demoFunction(sk);
 
-
-        sketch.update();
-        sketch.checkEdges();
-        sketch.display();
-        */
-
-        //sketch1.display();
-        //sketch2.display();
-        //sketch3.display();
-        //sketch4.display();
-
-
-        //sketch.update();
-        //sketch.checkEdges();
-        //sketch.display();
-
-
+            sk.setup = sketch.setup;
+            sk.draw = sketch.display;
+        });
+    } catch (error) {
+        console.error(`Error loading demo ${demoName}:`, error);
     }
-}
+};
 
-const P5 = new p5(p);
+runDemo(demoName);
