@@ -12,11 +12,11 @@ export const createAttractor = sk => {
         let distance = force.mag();
         // Limiting the distance to eliminate "extreme" results for very close or very far objects
         distance = sk.constrain(distance, 5, 25);
-
         // Calculate gravitational force magnitude
-        let strength = (G * mass * mover.mass) / (distance * distance);
+        let strength = (G * mass * mover.mass) / (distance ** 2);
         // Get force vector --> magnitude * direction
         force.setMag(strength);
+
         return force;
     };
 

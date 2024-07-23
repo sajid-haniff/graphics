@@ -22,8 +22,8 @@ export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
             canvas.id('canvas');
             sk.background(40);
 
-            for (let i = 0; i < 10; i++) {
-               vehicles.push(createVehicle(sk, sk.random(-100,100), sk.random(-100,100), sk.random(0.1, 2)));
+            for (let i = 0; i < 1; i++) {
+               vehicles.push(createVehicle(sk, sk.random(-100,100), sk.random(-100,100), sk.random(1, 2)));
             }
             attractor = createAttractor(sk, CANVAS_WIDTH, CANVAS_HEIGHT)
 
@@ -35,7 +35,6 @@ export const sketchBuilder = (sk, CANVAS_WIDTH = 400, CANVAS_HEIGHT = 400) => {
             sk.applyMatrix(sx, 0, 0, sy, tx, ty);
 
             sk.background(51);
-
             attractor.display();
 
             for (let i = 0; i < vehicles.length; i++) {

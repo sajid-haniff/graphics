@@ -1,4 +1,5 @@
 import * as vec3 from "./lib/esm/vec3";
+import {ortho} from "./lib/esm/mat4";
 
 export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 400, sk) => {
 
@@ -223,6 +224,110 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         return val === 0 ? 0 : val > 0 ? -1 : 1;
     }
 
+    // Function to calculate the center of the excircle
+    const excircle = (A, B, C) => {
+        // Calculate vectors a, b, and c
+        const a = vec3.sub(vec3.create(), B, A); // Vector AB:
+        const b = vec3.sub(vec3.create(), C, B); // Vector BC:
+        const c = vec3.sub(vec3.create(), C, A); // Vector CA:
+
+        // Calculate the perpendicular vector to a
+        const a_perp = perp(vec3.create(), a); // Perpendicular to vector AB:
+
+        // Calculate dot products
+        const b_dot_c = vec3.dot(b, c); // Dot product of BC and CA:
+        const a_perp_dot_c = vec3.dot(a_perp, c); // Dot product of a_perp and CA:
+
+        // Calculate the scaled perpendicular vector
+        const scaled_a_perp = vec3.scale(vec3.create(), a_perp, b_dot_c / a_perp_dot_c);
+
+        // Add vectors a and scaled_a_perp
+        const result = vec3.add(vec3.create(), a, scaled_a_perp);
+
+        // Scale the result by 0.5
+        const temp = vec3.scale(vec3.create(), result, 0.5);
+
+        // Calculate the center of the excircle
+        const center = vec3.add(vec3.create(), A, temp);
+
+        // Calculate the radius of the excircle
+        const radius = (vec3.length(a) / 2) * Math.sqrt((b_dot_c / a_perp_dot_c) ** 2 + 1);
+
+        // Return the center and radius
+        return { center, radius };
+    };
+
+    const incircle = (A, B, C) => {
+
+        const a = vec3.sub(vec3.create(), B, A); // Vector a = B - A:
+        const b = vec3.sub(vec3.create(), C, B); // Vector b = C - B:
+        const c = vec3.sub(vec3.create(), C, A); // Vector c = C - A:
+
+        const aNormalized = vec3.normalize(vec3.create(), a);
+        const bNormalized = vec3.normalize(vec3.create(), b);
+        const cNormalized = vec3.normalize(vec3.create(), c);
+
+        const La = (vec3.length(a) + vec3.length(c) - vec3.length(b)) * 0.5;
+        const Lb = (vec3.length(a) + vec3.length(b) - vec3.length(c)) * 0.5;
+
+        const R = vec3.add(vec3.create(), A, vec3.scale(vec3.create(), aNormalized, La));
+        const S = vec3.add(vec3.create(), B, vec3.scale(vec3.create(), bNormalized, Lb));
+        const T = vec3.add(vec3.create(), A, vec3.scale(vec3.create(), cNormalized, La));
+
+        return { R, S, T };
+
+    }
+
+    const perp2D = (v) => vec3.fromValues(-v[1], v[0], 0);
+
+    const computeNinePointCircle = (A, B, C) => {
+        // Create sides of the triangle
+        const sideAB = createLine({ type: 'points', p1: A, p2: B });
+        const sideBC = createLine({ type: 'points', p1: B, p2: C });
+        const sideCA = createLine({ type: 'points', p1: C, p2: A });
+
+        // Compute midpoints of each side
+        const midAB = sideAB.lerp(0.5);
+        const midBC = sideBC.lerp(0.5);
+        const midCA = sideCA.lerp(0.5);
+
+        // Find altitudes (perpendiculars from each vertex to the opposite side)
+        const perpBC = perp2D(vec3.sub(vec3.create(), C, B));
+        const perpCA = perp2D(vec3.sub(vec3.create(), A, C));
+        const perpAB = perp2D(vec3.sub(vec3.create(), B, A));
+
+        const altitudeA = createLine({ type: 'point-dir', p1: A, p2: perpBC });
+        const altitudeB = createLine({ type: 'point-dir', p1: B, p2: perpCA });
+        const altitudeC = createLine({ type: 'point-dir', p1: C, p2: perpAB });
+
+        // Find feet of the altitudes
+        const footA = altitudeA.intersect(sideBC).point;
+        const footB = altitudeB.intersect(sideCA).point;
+        const footC = altitudeC.intersect(sideAB).point;
+
+        // Find orthocenter (intersection of altitudes)
+        const orthocenter = altitudeA.intersect(altitudeC).point;
+
+        // Compute midpoints from each vertex to the orthocenter
+        const midAO = createLine({ type: 'points', p1: A, p2: orthocenter }).lerp(0.5);
+        const midBO = createLine({ type: 'points', p1: B, p2: orthocenter }).lerp(0.5);
+        const midCO = createLine({ type: 'points', p1: C, p2: orthocenter }).lerp(0.5);
+
+        const {center, radius} = excircle(midAB, midBC, midCA);
+
+        const ccenter = center;
+        const rradius = radius;
+
+        // Return the structure
+        return {
+            midpoints: { midAB, midBC, midCA },
+            feetOfAltitudes: { footA, footB, footC },
+            midpointsToOrthocenter: { midAO, midBO, midCO },
+            ninePointCircle: { ccenter, rradius }
+        };
+    };
+    
+
     const arcTo = (P, Q, R) => {
 
         sk.stroke(255, 20, 12);
@@ -309,12 +414,15 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
     const isBetweenZeroAndOne = (num) => num >= 0 && num <= 1;
 
+
     const intersect = (L1, L2) => {
         let A = L1.initial;
         let b = L1.dir;
 
         let C = L2.initial;
         let d = L2.dir;
+
+
 
         let c = vec3.sub(vec3.create(), C, A);
         let denom = vec3.dot(perp(d), b);
@@ -326,6 +434,100 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
             let intersection = affineCombination(A, b, t);
         }
     }
+
+    /**
+     * Factory function to create a line object with parametric representation.
+     * Supports creation from either two points or a point and a direction vector.
+     * @param {object} config - Configuration object for the line.
+     * @param {string} config.type - Indicates how to interpret the parameters ('point-dir' or 'points').
+     * @param {vec3} config.p1 - A point on the line or the start point of the line segment.
+     * @param {vec3} config.p2 - Either the direction vector or the end point of the line segment.
+     * @param {vec3} config.isSegment - Type of line - line segment or unbounded line
+     * @returns {object} - The line object with properties and methods to interact with it.
+     */
+    const createLine = ({ type, p1, p2 }) => {
+
+        const initializers = {
+            'point-dir': () => ({ point: vec3.clone(p1), dir: vec3.clone(p2) }),
+            'points': () => {
+                const dir = vec3.subtract(vec3.create(), p2, p1);
+                return { point: vec3.clone(p1), dir };
+            }
+        };
+
+        const { point, dir } = initializers[type]();
+
+        const isBetweenZeroAndOne = (value) => value >= 0 && value <= 1;
+        const perp = (v) => vec3.fromValues(-v[1], v[0], 0);
+
+        const lerp = t => vec3.scaleAndAdd(vec3.create(), point, dir, t);
+
+        const intersect = (L, isSegment = false) => {
+            const A = point, b = dir;
+            const C = L.point(), d = L.dir();
+
+            const c = vec3.subtract(vec3.create(), C, A);
+            const denom = vec3.dot(perp(d), b);
+
+            if (denom === 0) {
+                // Lines are parallel
+                const collinear = vec3.dot(perp(b), c) === 0;
+                if (!collinear) {
+                    return {type: 'none'};
+                }
+
+                // Lines are collinear, check for overlap
+                const t0 = vec3.dot(b, c) / vec3.dot(b, b);
+                const t1 = vec3.dot(b, vec3.subtract(vec3.create(), vec3.add(vec3.create(), C, d), A)) / vec3.dot(b, b);
+
+                if (t0 > t1) [t0, t1] = [t1, t0];
+
+                if (t0 > 1 || t1 < 0) {
+                    return {type: 'none'};
+                }
+
+                const overlapStart = Math.max(0, t0);
+                const overlapEnd = Math.min(1, t1);
+
+                return overlapStart === overlapEnd
+                    ? {type: 'one', point: lerp(overlapStart)}
+                    : {type: 'many', interval: [overlapStart, overlapEnd, lerp(overlapStart), lerp(overlapEnd)]};
+            }
+
+            const t = vec3.dot(perp(d), c) / denom;
+            const u = vec3.dot(perp(b), c) / denom;
+
+            if (isSegment && (!isBetweenZeroAndOne(t) || !isBetweenZeroAndOne(u))) {
+                return {type: 'none'};
+            }
+
+            return {type: 'one', point: lerp(t)};
+        };
+
+        const draw = () => {
+            const endPoint = type === 'point-dir' ? lerp(1) : vec3.clone(p2);
+            moveTo(point[0], point[1]);
+            lineTo(endPoint[0], endPoint[1]);
+        };
+
+        const perpAt = (t) => {
+            const start   = lerp(t);
+            const perpDir = perp(dir);
+            return createLine({ type: 'point-dir', p1: start, p2: perpDir });
+        }
+
+
+        return {
+            point: () => vec3.clone(point),
+            dir: () => vec3.clone(dir),
+            lerp,
+            intersect,
+            perpAt,
+            draw
+        };
+    };
+
+
 
 
 
@@ -341,6 +543,10 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         forward,
         polySpiral,
         drawArc,
-        arcTo
+        arcTo,
+        excircle,
+        incircle,
+        createLine,
+        computeNinePointCircle
     }
 }

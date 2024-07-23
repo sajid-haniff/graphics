@@ -18,7 +18,7 @@ export const createVehicle = (sk, x, y, mass) => {
     const update = () => {
         velocity.add(acceleration);
         position.add(velocity);
-        aAcceleration = acceleration.x / 10.0;
+        aAcceleration = Math.abs(acceleration.x / 20.0);
         aVelocity += aAcceleration;
         aVelocity = sk.constrain(aVelocity, -0.1, 0.1);
         angle += aVelocity;
@@ -26,6 +26,7 @@ export const createVehicle = (sk, x, y, mass) => {
     };
 
     const display = () => {
+
         sk.stroke(0);
         sk.fill(175, 200);
         sk.rectMode(sk.CENTER);
