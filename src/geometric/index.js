@@ -1,5 +1,5 @@
 import runDemo from '../util/runDemo';
-import {createTriangleCirclesDemo} from './excircle'
+import {createTriangleCirclesDemo} from './triangle-circles'
 
 runDemo(createTriangleCirclesDemo);
 

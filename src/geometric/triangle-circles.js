@@ -33,10 +33,10 @@ export const createTriangleCirclesDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT 
 
             // Define vertices of the triangle
             const A = vec3.fromValues(-98, -50, 0);
-            const B = vec3.fromValues(98,  -70, 0);
+            const B = vec3.fromValues(98, -70, 0);
             const C = vec3.fromValues(-56, 98, 0);
 
-            const vertices = [A,B,C];
+            const vertices = [A, B, C];
 
             // Draw Triangle
             ctx.moveTo(vertices[0][0], vertices[0][1]);
@@ -84,30 +84,35 @@ export const createTriangleCirclesDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT 
             //line2.draw();
 
 
-/*
-            const result = line1.intersect(line2);
+            /*
+                        const result = line1.intersect(line2);
 
-            if (result.type === 'none') {
-                console.log('No intersection.');
-            } else if (result.type === 'one') {
-                console.log('Intersection point:', result.point);
-            } else if (result.type === 'many') {
-                console.log('Overlapping segment:', result.interval);
-            }*/
+                        if (result.type === 'none') {
+                            console.log('No intersection.');
+                        } else if (result.type === 'one') {
+                            console.log('Intersection point:', result.point);
+                        } else if (result.type === 'many') {
+                            console.log('Overlapping segment:', result.interval);
+                        }*/
 
-            const { midpoints, feetOfAltitudes, midpointsToOrthocenter, ninePointCircle } = ctx.computeNinePointCircle(A, B, C);
+            const {
+                midpoints,
+                feetOfAltitudes,
+                midpointsToOrthocenter,
+                ninePointCircle
+            } = ctx.computeNinePointCircle(A, B, C);
 
-            const { midAB, midBC, midCA } = midpoints;
-            const { footA, footB, footC } = feetOfAltitudes;
-            const { midAO, midBO, midCO } = midpointsToOrthocenter;
-            const { ccenter, rradius } = ninePointCircle;
+            const {midAB, midBC, midCA} = midpoints;
+            const {footA, footB, footC} = feetOfAltitudes;
+            const {midAO, midBO, midCO} = midpointsToOrthocenter;
+            const {ccenter, rradius} = ninePointCircle;
 
             sk.noFill();
             sk.stroke(1);
             sk.fill(224);
             //sk.circle(ccenter[0], ccenter[1], 2 * rradius);
 
-            sk.stroke(0,0,255);
+            sk.stroke(0, 0, 255);
             sk.ellipse(midAO[0], midAO[1], 5, 5);
             sk.ellipse(midBO[0], midBO[1], 5, 5);
             sk.ellipse(midCO[0], midCO[1], 5, 5);
@@ -127,13 +132,9 @@ export const createTriangleCirclesDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT 
             ctx.moveTo(C[0], C[1]);
             ctx.lineTo(footC[0], footC[1]);
 
-            sk.stroke(124,0,0);
+            sk.stroke(124, 0, 0);
             sk.noFill();
             sk.circle(ccenter[0], ccenter[1], 2 * rradius);
-
-
-
-
 
         }
     }
