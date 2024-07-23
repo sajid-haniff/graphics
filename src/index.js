@@ -7,7 +7,7 @@ const demos = {
     // Add more demos here as needed
 };
 
-const demoName = 'createInCirclesDemo';
+const demoName = 'createTriangleCirclesDemo';
 
 const runDemo = async (demoName) => {
     try {
