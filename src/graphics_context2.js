@@ -1,17 +1,21 @@
 import * as vec3 from "./lib/esm/vec3";
 import {ortho} from "./lib/esm/mat4";
 
-export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 400, sk) => {
+export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 400, sk) => {
 
     /** global current position **/
-    let CP = vec3.fromValues(0.0, 0.0, 1.0 );
+    let CP = vec3.fromValues(0.0, 0.0, 1.0);
 
     /** global current direction **/
     let CD = 0.0;
 
-    const turn = (angle) => { CD += angle };
+    const turn = (angle) => {
+        CD += angle
+    };
 
-    const turnTo = (angle) => { CD = angle };
+    const turnTo = (angle) => {
+        CD = angle
+    };
 
     const forward = (dist, isVisible = true) => {
 
@@ -19,7 +23,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         let x = CP[0] + dist * Math.cos(RadPerDegree * CD);
         let y = CP[1] + dist * Math.sin(RadPerDegree * CD);
 
-        if(isVisible)
+        if (isVisible)
             lineTo(x, y);
         else
             moveTo(x, y);
@@ -36,8 +40,8 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         const [xP, yP, xQ, yQ] = Object.values(rest);
 
         if (accept) {
-            sk.line(xP,yP,xQ,yQ);
-            CP = vec3.fromValues(x,y,1.0);
+            sk.line(xP, yP, xQ, yQ);
+            CP = vec3.fromValues(x, y, 1.0);
         }
     }
 
@@ -56,7 +60,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
     const mouseToWindowCoordinates = (sk) => {
 
-        const currentTransformationMatrix   = sk.drawingContext.getTransform();
+        const currentTransformationMatrix = sk.drawingContext.getTransform();
         const deviceToWindow = currentTransformationMatrix.invertSelf();
         const point = new DOMPoint(sk.mouseX, sk.mouseY);
         return point.matrixTransform(deviceToWindow);
@@ -64,7 +68,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
     /* Viewport Transformation */
 
-    const {left: win_left,  right: win_right,  top: win_top,  bottom: win_bottom} = window;
+    const {left: win_left, right: win_right, top: win_top, bottom: win_bottom} = window;
     const {left: view_left, right: view_right, top: view_top, bottom: view_bottom} = viewport;
 
     let tmp1 = (win_right - win_left);
@@ -89,12 +93,11 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
     /*    1010    |  0010    |  0110    */
     /* ================================ */
 
-    const {left: x_min,  right: x_max,  top: y_max,  bottom: y_min} = window;
+    const {left: x_min, right: x_max, top: y_max, bottom: y_min} = window;
 
-    const code = (x, y) =>  {
+    const code = (x, y) => {
         return ((x < x_min) << 3) | ((x > x_max) << 2) | ((y < y_min) << 1) | (y > y_max);
     }
-
 
 
     const clip = (xP, yP, xQ, yQ) => {
@@ -103,23 +106,16 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         let cQ = code(xQ, yQ);
 
         while (cP | cQ) {
-            if( cP & cQ ) return { accept: false }
+            if (cP & cQ) return {accept: false}
 
             let dx = xQ - xP;
             let dy = yQ - yP;
 
             if (cP) {
-                if (cP & 8) yP += (x_min-xP)*dy/dx, xP=x_min; else
-                if (cP & 4) yP += (x_max-xP)*dy/dx, xP=x_max; else
-                if (cP & 2) xP += (y_min-yP)*dx/dy, yP=y_min; else
-                if (cP & 1) xP += (y_max-yP)*dx/dy, yP=y_max;
+                if (cP & 8) yP += (x_min - xP) * dy / dx, xP = x_min; else if (cP & 4) yP += (x_max - xP) * dy / dx, xP = x_max; else if (cP & 2) xP += (y_min - yP) * dx / dy, yP = y_min; else if (cP & 1) xP += (y_max - yP) * dx / dy, yP = y_max;
                 cP = code(xP, yP);
-            } else
-            {
-                if (cQ & 8) yQ += (x_min-xQ)*dy/dx, xQ=x_min; else
-                if (cQ & 4) yQ += (x_max-xQ)*dy/dx, xQ=x_max; else
-                if (cQ & 2) xQ += (y_min-yQ)*dx/dy, yQ=y_min; else
-                if (cQ & 1) xQ += (y_max-yQ)*dx/dy, yQ=y_max;
+            } else {
+                if (cQ & 8) yQ += (x_min - xQ) * dy / dx, xQ = x_min; else if (cQ & 4) yQ += (x_max - xQ) * dy / dx, xQ = x_max; else if (cQ & 2) xQ += (y_min - yQ) * dx / dy, yQ = y_min; else if (cQ & 1) xQ += (y_max - yQ) * dx / dy, yQ = y_max;
                 cQ = code(xQ, yQ);
             }
         }
@@ -149,7 +145,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
     const polySpiral = (dist, angle, incr, n) => {
 
-        for(let i=0; i<n; i++) {
+        for (let i = 0; i < n; i++) {
 
             forward(dist);
             turn(angle);
@@ -162,15 +158,13 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         let angle = startAngle * sk.PI / 180;
         let angleInc = sweep * sk.PI / (180 * n);
         moveTo(cX + radius * Math.cos(angle), cY + radius * Math.sin(angle));
-        for(let k = 0; k <= n; k++, angle += angleInc)
-        {
+        for (let k = 0; k <= n; k++, angle += angleInc) {
             lineTo(cX + radius * Math.cos(angle), cY + radius * Math.sin(angle));
         }
     }
 
     const turtle = (n, angle, Fn) => {
-        for(let i = 0; i < n; i++)
-        {
+        for (let i = 0; i < n; i++) {
             Fn();
             turn(angle);
         }
@@ -180,9 +174,9 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
         const deltaAngle = 2 * Math.PI / N;
 
-        return Array.from({ length: N }, (_, i) => {
+        return Array.from({length: N}, (_, i) => {
             const angle = i * deltaAngle;
-            return { x: R * Math.cos(angle), y: R * Math.sin(angle) };
+            return {x: R * Math.cos(angle), y: R * Math.sin(angle)};
         });
     };
 
@@ -210,8 +204,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         return vec3.scaleAndAdd(vec3.create(), a, dir, t);
     }
 
-    const bisector = (U, V, t) =>
-    {
+    const bisector = (U, V, t) => {
         const bisector = vec3.lerp(vec3.create(), U, V, 0.5);
         return vec3.normalize(vec3.create(), bisector);
     }
@@ -254,7 +247,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         const radius = (vec3.length(a) / 2) * Math.sqrt((b_dot_c / a_perp_dot_c) ** 2 + 1);
 
         // Return the center and radius
-        return { center, radius };
+        return {center, radius};
     };
 
     const incircle = (A, B, C) => {
@@ -274,17 +267,18 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         const S = vec3.add(vec3.create(), B, vec3.scale(vec3.create(), bNormalized, Lb));
         const T = vec3.add(vec3.create(), A, vec3.scale(vec3.create(), cNormalized, La));
 
-        return { R, S, T };
+        return {R, S, T};
 
     }
+
 
     const perp2D = (v) => vec3.fromValues(-v[1], v[0], 0);
 
     const computeNinePointCircle = (A, B, C) => {
         // Create sides of the triangle
-        const sideAB = createLine({ type: 'points', p1: A, p2: B });
-        const sideBC = createLine({ type: 'points', p1: B, p2: C });
-        const sideCA = createLine({ type: 'points', p1: C, p2: A });
+        const sideAB = createLine({type: 'points', p1: A, p2: B});
+        const sideBC = createLine({type: 'points', p1: B, p2: C});
+        const sideCA = createLine({type: 'points', p1: C, p2: A});
 
         // Compute midpoints of each side
         const midAB = sideAB.lerp(0.5);
@@ -296,9 +290,9 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         const perpCA = perp2D(vec3.sub(vec3.create(), A, C));
         const perpAB = perp2D(vec3.sub(vec3.create(), B, A));
 
-        const altitudeA = createLine({ type: 'point-dir', p1: A, p2: perpBC });
-        const altitudeB = createLine({ type: 'point-dir', p1: B, p2: perpCA });
-        const altitudeC = createLine({ type: 'point-dir', p1: C, p2: perpAB });
+        const altitudeA = createLine({type: 'point-dir', p1: A, p2: perpBC});
+        const altitudeB = createLine({type: 'point-dir', p1: B, p2: perpCA});
+        const altitudeC = createLine({type: 'point-dir', p1: C, p2: perpAB});
 
         // Find feet of the altitudes
         const footA = altitudeA.intersect(sideBC).point;
@@ -309,9 +303,9 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         const orthocenter = altitudeA.intersect(altitudeC).point;
 
         // Compute midpoints from each vertex to the orthocenter
-        const midAO = createLine({ type: 'points', p1: A, p2: orthocenter }).lerp(0.5);
-        const midBO = createLine({ type: 'points', p1: B, p2: orthocenter }).lerp(0.5);
-        const midCO = createLine({ type: 'points', p1: C, p2: orthocenter }).lerp(0.5);
+        const midAO = createLine({type: 'points', p1: A, p2: orthocenter}).lerp(0.5);
+        const midBO = createLine({type: 'points', p1: B, p2: orthocenter}).lerp(0.5);
+        const midCO = createLine({type: 'points', p1: C, p2: orthocenter}).lerp(0.5);
 
         const {center, radius} = excircle(midAB, midBC, midCA);
 
@@ -320,13 +314,13 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
         // Return the structure
         return {
-            midpoints: { midAB, midBC, midCA },
-            feetOfAltitudes: { footA, footB, footC },
-            midpointsToOrthocenter: { midAO, midBO, midCO },
-            ninePointCircle: { ccenter, rradius }
+            midpoints: {midAB, midBC, midCA},
+            feetOfAltitudes: {footA, footB, footC},
+            midpointsToOrthocenter: {midAO, midBO, midCO},
+            ninePointCircle: {ccenter, rradius}
         };
     };
-    
+
 
     const arcTo = (P, Q, R) => {
 
@@ -338,13 +332,13 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         const V = createDirectionVector(P, Q);
 
         const U_dot_V = vec3.dot(U, V); // cosine of angle since U & V are normalized
-        const tanHalfTheta = Math.sqrt((1 - U_dot_V)/(1 + U_dot_V) ); // half angle
+        const tanHalfTheta = Math.sqrt((1 - U_dot_V) / (1 + U_dot_V)); // half angle
         const length = R / tanHalfTheta;
 
         const A = affineCombination(P, U, length);
         const B = affineCombination(P, V, length);
 
-        const h = Math.sqrt(length**2 + R**2);
+        const h = Math.sqrt(length ** 2 + R ** 2);
 
         let bisector = lerp(U, V, 0.5);
         bisector = vec3.normalize(vec3.create(), bisector);
@@ -379,9 +373,9 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
 
         const sweepAngle = (endAngle < startAngle ? endAngle + 360 : endAngle) - startAngle;
 
-        console.log(startAngle);
-        console.log(endAngle);
-        console.log(sweepAngle);
+        //console.log(startAngle);
+        //console.log(endAngle);
+        //console.log(sweepAngle);
 
         //sk.ellipse(C[0]+b[0], C[1]+b[1], 8, 8);
         //sk.ellipse(C[0]+a[0], C[1]+a[1], 2, 2);
@@ -390,7 +384,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         //sk.stroke(255, 20, 12);
         drawArc(C[0], C[1], R, startAngle, sweepAngle);
         //sk.stroke(255, 20, 255);
-        if(orientationVal === CLOCKWISE)  moveTo(B[0], B[1]);
+        if (orientationVal === CLOCKWISE) moveTo(B[0], B[1]);
         lineTo(Q[0], Q[1]);
     }
 
@@ -423,14 +417,13 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         let d = L2.dir;
 
 
-
         let c = vec3.sub(vec3.create(), C, A);
         let denom = vec3.dot(perp(d), b);
 
         let t = vec3.dot(perp(d), c) / denom;
         let u = vec3.dot(perp(b), c) / denom;
 
-        if(isBetweenZeroAndOne(t) && isBetweenZeroAndOne(u)) {
+        if (isBetweenZeroAndOne(t) && isBetweenZeroAndOne(u)) {
             let intersection = affineCombination(A, b, t);
         }
     }
@@ -445,17 +438,17 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
      * @param {vec3} config.isSegment - Type of line - line segment or unbounded line
      * @returns {object} - The line object with properties and methods to interact with it.
      */
-    const createLine = ({ type, p1, p2 }) => {
+    const createLine = ({type, p1, p2}) => {
 
         const initializers = {
-            'point-dir': () => ({ point: vec3.clone(p1), dir: vec3.clone(p2) }),
+            'point-dir': () => ({point: vec3.clone(p1), dir: vec3.clone(p2)}),
             'points': () => {
                 const dir = vec3.subtract(vec3.create(), p2, p1);
-                return { point: vec3.clone(p1), dir };
+                return {point: vec3.clone(p1), dir};
             }
         };
 
-        const { point, dir } = initializers[type]();
+        const {point, dir} = initializers[type]();
 
         const isBetweenZeroAndOne = (value) => value >= 0 && value <= 1;
         const perp = (v) => vec3.fromValues(-v[1], v[0], 0);
@@ -511,15 +504,15 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         };
 
         const perpAt = (t) => {
-            const start   = lerp(t);
+            const start = lerp(t);
             const perpDir = perp(dir);
-            return createLine({ type: 'point-dir', p1: start, p2: perpDir });
+            return createLine({type: 'point-dir', p1: start, p2: perpDir});
         }
 
 
         return {
-            point: () => vec3.clone(point),
-            dir: () => vec3.clone(dir),
+            point: (() => vec3.clone(point))(),
+            dir: (() => vec3.clone(dir))(),
             lerp,
             intersect,
             perpAt,
@@ -528,11 +521,75 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
     };
 
 
+    /**
+     * Creates a polygon object with vertices, edges, normals, and a draw method.
+     * @param {Array} vertices - The list of vertices defining the polygon.
+     * @param {Object} sk - The p5.js sketch object.
+     * @returns {Object} The polygon object.
+     */
+    const createPolygon = (vertices) => {
+        const edges = vertices.map((start, i) => {
+            const end = vertices[(i + 1) % vertices.length];
+            const direction = vec3.sub(vec3.create(), end, start);
+            const normal = vec3.negate(vec3.create(), vec3.normalize(vec3.create(), perp2D(direction)));
+            const translation = vec3.dot(normal, start);
+            return {edge: {start, end}, normal, translation};
+        });
 
+        const draw = () => {
+            moveTo(vertices[0][0], vertices[0][1]);
+            for (let i = 1; i < vertices.length; i++) {
+                lineTo(vertices[i][0], vertices[i][1]);
+            }
+            lineTo(vertices[0][0], vertices[0][1]);
+        };
+
+        return {edges, draw};
+    };
+
+    const cyrusBeckClipper = (polygon) => {
+        const {edges} = polygon;
+
+        return (line) => {
+            const p1 = line.point;
+            const d = line.dir;
+            let tE = 0.0;
+            let tL = 1.0;
+
+            for (const {edge: {start: p}, normal: n} of edges) {
+                const w = vec3.subtract(vec3.create(), p, p1);
+                const num = vec3.dot(n, w);
+                const denom = vec3.dot(n, d);
+
+                if (denom !== 0) {
+                    const t = num / denom;
+                    if (denom < 0) {
+                        // Ray is entering the polygon
+                        tE = Math.max(tE, t); // Update entry time to the maximum
+                    } else {
+                        // Ray is exiting the polygon
+                        tL = Math.min(tL, t); // Update exit time to the minimum
+                    }
+                } else if (num < 0) {
+                    // Line is parallel to the edge and outside the polygon
+                    return null; // Parallel and outside window
+                }
+            }
+
+            // If the entry time is less than or equal to the exit time, there is a visible part
+            if (tE <= tL) {
+                const newP1 = vec3.add(vec3.create(), p1, vec3.scale(vec3.create(), d, tE));
+                const newP2 = vec3.add(vec3.create(), p1, vec3.scale(vec3.create(), d, tL));
+                return createLine({type: 'points', p1: newP1, p2: newP2});
+            }
+
+            return null; // No visible part
+        };
+    };
 
 
     return {
-        viewport: { sx, sy, tx, ty },
+        viewport: {sx, sy, tx, ty},
 
         moveTo,
         lineTo,
@@ -547,6 +604,8 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT= 40
         excircle,
         incircle,
         createLine,
+        createPolygon,
+        cyrusBeckClipper,
         computeNinePointCircle
     }
 }

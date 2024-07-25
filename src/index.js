@@ -1,13 +1,14 @@
 import * as p5 from './lib/p5';
-import {createInCirclesDemo} from "./geometric/incircle-excircle";
+
 
 const demos = {
     'createTriangleCirclesDemo': () => import('./geometric/triangle-circles'),
     'createInCirclesDemo': () => import('./geometric/incircle-excircle'),
+    'createPolygonDemo': () => import('./geometric/polygon-demo')
     // Add more demos here as needed
 };
 
-const demoName = 'createTriangleCirclesDemo';
+const demoName = 'createPolygonDemo';
 
 const runDemo = async (demoName) => {
     try {
