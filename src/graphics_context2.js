@@ -533,7 +533,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
             const direction = vec3.sub(vec3.create(), end, start);
             const normal = vec3.negate(vec3.create(), vec3.normalize(vec3.create(), perp2D(direction)));
             const translation = vec3.dot(normal, start);
-            return {edge: {start, end}, normal, translation};
+            return {edge: {start, end, edgeVec: direction}, normal, translation};
         });
 
         const draw = () => {
@@ -587,25 +587,46 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
         };
     };
 
+    const cyrusBeckClipperNonConvex = (polygon) => {
+        const {edges} = polygon;
 
-    return {
-        viewport: {sx, sy, tx, ty},
+        return (line) => {
+            const {A, C} = line;
 
-        moveTo,
-        lineTo,
-        moveRel,
-        lineRel,
-        turn,
-        turnTo,
-        forward,
-        polySpiral,
-        drawArc,
-        arcTo,
-        excircle,
-        incircle,
-        createLine,
-        createPolygon,
-        cyrusBeckClipper,
-        computeNinePointCircle
+            for (const {edge: {start: p}, normal: n} of edges) {
+                const w = vec3.subtract(vec3.create(), p, p1);
+                const num = vec3.dot(n, w);
+                const denom = vec3.dot(n, d);
+            }
+
+            for (const {edge: {start: p, edgeVec}} of edges) {
+                // Perform intersection logic
+                const b = vec3.subtract(vec3.create(), p, A);
+                // const
+                // const t = vec3.dot(perp2D(edgeVec), b) /
+            }
+        }
+
+
+        return {
+            viewport: {sx, sy, tx, ty},
+
+            moveTo,
+            lineTo,
+            moveRel,
+            lineRel,
+            turn,
+            turnTo,
+            forward,
+            polySpiral,
+            drawArc,
+            arcTo,
+            excircle,
+            incircle,
+            createLine,
+            createPolygon,
+            cyrusBeckClipper,
+            computeNinePointCircle
+        }
     }
 }
