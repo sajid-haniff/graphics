@@ -806,8 +806,6 @@ export var forEach = function () {
 
   //==========================//
 
-  export function ccw(a, b) {
-    return a[0]*b[1] - a[1]*b[0];
-  }
+
 
 }();

@@ -606,6 +606,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
                 // const t = vec3.dot(perp2D(edgeVec), b) /
             }
         }
+    }
 
 
         return {
@@ -628,5 +629,4 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
             cyrusBeckClipper,
             computeNinePointCircle
         }
-    }
 }
