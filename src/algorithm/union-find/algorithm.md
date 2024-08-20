@@ -27,18 +27,10 @@ graph TD
 
 
 
-graph TD
-    A((A)) --> B
-    B((B)) --> C
-    C((C)) --> D
-    D((D)) --> D
-    E((E)) --> C
-    F((F)) --> B
+graph LR
+A[0] --> A
+B[1] --> B
+C[2] --> B
+D[3] --> C
+E[4] --> C
 
-    A-.->C
-    B-.->D
-    E-.->D
-    F-.->D
-
-    style A fill:#f9f,stroke:#333,stroke-width:4px
-    style D fill:#bbf,stroke:#333,stroke-width:4px
