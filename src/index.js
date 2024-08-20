@@ -1,5 +1,6 @@
 import * as p5 from './lib/p5';
 import demos from './demos';
+import {unionFindDemo} from "./algorithm/union-find/uf-tester";
 
 /*
 const demos = {
@@ -9,7 +10,7 @@ const demos = {
     // Add more demos here as needed
 };*/
 
-const demoName = 'createPolygonDemo';
+const demoName = 'unionFindDemo';
 
 const runDemo = async (demoName) => {
     try {
