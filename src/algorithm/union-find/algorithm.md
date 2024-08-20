@@ -1,24 +1,26 @@
 # Weighted Union-Find Algorithm
 
-The **Weighted Union-Find** algorithm is a data structure that efficiently handles dynamic connectivity queries, such as determining whether two elements are in the same connected component or merging two components.
+## Introduction
+
+The Weighted Union-Find algorithm is an efficient data structure and algorithm for maintaining disjoint sets. It's particularly useful for solving connectivity problems in graphs, image processing, and network analysis. This algorithm provides near-constant time operations for unioning sets and checking if two elements are in the same set.
 
 ## Key Concepts
 
-- **Union**: Connects two elements by linking their components.
-- **Find**: Identifies the root of the component containing a given element.
-- **Weighting**: Ensures that smaller trees are always added under larger trees to keep the structure flat and efficient.
+1. **Union**: The operation of merging two sets.
+2. **Find**: The operation of determining which set an element belongs to.
+3. **Weighting**: A strategy to keep the tree balanced by always attaching the smaller tree to the root of the larger tree during union operations.
 
-## Steps of the Algorithm
+## Algorithm Details
 
-### 1. Initialization
-Each element is initially its own root.
-- The `id` array keeps track of the parent for each element.
-- The `sz` array stores the size of the tree rooted at each element.
+### Initialization
+
+1. Create an array `id` where each element points to itself (each element is in its own set).
+2. Create an array `sz` to keep track of the size of each tree, initially set to 1 for all elements.
 
 ```mermaid
-graph LR
-A[0] --> A
-B[1] --> B
-C[2] --> C
-D[3] --> D
-E[4] --> E
+graph TD
+    0((0)) --> 0
+    1((1)) --> 1
+    2((2)) --> 2
+    3((3)) --> 3
+    4((4)) --> 4
