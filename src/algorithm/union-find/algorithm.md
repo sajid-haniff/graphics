@@ -24,3 +24,21 @@ graph TD
     2((2)) --> 2
     3((3)) --> 3
     4((4)) --> 4
+
+
+
+graph TD
+    A((A)) --> B
+    B((B)) --> C
+    C((C)) --> D
+    D((D)) --> D
+    E((E)) --> C
+    F((F)) --> B
+
+    A-.->C
+    B-.->D
+    E-.->D
+    F-.->D
+
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style D fill:#bbf,stroke:#333,stroke-width:4px
