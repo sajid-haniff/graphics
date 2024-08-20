@@ -83,7 +83,7 @@ E[4] --> D
 
 ```mermaid
 graph LR
-subgraph After Union(1, 3)
+subgraph AfterUnion1_3
 B[1] --> B
 C[2] --> B
 D[3] --> B
