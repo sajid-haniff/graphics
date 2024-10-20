@@ -10,7 +10,7 @@ const demos = {
     // Add more demos here as needed
 };*/
 
-const demoName = 'unionFindDemo';
+const demoName = 'createGridDemo';
 
 const runDemo = async (demoName) => {
     try {
