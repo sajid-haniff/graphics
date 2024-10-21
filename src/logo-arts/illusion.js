@@ -15,7 +15,7 @@ export const createGridDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
     const GRAY = sk.color(128);
 
     const SIDE_LENGTH = 400; // Adjust to fit the canvas
-    let order = 15; // Default order
+    let gridSize = 20; // Default order
 
     // Utility Functions
     const isEven = (num) => num % 2 === 0;
@@ -57,6 +57,7 @@ export const createGridDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
         sk.fill(shouldBeWhite ? BLACK : WHITE);
 
         sk.noStroke();
+        sk.push();
         sk.translate(side / 2, -side / 2);  // Move to the center or custom offset of the tile
         sk.ellipse(0, 0, side / 2, side / 2);  // Draw a dot centered at (0, 0)
         sk.pop();
@@ -66,6 +67,7 @@ export const createGridDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
         sk.noFill();
         sk.stroke(GRAY);
         sk.strokeWeight(side / 30);
+        sk.push();
         sk.translate(1 * side, -1 * side)
         drawSquare(side);
         sk.pop();
@@ -96,6 +98,10 @@ export const createGridDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
             sk.noLoop(); // Only render once
         },
         display() {
+
+            // First matrix: Flips the Y-axis, effectively flipping the drawing vertically.
+            // Second matrix: Scales and translates to match the canvas width and height.
+            // Third matrix: Applies scaling and translation based on the viewport (sx, sy, tx, ty).
             sk.applyMatrix(1, 0, 0, -1, 0, CANVAS_HEIGHT);
             sk.applyMatrix(CANVAS_WIDTH, 0, 0, CANVAS_HEIGHT, 0, 0);
             sk.applyMatrix(sx, 0, 0, sy, tx, ty);
@@ -105,9 +111,9 @@ export const createGridDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
             sk.strokeWeight(2);
             sk.fill(127);
 
-            grid(order, order, 10, drawTileBg);
-            grid(order - 1, order - 1, 10, drawTileDot);
-            grid(order - 2, order - 2, 10, drawTileSquare);
+            grid(gridSize, gridSize, 10, drawTileBg);
+            grid(gridSize - 1, gridSize - 1, 10, drawTileDot);
+            grid(gridSize - 2, gridSize - 2, 10, drawTileSquare);
         }
     };
 };

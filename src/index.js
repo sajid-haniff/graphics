@@ -10,7 +10,7 @@ const demos = {
     // Add more demos here as needed
 };*/
 
-const demoName = 'createGridDemo';
+const demoName = 'fractalTreeDemo';
 
 const runDemo = async (demoName) => {
     try {

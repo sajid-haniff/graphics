@@ -5,7 +5,7 @@ module.exports = {
 
     devServer: {
         contentBase: "./dist",
-        host: '0.0.0.0',
+        host: '172.30.47.65',
         port: 8080,
         hot: true,  // Hot reloading
         liveReload: true,  // Enable live reloading

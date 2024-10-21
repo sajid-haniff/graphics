@@ -1,5 +1,6 @@
 import {unionFindDemo} from "./algorithm/union-find/uf-tester";
 import {createGridDemo} from "./logo-arts/illusion";
+import {createFractalCircleDemo} from "./recursion/circle_recursion";
 
 const demos = {
     'createTriangleCirclesDemo': () => import('./geometric/triangle-circles'),
@@ -11,6 +12,8 @@ const demos = {
     'createHexagonLogoDemo': () => import('./logo-arts/hexagon-logo-demo'),
     'createCurvedGridDemo': () => import('./logo-arts/curved-grid'),
     'createGridDemo': () => import('./logo-arts/illusion'),
+    'createFractalCircleDemo': () => import('./recursion/circle_recursion'),
+    'fractalTreeDemo': () => import('./recursion/fractal-tree-demo'),
     // Other demos...
 };
 
