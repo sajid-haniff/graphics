@@ -14,6 +14,7 @@ const demos = {
     'createGridDemo': () => import('./logo-arts/illusion'),
     'createFractalCircleDemo': () => import('./recursion/circle_recursion'),
     'fractalTreeDemo': () => import('./recursion/fractal-tree-demo'),
+    'createSeekDemo': () => import('./path/createSeekDemo'),
     // Other demos...
 };
 

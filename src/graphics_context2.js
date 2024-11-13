@@ -58,13 +58,18 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
         CP = end;
     }
 
-    const mouseToWindowCoordinates = (sk) => {
+    const mouseToWindowCoordinatesB = (sk) => {
 
         const currentTransformationMatrix = sk.drawingContext.getTransform();
         const deviceToWindow = currentTransformationMatrix.invertSelf();
         const point = new DOMPoint(sk.mouseX, sk.mouseY);
         return point.matrixTransform(deviceToWindow);
     }
+
+    const mouseToWindowCoordinates = (sk, x = sk.mouseX, y = sk.mouseY) => {
+        const matrix = sk.drawingContext.getTransform().invertSelf();  // Clone and invert the matrix in one step
+        return new DOMPoint(x, y).matrixTransform(matrix);
+    };
 
     /* Viewport Transformation */
 
@@ -627,6 +632,7 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
             createLine,
             createPolygon,
             cyrusBeckClipper,
-            computeNinePointCircle
+            computeNinePointCircle,
+            mouseToWindowCoordinates
         }
 }
