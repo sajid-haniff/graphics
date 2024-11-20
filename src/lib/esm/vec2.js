@@ -23,7 +23,7 @@ export function create() {
 /**
  * Creates a new vec2 initialized with values from an existing vector
  *
- * @param {ReadonlyVec2} a vector to clone
+ * @param {vec2} a vector to clone
  * @returns {vec2} a new 2D vector
  */
 
@@ -78,8 +78,8 @@ export function set(out, x, y) {
  * Adds two vec2's
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {vec2} out
  */
 
@@ -92,8 +92,8 @@ export function add(out, a, b) {
  * Subtracts vector b from vector a
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {vec2} out
  */
 
@@ -106,8 +106,8 @@ export function subtract(out, a, b) {
  * Multiplies two vec2's
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {vec2} out
  */
 
@@ -120,8 +120,8 @@ export function multiply(out, a, b) {
  * Divides two vec2's
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {vec2} out
  */
 
@@ -134,7 +134,7 @@ export function divide(out, a, b) {
  * Math.ceil the components of a vec2
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a vector to ceil
+ * @param {vec2} a vector to ceil
  * @returns {vec2} out
  */
 
@@ -160,8 +160,8 @@ export function floor(out, a) {
  * Returns the minimum of two vec2's
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {vec2} out
  */
 
@@ -174,8 +174,8 @@ export function min(out, a, b) {
  * Returns the maximum of two vec2's
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {vec2} out
  */
 
@@ -188,7 +188,7 @@ export function max(out, a, b) {
  * Math.round the components of a vec2
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a vector to round
+ * @param {vec2} a vector to round
  * @returns {vec2} out
  */
 
@@ -201,7 +201,7 @@ export function round(out, a) {
  * Scales a vec2 by a scalar number
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a the vector to scale
+ * @param {vec2} a the vector to scale
  * @param {Number} b amount to scale the vector by
  * @returns {vec2} out
  */
@@ -242,8 +242,8 @@ export function distance(a, b) {
 /**
  * Calculates the squared euclidian distance between two vec2's
  *
- * @param {ReadonlyVec2} a the first operand
- * @param {ReadonlyVec2} b the second operand
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
  * @returns {Number} squared distance between a and b
  */
 
@@ -255,7 +255,7 @@ export function squaredDistance(a, b) {
 /**
  * Calculates the length of a vec2
  *
- * @param {ReadonlyVec2} a vector to calculate length of
+ * @param {vec2} a vector to calculate length of
  * @returns {Number} length of a
  */
 
@@ -306,7 +306,7 @@ export function inverse(out, a) {
  * Normalize a vec2
  *
  * @param {vec2} out the receiving vector
- * @param {ReadonlyVec2} a vector to normalize
+ * @param {vec2} a vector to normalize
  * @returns {vec2} out
  */
 
@@ -621,4 +621,5 @@ export var forEach = function () {
 
     return a;
   };
+
 }();

@@ -1,8 +1,10 @@
 import * as vec2 from '../lib/esm/vec2'
 import { createLocalSpace } from './createLocalSpace';  // Import local space factory
 import { createSteeringBehaviors } from './steeringBehavior';
+import { boundaries } from './boundaries';
 
-export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 5, maxForce = 0.1, behaviorType = 'seek') => {
+
+export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 4, maxForce = 0.1, behaviorType = 'seek', color = [127, 127, 7]) => {
     const localSpace = createLocalSpace(pos, vec2.create());  // Initialize position and velocity
     let headingAngle = 0;  // Variable to store the heading angle
     const steeringBehaviors = createSteeringBehaviors(sk, maxSpeed, maxForce); // Create behaviors instance
@@ -27,8 +29,13 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 5, maxForce = 
         //const steer = seek(target);  // Get the steering force
         //localSpace.update(steer, maxSpeed);  // Update position and velocity based on steering
 
-        const steer = selectBehavior(behaviorType, localSpace, target);  // Get the steering force based on the selected behavior
+        // Get the steering force based on the selected behavior
+        const steer = selectBehavior(behaviorType, localSpace, target);
+        const deltaTime = sk.deltaTime ;  // Convert deltaTime to seconds
         localSpace.update(steer, maxSpeed);  // Update position and velocity based on steering
+
+        // Check boundaries and apply necessary steering force
+        boundaries(localSpace, -100, 100, 100, -100);
 
     };
 
@@ -40,7 +47,8 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 5, maxForce = 
         sk.translate(localSpace.getPosition()[0], localSpace.getPosition()[1]);
         sk.rotate(localSpace.heading());  // Rotate vehicle to face direction of velocity
         //sk.rotate(headingAngle);  // Rotate vehicle to face direction of velocity
-        sk.fill(127);
+        sk.fill(color[0], color[1], color[2]);
+        //sk.fill(127);
         sk.stroke(200);
         sk.triangle(14, 0, 0, -3, 0, 3);  // Draw triangle representing vehicle
 
