@@ -12,7 +12,7 @@ export const createSteeringBehaviors = (sk, maxSpeed, maxForce) => {
         const distance = vec2.length(desired);
 
         // If we are closer than 100 pixels, adjust the magnitude of the desired vector
-        if (distance < 100) {
+        if (distance < 10) {
             // Linearly interpolate the speed based on distance
             const speed = sk.map(distance, 0, 100, 0, maxSpeed);
             vec2.normalize(desired, desired);  // Normalize the direction vector

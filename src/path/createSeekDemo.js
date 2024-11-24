@@ -18,7 +18,7 @@ export const createSeekDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
     // Initialize multiple vehicles
     const vehicles = [
         createVehicle(sk, vec2.fromValues(0, 0), 3, 0.1, 'seek', [127, 127, 7]),  // First vehicle
-        createVehicle(sk, vec2.fromValues(20, 20), 2, 0.2, 'flee', [0, 127, 255]), // Second vehicle with different initial position and color
+        createVehicle(sk, vec2.fromValues(20, 20), 2, 0.1, 'flee', [0, 127, 255]), // Second vehicle with different initial position and color
         //createVehicle(sk, vec2.fromValues(0, 0), 5, 0.1, 'pursuit', [127, 127, 7]),  // Vehicle with pursuit behavior
         //createVehicle(sk, vec2.fromValues(20, 20), 5, 0.1, 'evade', [255, 0, 0])    // Vehicle with evade behavior
     ];
