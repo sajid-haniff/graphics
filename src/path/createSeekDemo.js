@@ -12,10 +12,8 @@ export const createSeekDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
 
     let target = vec2.create();  // The target will be set to the mouse position
 
-    const fleer = createVehicle(sk, vec2.fromValues(20, 20), 2, 0.1, 'flee', [0, 127, 255]); // Fleeing vehicle
+    const fleer  = createVehicle(sk, vec2.fromValues(20, 20), 2, 0.1, 'flee', [0, 127, 255]); // Fleeing vehicle
     const pursuer = createVehicle(sk, vec2.fromValues(-50, -50), 2, 0.2, 'pursuit', [243, 0, 0]); // Pursuing vehicle
-
-    //const wanderer = createVehicle(sk, vec2.fromValues(0, 0), 3, 0.1, 'wander', [0, 255, 0]); // Green color for visual distinction
 
     return {
         setup() {
@@ -38,8 +36,6 @@ export const createSeekDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
 
             // Fleer updates position based on the mouse position
             fleer.update(target);
-
-            // Pursuer updates its position to pursue the fleer
             pursuer.update(fleer);  // Pass the fleer as a target for the pursuer
 
             // Draw both vehicles
@@ -49,7 +45,6 @@ export const createSeekDemo = (sk, CANVAS_WIDTH = 1000, CANVAS_HEIGHT = 1000) =>
             // Visualize the target as a red circle
             sk.fill(255, 0, 0);
             sk.ellipse(target[0], target[1], 6, 6);
-
         }
     };
 };
