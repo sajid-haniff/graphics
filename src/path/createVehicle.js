@@ -18,6 +18,8 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 4, maxForce = 
                 return steeringBehaviors.flee ? steeringBehaviors.flee(vehicle, target) : vec2.create();
             case 'arrive':
                 return steeringBehaviors.arrive ? steeringBehaviors.arrive(vehicle, target) : vec2.create();
+            case 'pursuit':
+                return steeringBehaviors.pursuit ? steeringBehaviors.pursuit(vehicle, target) : vec2.create();
             default:
                 console.warn(`Unknown behavior type: ${type}`);
                 return vec2.create();  // No steering force if unknown
@@ -26,9 +28,6 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 4, maxForce = 
 
     // Update vehicle's position and velocity
     const update = (target) => {
-        //const steer = seek(target);  // Get the steering force
-        //localSpace.update(steer, maxSpeed);  // Update position and velocity based on steering
-
         // Get the steering force based on the selected behavior
         const steer = selectBehavior(behaviorType, localSpace, target);
         const deltaTime = sk.deltaTime ;  // Convert deltaTime to seconds
@@ -36,14 +35,12 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 4, maxForce = 
 
         // Check boundaries and apply necessary steering force
         boundaries(localSpace, -100, 100, 100, -100);
-
     };
 
     // Display the vehicle (triangle pointing in the direction of movement)
     const display = () => {
         sk.push();
-        //console.log(localSpace.getPosition()[0], localSpace.getPosition()[1])
-        //console.log(localSpace.heading())
+
         sk.translate(localSpace.getPosition()[0], localSpace.getPosition()[1]);
         sk.rotate(localSpace.heading());  // Rotate vehicle to face direction of velocity
         //sk.rotate(headingAngle);  // Rotate vehicle to face direction of velocity
@@ -51,6 +48,7 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 4, maxForce = 
         //sk.fill(127);
         sk.stroke(200);
         sk.triangle(14, 0, 0, -3, 0, 3);  // Draw triangle representing vehicle
+
 
         sk.stroke(255, 0, 0);  // Red color for the line
         //sk.line(0, 0, localSpace.getVelocity()[0] * 10, localSpace.getVelocity()[1] * 10);
@@ -60,6 +58,9 @@ export const createVehicle = (sk, pos = vec2.create(), maxSpeed = 4, maxForce = 
 
     return {
         update,
-        display
+        display,
+        getPosition: () => localSpace.getPosition(),
+        getVelocity: () => localSpace.getVelocity(),
+        getHeading: () => localSpace.heading()
     };
 };

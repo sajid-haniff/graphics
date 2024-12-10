@@ -1,22 +1,27 @@
-
-
-export const boundaries = (vehicle, windowLeft = -90, windowRight = 90, windowTop = 90, windowBottom = 90, d = 10) => {
+export const boundaries = (vehicle, windowLeft = -100, windowRight = 100, windowTop = 100, windowBottom = -100, buffer = 5) => {
     const position = vehicle.getPosition();
 
-    // Check x-axis boundaries and wrap around
-    if (position[0] < windowLeft) {
-        position[0] = windowRight;
-    } else if (position[0] > windowRight) {
-        position[0] = windowLeft;
+    // Apply wrap-around with a buffer zone
+    if (position[0] < windowLeft - buffer) {
+        position[0] = windowRight + buffer;
+    } else if (position[0] > windowRight + buffer) {
+        position[0] = windowLeft - buffer;
     }
 
-    // Check y-axis boundaries and wrap around
-    if (position[1] < windowBottom) {
-        position[1] = windowTop;
-    } else if (position[1] > windowTop) {
-        position[1] = windowBottom;
+    if (position[1] < windowBottom - buffer) {
+        position[1] = windowTop + buffer;
+    } else if (position[1] > windowTop + buffer) {
+        position[1] = windowBottom - buffer;
     }
 
     // Update the vehicle's position directly
     vehicle.setPosition(position);
+
+    // Optional: Add visual debugging for the boundary
+    if (vehicle.debugMode) {
+        console.log(`Vehicle position adjusted to: [${position[0]}, ${position[1]}]`);
+    }
 };
+
+
+

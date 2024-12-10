@@ -11,7 +11,7 @@ export const createSteeringBehaviors = (sk, maxSpeed, maxForce) => {
         // Get the distance between the vehicle's position and the target
         const distance = vec2.length(desired);
 
-        // If we are closer than 100 pixels, adjust the magnitude of the desired vector
+        // If we are closer than 10 pixels, adjust the magnitude of the desired vector
         if (distance < 10) {
             // Linearly interpolate the speed based on distance
             const speed = sk.map(distance, 0, 100, 0, maxSpeed);
@@ -40,6 +40,35 @@ export const createSteeringBehaviors = (sk, maxSpeed, maxForce) => {
         const seekSteer = seek(vehicle, target);
         vec2.scale(seekSteer, seekSteer, -1);  // Negate the seek force to create a flee behavior
         return seekSteer;
+    };
+
+    const fleeX = (vehicle, target, fleeDistance = 100, wanderJitter = 0.5) => {
+        const desired = vec2.create();
+        const steer = vec2.create();
+
+        // Calculate desired direction away from target
+        vec2.sub(desired, vehicle.getPosition(), target);
+
+        // Add randomness to break linear alignment
+        desired[0] += sk.random(-wanderJitter, wanderJitter);
+        desired[1] += sk.random(-wanderJitter, wanderJitter);
+
+        const distance = vec2.length(desired);
+        if (distance < fleeDistance) {
+            vec2.normalize(desired, desired);  // Normalize the direction vector
+            vec2.scale(desired, desired, vehicle.maxSpeed);
+
+            // Calculate steering force
+            vec2.sub(steer, desired, vehicle.getVelocity());
+            if (vec2.length(steer) > vehicle.maxForce) {
+                vec2.normalize(steer, steer);
+                vec2.scale(steer, steer, vehicle.maxForce);
+            }
+        } else {
+            vec2.set(steer, 0, 0); // No force if outside flee distance
+        }
+
+        return steer;
     };
 
     const pursuit = (vehicle, targetVehicle) => {

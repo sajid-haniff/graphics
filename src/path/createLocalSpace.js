@@ -1,7 +1,6 @@
 import * as vec2 from '../lib/esm/vec2';
 
 export const createLocalSpace = (pos = vec2.create(), vel = vec2.create(), mass = 3, maxTurnRate = Math.PI / 10) => {
-    // We store `position` and `velocity` as local variables in the closure
     let position = pos;
     let velocity = vel;
 
