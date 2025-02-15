@@ -15,7 +15,8 @@ const demos = {
     'createFractalCircleDemo': () => import('./recursion/circle_recursion'),
     'fractalTreeDemo': () => import('./recursion/fractal-tree-demo'),
     'createSeekDemo': () => import('./path/createSeekDemo'),
-    'simulateSpringSystem': () => import('./physics/kinematics/spring-simulation.js')
+    'simulateSpringSystem': () => import('./physics/kinematics/spring-simulation.js'),
+    'createMinEditDemo': () => import('./algorithm/dynamic/min-edit-demo.js')
     // Other demos...
 };
 

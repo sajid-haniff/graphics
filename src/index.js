@@ -10,7 +10,8 @@ const demos = {
     // Add more demos here as needed
 };*/
 
-const demoName = 'simulateSpringSystem';
+//const demoName = 'simulateSpringSystem';
+const demoName = 'createMinEditDemo';
 
 const runDemo = async (demoName) => {
     try {
