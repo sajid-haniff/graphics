@@ -12,28 +12,34 @@ This implementation uses **dynamic programming (DP) with backtracking** to recon
 
 ## Algorithm Steps
 
-### **1. Define the Recurrence Relation**
-The minimum edit distance `dp[i][j]` is computed based on three possible operations:
+# Edit Distance Algorithm with Backtracking
 
-\[
+## Recurrence Relation
+
+The edit distance is calculated using the following **recurrence relation**:
+
+$$
 dp(i, j) =
-\begin{cases} 
-    dp(i-1, j) + 1 & \text{(delete a character from source)} \\
-    dp(i, j-1) + 1 & \text{(insert a character into source)} \\
-    dp(i-1, j-1) + \text{cost} & \text{(replace if different, cost = 1; otherwise, 0)}
+\begin{cases}
+dp(i-1, j) + 1 & \text{(delete a character from source)} \\
+dp(i, j-1) + 1 & \text{(insert a character into source)} \\
+dp(i-1, j-1) + \text{cost} & \text{(replace if different, cost = 1; otherwise, 0)}
 \end{cases}
-\]
+$$
 
 Where:
-- `dp(i-1, j) + 1` → **Delete** the character `source[i-1]`.
-- `dp(i, j-1) + 1` → **Insert** the character `target[j-1]`.
-- `dp(i-1, j-1) + cost` → **Replace** `source[i-1]` with `target[j-1]` (**cost = 0** if they match, otherwise **1**).
+- **Deletion:** `dp(i-1, j) + 1` → Remove `source[i-1]`
+- **Insertion:** `dp(i, j-1) + 1` → Add `target[j-1]`
+- **Replacement:** `dp(i-1, j-1) + cost`
+    - If `source[i-1] == target[j-1]`, then **cost = 0** (no change).
+    - Otherwise, **cost = 1** (replace the character).
 
 **Base Cases:**
-\[
+$$
 dp(i, 0) = i, \quad dp(0, j) = j
-\]
+$$
 - If one string is empty, the cost is the length of the other string (all insertions or deletions).
+
 
 ---
 
