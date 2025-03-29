@@ -1,131 +1,93 @@
-import * as vec2 from '../lib/esm/vec2'
+import { V } from '../lib/esm/V';
 
 export const createSteeringBehaviors = (sk, maxSpeed, maxForce) => {
+
+    // Seek Behavior
     const seek = (vehicle, target) => {
-        const desired = vec2.create();
-        const steer = vec2.create();
+        const desired = V.sub(target, vehicle.getPosition());
+        const distance = V.length(desired);
 
-        // Calculate desired = target - position
-        vec2.sub(desired, target, vehicle.getPosition());
+        const speed = distance < 10 ? sk.map(distance, 0, 100, 0, maxSpeed) : maxSpeed;
+        const desiredVelocity = V.scale(V.normalize(desired), speed);
 
-        // Get the distance between the vehicle's position and the target
-        const distance = vec2.length(desired);
-
-        // If we are closer than 10 pixels, adjust the magnitude of the desired vector
-        if (distance < 10) {
-            // Linearly interpolate the speed based on distance
-            const speed = sk.map(distance, 0, 100, 0, maxSpeed);
-            vec2.normalize(desired, desired);  // Normalize the direction vector
-            vec2.scale(desired, desired, speed);  // Scale the desired velocity based on distance
-        } else {
-            // Otherwise, proceed at maximum speed
-            vec2.normalize(desired, desired);
-            vec2.scale(desired, desired, maxSpeed);
-        }
-
-        // Calculate steering force = desired - velocity
-        vec2.sub(steer, desired, vehicle.getVelocity());
-
-        // Limit the steering force to maxForce
-        if (vec2.length(steer) > maxForce) {
-            vec2.normalize(steer, steer);
-            vec2.scale(steer, steer, maxForce);
-        }
-
+        const steer = V.limit(V.sub(desiredVelocity, vehicle.getVelocity()), maxForce);
         return steer;
     };
 
-    const flee = (vehicle, target) => {
-        // Use the seek behavior and negate the resulting force
-        const seekSteer = seek(vehicle, target);
-        vec2.scale(seekSteer, seekSteer, -1);  // Negate the seek force to create a flee behavior
-        return seekSteer;
-    };
+    // Flee Behavior (Inverse of Seek)
+    const flee = (vehicle, target) => V.scale(seek(vehicle, target), -1);
 
+    // Enhanced Flee with Randomness
     const fleeX = (vehicle, target, fleeDistance = 100, wanderJitter = 0.5) => {
-        const desired = vec2.create();
-        const steer = vec2.create();
-
-        // Calculate desired direction away from target
-        vec2.sub(desired, vehicle.getPosition(), target);
-
-        // Add randomness to break linear alignment
+        const desired = V.sub(vehicle.getPosition(), target);
         desired[0] += sk.random(-wanderJitter, wanderJitter);
         desired[1] += sk.random(-wanderJitter, wanderJitter);
 
-        const distance = vec2.length(desired);
-        if (distance < fleeDistance) {
-            vec2.normalize(desired, desired);  // Normalize the direction vector
-            vec2.scale(desired, desired, vehicle.maxSpeed);
+        if (V.length(desired) > fleeDistance) return V.zero();
 
-            // Calculate steering force
-            vec2.sub(steer, desired, vehicle.getVelocity());
-            if (vec2.length(steer) > vehicle.maxForce) {
-                vec2.normalize(steer, steer);
-                vec2.scale(steer, steer, vehicle.maxForce);
-            }
-        } else {
-            vec2.set(steer, 0, 0); // No force if outside flee distance
-        }
-
-        return steer;
+        const desiredVelocity = V.scale(V.normalize(desired), maxSpeed);
+        return V.limit(V.sub(desiredVelocity, vehicle.getVelocity()), maxForce);
     };
 
+    // Pursuit Behavior (Predicting Target's Future Position)
     const pursuit = (vehicle, targetVehicle) => {
-        const targetPos = vec2.clone(targetVehicle.getPosition());
-        const targetVel = vec2.clone(targetVehicle.getVelocity());
+        const toTarget = V.sub(targetVehicle.getPosition(), vehicle.getPosition());
+        const predictionTime = V.length(vehicle.getVelocity()) > 0 ? V.length(toTarget) / V.length(vehicle.getVelocity()) : 0;
 
-        // Calculate the distance between the vehicles
-        const toTarget = vec2.create();
-        vec2.sub(toTarget, targetPos, vehicle.getPosition());
-        const distance = vec2.length(toTarget);
+        const predictedTarget = V.add(
+            targetVehicle.getPosition(),
+            V.scale(targetVehicle.getVelocity(), predictionTime)
+        );
 
-        // Estimate the prediction time (time to reach the target's current position)
-        const speed = vec2.length(vehicle.getVelocity());
-        const predictionTime = speed > 0 ? distance / speed : 0;
-
-        // Predict the future position of the target
-        const predictedTarget = vec2.create();
-        vec2.scaleAndAdd(predictedTarget, targetPos, targetVel, predictionTime);
-
-        // Seek the predicted target position
         return seek(vehicle, predictedTarget);
     };
 
-    const evade = (vehicle, targetVehicle) => {
-        // Evade uses the same logic as pursuit but inverts the direction
-        const pursuitSteer = pursuit(vehicle, targetVehicle);
-        vec2.scale(pursuitSteer, pursuitSteer, -1);  // Negate the pursuit force to create an evade behavior
-        return pursuitSteer;
-    };
+    // Evade Behavior (Inverse of Pursuit)
+    const evade = (vehicle, targetVehicle) => V.scale(pursuit(vehicle, targetVehicle), -1);
 
-    const wander = (vehicle, wanderRadius = 5, wanderDistance = 10, wanderJitter = 0.1) => {
-        const wanderTarget = vec2.create();
-        vec2.random(wanderTarget, wanderRadius);  // Generate a random vector within the circle defined by wanderRadius
+    // Persistent Wander Target
+    const wanderTarget = V.create(10, 0);
 
-        // Project the wander target ahead of the vehicle
-        const vehicleHeading = vec2.clone(vehicle.getVelocity());
-        if (vec2.length(vehicleHeading) > 0) {
-            vec2.normalize(vehicleHeading, vehicleHeading);
-            vec2.scale(vehicleHeading, vehicleHeading, wanderDistance);
-            vec2.add(wanderTarget, wanderTarget, vehicleHeading);
-        }
-
-        // Add some random jitter to the wander target
+    // Wander Behavior
+    const wander = (vehicle, wanderRadius = 10, wanderDistance = 30, wanderJitter = 2.8) => {
+        // Apply jitter to wanderTarget
         wanderTarget[0] += sk.random(-wanderJitter, wanderJitter);
         wanderTarget[1] += sk.random(-wanderJitter, wanderJitter);
 
-        // Seek the wander target
-        return seek(vehicle, wanderTarget);
+        // Keep wanderTarget on the circle
+        V.set(wanderTarget, ...V.scale(V.normalize(wanderTarget), wanderRadius));
+
+        // Project the wander target ahead of the vehicle
+        const vehicleHeading = V.scale(V.normalize(vehicle.getVelocity()), wanderDistance);
+        const circleCenter = V.add(vehicle.getPosition(), vehicleHeading);
+        const worldTarget = V.add(circleCenter, wanderTarget);
+
+        drawWanderDebug(sk, vehicle, worldTarget, circleCenter, wanderRadius);
+
+        return seek(vehicle, worldTarget);
     };
 
+    // Debug Visualization for Wander
+    const drawWanderDebug = (sk, vehicle, worldTarget, circleCenter, wanderRadius) => {
+        const position = vehicle.getPosition();
+        const velocity = vehicle.getVelocity();
 
+        sk.push();
+        sk.stroke(100, 100, 255);
+        sk.noFill();
+        sk.ellipse(circleCenter[0], circleCenter[1], wanderRadius * 2, wanderRadius * 2);
 
-    return {
-        seek,
-        flee,
-        pursuit,
-        evade,
-        wander
+        sk.fill(255, 0, 0);
+        sk.ellipse(worldTarget[0], worldTarget[1], 4, 4);
+
+        sk.stroke(0, 255, 0);
+        sk.line(position[0], position[1], worldTarget[0], worldTarget[1]);
+
+        const velocityEnd = V.add(position, V.scale(velocity, 10));
+        sk.stroke(255, 255, 0);
+        sk.line(position[0], position[1], velocityEnd[0], velocityEnd[1]);
+        sk.pop();
     };
+
+    return { seek, flee, fleeX, pursuit, evade, wander };
 };

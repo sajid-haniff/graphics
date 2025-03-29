@@ -11,7 +11,9 @@ const demos = {
 };*/
 
 //const demoName = 'simulateSpringSystem';
-const demoName = 'createMinEditDemo';
+//const demoName = 'createMinEditDemo';
+const demoName = 'createSeekDemo';
+
 
 const runDemo = async (demoName) => {
     try {
