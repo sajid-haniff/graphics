@@ -48,11 +48,13 @@ export const createWorleyDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) =>
         };
 
         for (let f = 0; f < frmLen; f++) {
+            const hueShift = Math.sin(f * 0.05) * 40;
             worker.postMessage({
                 width: CANVAS_WIDTH,
                 height: CANVAS_HEIGHT,
                 frameIndex: f,
                 points: points[f],
+                hueShift
             });
         }
     };
@@ -82,11 +84,17 @@ export const createWorleyDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) =>
             const frameIndex = sk.frameCount % frmLen;
             const framePixels = wave[frameIndex];
 
-            sk.loadPixels();
+            // Create an ImageData object from the raw RGBA buffer
+            const imgData = new ImageData(framePixels, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+           // Draw it directly to the 2D context (faster than loadPixels/updatePixels)
+            sk.drawingContext.putImageData(imgData, 0, 0);
+
+            /*sk.loadPixels();
             for (let i = 0; i < framePixels.length; i++) {
                 sk.pixels[i] = framePixels[i];
             }
-            sk.updatePixels();
+            sk.updatePixels();*/
         }
     };
 };

@@ -2,7 +2,7 @@ const waveColor = (x, a, b, e) =>
     x < 0 ? b : Math.pow(x / a, e) + b;
 
 onmessage = (e) => {
-    const { width, height, frameIndex, points } = e.data;
+    const {width, height, frameIndex, points, hueShift} = e.data;
 
     const frameWave = new Uint8ClampedArray(width * height * 4);
     for (let y = 0; y < height; y++) {
@@ -18,12 +18,13 @@ onmessage = (e) => {
 
             const noise = Math.sqrt(minDistSq);
             const index = (x + y * width) * 4;
-            frameWave[index + 0] = waveColor(noise, 40, 32, 2.2);
-            frameWave[index + 1] = waveColor(noise, 30, 55, 3.34);
-            frameWave[index + 2] = waveColor(noise, 30, 68, 3.55);
-            frameWave[index + 3] = 255;
+
+            frameWave[index + 0] = waveColor(noise, 40, 32, 4.72);
+            frameWave[index + 1] = waveColor(noise, 30, 55, 4.34);
+            frameWave[index + 2] = waveColor(noise, 30, 68, 4.55);
+            frameWave[index + 3] = 255;    // A: fully opaque
         }
     }
-
-    postMessage({ frameIndex, frameWave }, [frameWave.buffer]);
+    console.log(`Generated frame ${frameIndex + 1} / ${120}`);
+    postMessage({frameIndex, frameWave}, [frameWave.buffer]);
 };
