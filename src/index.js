@@ -12,7 +12,10 @@ const demos = {
 
 //const demoName = 'simulateSpringSystem';
 //const demoName = 'createMinEditDemo';
-const demoName = 'createSeekDemo';
+//const demoName = 'createSeekDemo';
+//const demoName = 'createLoadImagesDemo';
+const demoName = 'createWorleyDemo';
+
 
 
 const runDemo = async (demoName) => {

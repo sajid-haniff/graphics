@@ -16,7 +16,10 @@ const demos = {
     'fractalTreeDemo': () => import('./recursion/fractal-tree-demo'),
     'createSeekDemo': () => import('./path/createSeekDemo'),
     'simulateSpringSystem': () => import('./physics/kinematics/spring-simulation.js'),
-    'createMinEditDemo': () => import('./algorithm/dynamic/min-edit-demo.js')
+    'createMinEditDemo': () => import('./algorithm/dynamic/min-edit-demo.js'),
+    'createLoadImagesDemo': () => import('./adv-game-design/loadImagesDemo'),
+    'createWorleyDemo': () => import('./worley-pattern/worley-demo-1')
+
     // Other demos...
 };
 
