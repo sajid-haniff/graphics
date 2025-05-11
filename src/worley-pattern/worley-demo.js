@@ -19,7 +19,7 @@ export const createWorleyDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) =>
 
     const generateInitPoints = () => {
         sk.randomSeed(70);
-        for (let i = 0; i < 36; i++) {
+        for (let i = 0; i < 26; i++) {
             initPoints.push(sk.createVector(sk.random(CANVAS_WIDTH), sk.random(CANVAS_HEIGHT)));
         }
     };
@@ -29,8 +29,8 @@ export const createWorleyDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) =>
             const framePoints = [];
             const angle = (f * 360 / frmLen);
             for (let i = 0; i < initPoints.length; i++) {
-                const pX = 50 * sk.sin(angle + 6 * initPoints[i].x) + initPoints[i].x;
-                const pY = 50 * sk.cos(angle + 6 * initPoints[i].y) + initPoints[i].y;
+                const pX = 60 * sk.sin(angle + 6 * initPoints[i].x) + initPoints[i].x;
+                const pY = 60 * sk.cos(angle + 6 * initPoints[i].y) + initPoints[i].y;
                 framePoints.push({ x: pX, y: pY });
             }
             points.push(framePoints);
@@ -86,15 +86,8 @@ export const createWorleyDemo = (sk, CANVAS_WIDTH = 600, CANVAS_HEIGHT = 600) =>
 
             // Create an ImageData object from the raw RGBA buffer
             const imgData = new ImageData(framePixels, CANVAS_WIDTH, CANVAS_HEIGHT);
-
            // Draw it directly to the 2D context (faster than loadPixels/updatePixels)
             sk.drawingContext.putImageData(imgData, 0, 0);
-
-            /*sk.loadPixels();
-            for (let i = 0; i < framePixels.length; i++) {
-                sk.pixels[i] = framePixels[i];
-            }
-            sk.updatePixels();*/
         }
     };
 };

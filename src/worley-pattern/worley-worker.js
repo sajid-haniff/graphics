@@ -1,6 +1,17 @@
-const waveColor = (x, a, b, e) =>
-    x < 0 ? b : Math.pow(x / a, e) + b;
+//const waveColor = (x, a, b, e) =>
+//    x < 0 ? b : Math.pow(x / a, e) + b;
 
+export const waveColor = (distanceSq, falloffRadiusSq, baseColor, exponent) =>
+    distanceSq < 0
+        ? baseColor
+        : Math.pow(distanceSq / falloffRadiusSq, exponent) + baseColor;
+
+/*
+for each (x, y):
+  find min distance to any point in `points`
+  convert distance → brightness via waveColor()
+  set RGBA values in `frameWave`
+*/
 onmessage = (e) => {
     const {width, height, frameIndex, points, hueShift} = e.data;
 
@@ -19,9 +30,9 @@ onmessage = (e) => {
             const noise = Math.sqrt(minDistSq);
             const index = (x + y * width) * 4;
 
-            frameWave[index + 0] = waveColor(noise, 40, 32, 4.72);
-            frameWave[index + 1] = waveColor(noise, 30, 55, 4.34);
-            frameWave[index + 2] = waveColor(noise, 30, 68, 4.55);
+            frameWave[index + 0] = waveColor(noise, 10,  80,  2.5);
+            frameWave[index + 1] = waveColor(noise, 25,  140, 2.2);
+            frameWave[index + 2] = waveColor(noise, 15,  120, 2.8);
             frameWave[index + 3] = 255;    // A: fully opaque
         }
     }
