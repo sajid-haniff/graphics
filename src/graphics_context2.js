@@ -613,26 +613,25 @@ export const createGraphicsContext2 = (window, viewport, WIDHT = 400, HEIGHT = 4
         }
     }
 
+    return {
+        viewport: {sx, sy, tx, ty},
 
-        return {
-            viewport: {sx, sy, tx, ty},
-
-            moveTo,
-            lineTo,
-            moveRel,
-            lineRel,
-            turn,
-            turnTo,
-            forward,
-            polySpiral,
-            drawArc,
-            arcTo,
-            excircle,
-            incircle,
-            createLine,
-            createPolygon,
-            cyrusBeckClipper,
-            computeNinePointCircle,
-            mouseToWindowCoordinates
-        }
+        moveTo,
+        lineTo,
+        moveRel,
+        lineRel,
+        turn,
+        turnTo,
+        forward,
+        polySpiral,
+        drawArc,
+        arcTo,
+        excircle,
+        incircle,
+        createLine,
+        createPolygon,
+        cyrusBeckClipper,
+        computeNinePointCircle,
+        mouseToWindowCoordinates
+    }
 }

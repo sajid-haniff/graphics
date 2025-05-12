@@ -14,7 +14,8 @@ const demos = {
 //const demoName = 'createMinEditDemo';
 //const demoName = 'createSeekDemo';
 //const demoName = 'createLoadImagesDemo';
-const demoName = 'createWorleyDemo';
+//const demoName = 'createWorleyDemo';
+const demoName = 'createStarfieldDemo';
 
 
 
