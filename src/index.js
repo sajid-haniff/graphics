@@ -18,7 +18,8 @@ const demos = {
 //const demoName = 'createStarfieldDemo';
 //const demoName = 'createMatrixRainDemo';
 //const demoName = 'createFlowFieldDemo';
-const demoName = 'knightsTourDemo';
+//const demoName = 'knightsTourDemo';
+const demoName = 'createRippleWaterDemo';
 
 const runDemo = async (demoName) => {
     try {
@@ -48,6 +49,7 @@ const runDemo = async (demoName) => {
 
             sk.setup = sketch.setup;
             sk.draw = sketch.display;
+            sk.mousePressed = sketch.mousePressed;
         });
     } catch (error) {
         console.error(`Error loading demo ${demoName}:`, error);

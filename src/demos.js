@@ -1,6 +1,7 @@
 import {unionFindDemo} from "./algorithm/union-find/uf-tester";
 import {createGridDemo} from "./logo-arts/illusion";
 import {createFractalCircleDemo} from "./recursion/circle_recursion";
+import {createRippleWaterDemo} from "./demos/wave/ripples";
 
 const demos = {
     'createTriangleCirclesDemo': () => import('./geometric/triangle-circles'),
@@ -23,6 +24,7 @@ const demos = {
     'createMatrixRainDemo': () => import('./noc/visuals/matrix-rain'),
     'createFlowFieldDemo': () => import('./noc/fields/flow-field'),
     'knightsTourDemo': () => import('./recursion/knights/knight-tour-demo'),
+    'createRippleWaterDemo': () => import('./demos/wave/ripples'),
 };
 
 export default demos;
