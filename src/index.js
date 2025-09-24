@@ -15,9 +15,10 @@ const demos = {
 //const demoName = 'createSeekDemo';
 //const demoName = 'createLoadImagesDemo';
 //const demoName = 'createWorleyDemo';
-const demoName = 'createStarfieldDemo';
-
-
+//const demoName = 'createStarfieldDemo';
+//const demoName = 'createMatrixRainDemo';
+//const demoName = 'createFlowFieldDemo';
+const demoName = 'knightsTourDemo';
 
 const runDemo = async (demoName) => {
     try {

@@ -20,8 +20,9 @@ const demos = {
     'createLoadImagesDemo': () => import('./adv-game-design/loadImagesDemo'),
     'createWorleyDemo': () => import('./worley-pattern/worley-demo'),
     'createStarfieldDemo': () => import('./space/starfield2'),
-
-    // Other demos...
+    'createMatrixRainDemo': () => import('./noc/visuals/matrix-rain'),
+    'createFlowFieldDemo': () => import('./noc/fields/flow-field'),
+    'knightsTourDemo': () => import('./recursion/knights/knight-tour-demo'),
 };
 
 export default demos;
