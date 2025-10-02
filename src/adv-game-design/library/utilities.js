@@ -1,171 +1,422 @@
-/* utilities.js
-   ==============
-   Modernized utilities for sprite interactivity using ES6+ features
-   Assumptions: async/await, fetch API, FontFace API, TWEEN available
+/*
+utilities.js
+==============
+
+This JavaScript file contains useful functions for
+adding interactivity to sprites. See the sprites.js file for
+sprite prototype objects that can use this code.
 */
 
-// ——— Assets Manager ———
-export const createAssetsManager = () => {
-    const store = {};
-    const exts = {
-        image: ["png", "jpg", "gif"],
-        font:  ["ttf", "otf", "ttc", "woff"],
-        json:  ["json"],
-        audio: ["mp3", "ogg", "wav", "webm"]
+// Dependencies
+//import {makeSound} from "../library/sound";
+
+/*
+assets
+------
+
+This is an object to help you load and use game assets, like images, fonts and sounds,
+and texture atlases.
+
+Here's how to use it to load an image, a font and a texture atlas:
+
+    assets.load([
+      "images/cat.png",
+      "fonts/puzzler.otf",
+      "images/animals.json",
+    ]).then(() => setup());
+
+When all the assets have finished loading, the setup function
+will run. (Replace setup with any other function you need).
+When you've loaded an asset, you can access it like this:
+
+    imageObject = assets["images/cat.png"];
+
+Access individual frames in a texture atlas using the frame's name, like this:
+
+    frame = assets["hedgehog.png"];
+
+(Just use the image name without the extension.)
+*/
+
+const createAssets = () => {
+    const imageExtensions = ["png", "jpg", "gif"];
+    const fontExtensions = ["ttf", "otf", "ttc", "woff"];
+    const jsonExtensions = ["json"];
+    const audioExtensions = ["mp3", "ogg", "wav", "webm"];
+
+    const assets = {};
+
+    const loadImage = (source) => new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+            assets[source] = image;
+            resolve(image);
+        };
+        image.onerror = reject;
+        image.src = source;
+    });
+
+    const loadFont = (source) => {
+        const fontFamily = source.split("/").pop().split(".")[0];
+        const newStyle = document.createElement("style");
+        const fontFace = `@font-face {font-family: '${fontFamily}'; src: url('${source}');}`;
+        newStyle.appendChild(document.createTextNode(fontFace));
+        document.head.appendChild(newStyle);
+        return Promise.resolve();
     };
 
-    const getExt = src => src.split(".").pop().toLowerCase();
-    const resolveType = ext => Object.entries(exts).find(([_,arr]) => arr.includes(ext))?.[0];
-
-    const loadImage = src =>
-        new Promise(res => {
-            const img = new Image();
-            img.onload = () => res(store[src] = img);
-            img.src = src;
+    const loadJson = (source) => fetch(source)
+        .then((response) => {
+            if (!response.ok) throw new Error(`Failed to load ${source}`);
+            return response.json();
+        })
+        .then((file) => {
+            file.name = source;
+            assets[source] = file;
+            if (file.frames) {
+                const baseUrl = source.replace(/[^\/]*$/, "");
+                const imageSource = baseUrl + file.meta.image;
+                return new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => {
+                        assets[imageSource] = image;
+                        Object.entries(file.frames).forEach(([frameName, frameData]) => {
+                            assets[frameName] = { ...frameData, source: image };
+                        });
+                        resolve();
+                    };
+                    image.onerror = reject;
+                    image.src = imageSource;
+                });
+            }
+            return Promise.resolve();
         });
 
-    const loadFont = src => {
-        const family = src.split("/").pop().split(".")[0];
-        return new FontFace(family, `url(${src})`)
-            .load()
-            .then(loaded => (document.fonts.add(loaded), store[src] = loaded))
-            .catch(err => console.error(`Font load failed: ${src}`, err));
-    };
+    /*
+    const loadSound = (source) => new Promise((resolve) => {
+        const sound = makeSound(source, () => resolve(sound));
+        sound.name = source;
+        assets[sound.name] = sound;
+    });
 
-    const loadJson = async src => {
-        const res = await fetch(src);
-        if (!res.ok) throw new Error(`Failed to load JSON: ${src}`);
-        const json = await res.json();
-        store[src] = json;
-        if (json.frames) await createTilesetFrames(json, src);
-    };
 
-    const createTilesetFrames = async (file, src) => {
-        const base = src.replace(/[^\/]*$/, "");
-        const imgSrc = base + file.meta.image;
-        await loadImage(imgSrc);
-        Object.entries(file.frames).forEach(([name, frame]) => {
-            store[name] = { ...frame, source: store[imgSrc] };
-        });
-    };
-
-    const loadSound = src =>
-        // placeholder: attach real sound loader here
-        Promise.resolve(store[src] = /* sound object */ { src });
-
-    const loaders = { image: loadImage, font: loadFont, json: loadJson, audio: loadSound };
-
-    const load = async (sources = []) => {
+     */
+    const load = (sources) => {
         console.log("Loading assets...");
-        await Promise.all(
-            sources.map(src => {
-                const type = resolveType(getExt(src));
-                return type ? loaders[type](src) : (console.warn(`Unrecognized: ${src}`), Promise.resolve());
-            })
-        );
-        console.log("Assets finished loading");
-        return store;
+        return Promise.all(sources.map((source) => {
+            const extension = source.split(".").pop().toLowerCase();
+            if (imageExtensions.includes(extension)) return loadImage(source);
+            if (fontExtensions.includes(extension)) return loadFont(source);
+            if (jsonExtensions.includes(extension)) return loadJson(source);
+            //if (audioExtensions.includes(extension)) return loadSound(source);
+            console.warn(`File type not recognized: ${source}`);
+            return Promise.resolve();
+        })).then(() => {
+            console.log("Assets finished loading");
+        });
     };
 
-    return { load, get: key => store[key] };
+    return { ...assets, load };
 };
-export const assets = createAssetsManager();
+
+export const assets = createAssets();
+
+// image-loader.js
+export const loadImageFromOrigin = (src) => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // ensure CORS-safe loading
+        img.onload = () => resolve(img);
+        img.onerror = (err) => reject(err);
+        img.src = src;
+    });
+};
 
 
-// ——— Boundary Utilities ———
-const checkEdge = (pos, limit, size, onHit) =>
-    pos < 0 ? onHit("min") : pos + size > limit ? onHit("max") : null;
 
-export const outsideBounds = ({ x, y, width: w, height: h }, { x: bx, y: by, width, height }) =>
-    ["left","top","right","bottom"]
-        .find(dir => checkEdge(dir==="left"? x-bx : dir==="right"? width - (x+ w) : 0,
-            dir==="top"? y-by : dir==="bottom"? height - (y+ h) : 0,
-            0,
-            d => d))
-    || null;
+/*
+outsideBounds
+-------------
 
-export const contain = (sprite, { x: bx, y: by, width, height }, bounce = false, extra) => {
-    const { mass = 1, width: w, height: h } = sprite;
-    let collision = null;
-    const bounceVel = v => bounce ? -v / mass : v / mass;
+Check whether sprite is completely outside of
+a boundary
+*/
 
-    if (sprite.x < bx) {
-        sprite.x = bx;
-        sprite.vx = bounceVel(sprite.vx);
-        collision = "left";
-    }
-    if (sprite.y < by) {
-        sprite.y = by;
-        sprite.vy = bounceVel(sprite.vy);
-        collision = "top";
-    }
-    if (sprite.x + w > width) {
-        sprite.x = width - w;
-        sprite.vx = bounceVel(sprite.vx);
-        collision = "right";
-    }
-    if (sprite.y + h > height) {
-        sprite.y = height - h;
-        sprite.vy = bounceVel(sprite.vy);
-        collision = "bottom";
-    }
+export const outsideBounds = (sprite, bounds, extra) => {
+    const { x, y, width, height } = bounds;
+    let collision;
 
-    collision && extra?.(collision);
+    if (sprite.x < x - sprite.width) collision = "left";
+    if (sprite.y < y - sprite.height) collision = "top";
+    if (sprite.x > width) collision = "right";
+    if (sprite.y > height) collision = "bottom";
+
+    if (collision && extra) extra(collision);
     return collision;
 };
 
+/*
+contain
+-------
 
-// ——— Math & Motion ———
-export const distance       = (a, b) => Math.hypot(b.centerX - a.centerX, b.centerY - a.centerY);
-export const angle          = (a, b) => Math.atan2(b.centerY - a.centerY, b.centerX - a.centerX);
+Keep a sprite contained inside a boundary
+*/
 
-export const followEase     = (f, l, e) => {
-    const dx = l.centerX - f.centerX, dy = l.centerY - f.centerY;
-    Math.hypot(dx, dy) > 1 && (f.x += dx*e, f.y += dy*e);
+export const contain = (sprite, bounds, bounce = false, extra) => {
+    const { x, y, width, height } = bounds;
+    let collision;
+
+    if (sprite.x < x) {
+        if (bounce) sprite.vx *= -1;
+        if (sprite.mass) sprite.vx /= sprite.mass;
+        sprite.x = x;
+        collision = "left";
+    }
+
+    if (sprite.y < y) {
+        if (bounce) sprite.vy *= -1;
+        if (sprite.mass) sprite.vy /= sprite.mass;
+        sprite.y = y;
+        collision = "top";
+    }
+
+    if (sprite.x + sprite.width > width) {
+        if (bounce) sprite.vx *= -1;
+        if (sprite.mass) sprite.vx /= sprite.mass;
+        sprite.x = width - sprite.width;
+        collision = "right";
+    }
+
+    if (sprite.y + sprite.height > height) {
+        if (bounce) sprite.vy *= -1;
+        if (sprite.mass) sprite.vy /= sprite.mass;
+        sprite.y = height - sprite.height;
+        collision = "bottom";
+    }
+
+    if (collision && extra) extra(collision);
+    return collision;
 };
 
-export const followConstant = (f, l, s) => {
-    const dx = l.centerX - f.centerX, dy = l.centerY - f.centerY;
-    const d = Math.hypot(dx, dy);
-    d > s && (f.x += dx/d*s, f.y += dy/d*s);
+/*
+distance
+----------------
+
+Find the distance in pixels between two sprites.
+Parameters:
+a. A sprite object with `centerX` and `centerY` properties.
+b. A sprite object with `centerX` and `centerY` properties.
+The function returns the number of pixels distance between the sprites.
+*/
+
+export const distance = (s1, s2) => {
+    const vx = s2.centerX - s1.centerX;
+    const vy = s2.centerY - s1.centerY;
+    return Math.sqrt(vx * vx + vy * vy);
 };
 
-export const rotatePoint   = (x,y,dx,dy,ang) => ({ x: x+Math.cos(ang)*dx, y: y+Math.sin(ang)*dy });
-export const rotateSprite  = (rot, c, dist, ang) => {
-    rot.x = c.centerX - rot.parent.x + dist*Math.cos(ang) - rot.halfWidth;
-    rot.y = c.centerY - rot.parent.y + dist*Math.sin(ang) - rot.halfHeight;
+/*
+followEase
+----------------
+
+Make a sprite ease to the position of another sprite.
+Parameters:
+a. A sprite object with `centerX` and `centerY` properties. This is the `follower`
+sprite.
+b. A sprite object with `centerX` and `centerY` properties. This is the `leader` sprite that
+the follower will chase
+c. The easing value, such as 0.3. A higher number makes the follower move faster
+*/
+
+export const followEase = (follower, leader, speed) => {
+    const vx = leader.centerX - follower.centerX;
+    const vy = leader.centerY - follower.centerY;
+    const dist = Math.sqrt(vx * vx + vy * vy);
+    if (dist >= 1) {
+        follower.x += vx * speed;
+        follower.y += vy * speed;
+    }
 };
 
-export const randomInt     = (min, max) => Math.floor(Math.random()*(max-min+1))+min;
-export const randomFloat   = (min, max) => min + Math.random()*(max-min);
+export const easeProperty = (start, end, speed) => {
+    const distance = end - start;
+    return distance >= 1 ? distance * speed : 0;
+};
 
-// ——— Actions ———
-export const shoot = (shooter, ang, offset, speed, container, makeBullet) => {
-    const b = makeBullet();
-    Object.assign(b, {
-        x: shooter.centerX - b.halfWidth + offset*Math.cos(ang),
-        y: shooter.centerY - b.halfHeight + offset*Math.sin(ang),
-        vx: Math.cos(ang)*speed,
-        vy: Math.sin(ang)*speed
+/*
+followConstant
+----------------
+
+Make a sprite move towards another sprite at a regular speed.
+Parameters:
+a. A sprite object with `centerX` and `centerY` properties. This is the `follower`
+sprite.
+b. A sprite object with `centerX` and `centerY` properties. This is the `leader` sprite that
+the follower will chase
+c. The speed value, such as 3. This is the pixels per frame that the sprite will move. A higher number makes the follower move faster.
+*/
+
+export const followConstant = (follower, leader, speed) => {
+    const vx = leader.centerX - follower.centerX;
+    const vy = leader.centerY - follower.centerY;
+    const dist = Math.sqrt(vx * vx + vy * vy);
+    if (dist >= speed) {
+        follower.x += (vx / dist) * speed;
+        follower.y += (vy / dist) * speed;
+    }
+};
+
+/*
+angle
+-----
+
+Return the angle in Radians between two sprites.
+Parameters:
+a. A sprite object with `centerX` and `centerY` properties.
+b. A sprite object with `centerX` and `centerY` properties.
+You can use it to make a sprite rotate towards another sprite like this:
+
+    box.rotation = angle(box, pointer);
+*/
+
+export const angle = (s1, s2) =>
+    Math.atan2(
+        s2.centerY - s1.centerY,
+        s2.centerX - s1.centerX
+    );
+
+//### rotateAround
+//Make a sprite rotate around another sprite
+
+export const rotateSprite = (rotatingSprite, centerSprite, distance, angle) => {
+    rotatingSprite.x =
+        centerSprite.centerX - rotatingSprite.parent.x
+        + (distance * Math.cos(angle))
+        - rotatingSprite.halfWidth;
+
+    rotatingSprite.y =
+        centerSprite.centerY - rotatingSprite.parent.y
+        + (distance * Math.sin(angle))
+        - rotatingSprite.halfHeight;
+};
+
+//### rotatePoint
+//Make a point rotate around another point
+
+export const rotatePoint = (pointX, pointY, distanceX, distanceY, angle) => ({
+    x: pointX + Math.cos(angle) * distanceX,
+    y: pointY + Math.sin(angle) * distanceY
+});
+
+/*
+randomInt
+---------
+
+Return a random integer between a minimum and maximum value
+Parameters:
+a. An integer.
+b. An integer.
+Here's how you can use it to get a random number between, 1 and 10:
+
+    randomInt(1, 10);
+*/
+
+export const randomInt = (min, max) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+/*
+randomFloat
+---------
+
+Return a random floating point number between a minimum and maximum value
+Parameters:
+a. Any number.
+b. Any number.
+Here's how you can use it to get a random floating point number between, 1 and 10:
+
+    randomFloat(1, 10);
+*/
+
+export const randomFloat = (min, max) =>
+    min + Math.random() * (max - min);
+
+/*
+shoot
+---------
+*/
+
+export const shoot = (
+    shooter, angle, offsetFromCenter,
+    bulletSpeed, bulletArray, bulletSprite
+) => {
+    const bullet = bulletSprite();
+    bullet.x =
+        shooter.centerX - bullet.halfWidth
+        + (offsetFromCenter * Math.cos(angle));
+    bullet.y =
+        shooter.centerY - bullet.halfHeight
+        + (offsetFromCenter * Math.sin(angle));
+    bullet.vx = Math.cos(angle) * bulletSpeed;
+    bullet.vy = Math.sin(angle) * bulletSpeed;
+    bulletArray.push(bullet);
+};
+
+/*
+Wait
+----
+
+Lets you set up a timed sequence of events
+
+    wait(1000)
+      .then(() => console.log("One"))
+      .then(() => wait(1000))
+      .then(() => console.log("Two"))
+      .then(() => wait(1000))
+      .then(() => console.log("Three"))
+*/
+
+export const wait = (duration = 0) =>
+    new Promise((resolve) => setTimeout(resolve, duration));
+
+/*
+Move
+----
+
+Move a sprite by adding it's velocity to it's position
+
+    move(sprite);
+*/
+
+export const move = (...sprites) =>
+    sprites.forEach((s) => {
+        s.x += s.vx;
+        s.y += s.vy;
     });
-    container.push(b);
+
+//Tween functions
+
+/*
+export const slide = (sprite, x, y, time) => {
+    const tween = new TWEEN.Tween({ x: sprite.x, y: sprite.y })
+        .to({ x, y }, time);
+    tween.easing(TWEEN.Easing.Circular.Out);
+    tween.onUpdate(function () {
+        sprite.x = this.x;
+        sprite.y = this.y;
+    });
+    tween.start();
+    return tween;
 };
 
-export const wait = ms => new Promise(res => setTimeout(res, ms));
-export const move = (...sprites) => sprites.forEach(s => (s.x += s.vx, s.y += s.vy));
+export const fade = (sprite, alpha, time) => {
+    const tween = new TWEEN.Tween({ alpha: sprite.alpha })
+        .to({ alpha }, time);
+    tween.easing(TWEEN.Easing.Linear.None);
+    tween.onUpdate(function () {
+        sprite.alpha = this.alpha;
+    });
+    tween.start();
+    return tween;
+};
 
-
-// ——— Tween Helpers ———
-export const slide = (sprite, x, y, duration) =>
-    new TWEEN.Tween({ x: sprite.x, y: sprite.y })
-        .to({ x, y }, duration)
-        .easing(TWEEN.Easing.Circular.Out)
-        .onUpdate(({ x:nx, y:ny }) => (sprite.x = nx, sprite.y = ny))
-        .start();
-
-export const fade = (sprite, alpha, duration) =>
-    new TWEEN.Tween({ alpha: sprite.alpha })
-        .to({ alpha }, duration)
-        .easing(TWEEN.Easing.Linear.None)
-        .onUpdate(({ alpha:na }) => (sprite.alpha = na))
-        .start();
+ */
