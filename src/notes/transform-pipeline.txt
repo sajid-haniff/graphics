@@ -55,7 +55,6 @@
 //    Final screen coords
 //
 // Note on order:
-// - Mathematically: p' = p * (M1 * M2 * M3).
 // - Because of post-multiplication, the *last-applied* matrix (M3)
 //   sits at the top of the stack and acts first on coordinates.
 //
@@ -65,5 +64,6 @@
 // 3. M2 scales NDC → pixel device coords.
 // 4. M1 reflects + translates so the canvas behaves like Cartesian paper.
 //
-// Net effect: you write math in world coords, the framework handles
-// viewport, normalization, and device-space quirks automatically.
+// CTM = M1 · M2 · M3
+// p_screen = CTM · p_world = (M1 · M2 · M3) · p_world
+            = M1 · ( M2 · ( M3 · p_world ) )
