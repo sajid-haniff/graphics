@@ -9,19 +9,15 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
     const ctx = createGraphicsContext2(win, view, CANVAS_WIDTH, CANVAS_HEIGHT, sk);
     const { sx, sy, tx, ty } = ctx.viewport;
 
-    let img = null;
+    let img;
 
     return {
-        async setup() {
+        setup() {
             sk.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
             sk.background(30);
 
-            // Load image asynchronously
-            try {
-                img = await loadImageFromOrigin('images/tiger.png');
-            } catch (err) {
-                console.error('Image failed to load:', err);
-            }
+            // Load directly with p5.js — no promises
+            img = sk.loadImage('images/cat.png');
         },
         display() {
             sk.applyMatrix(1, 0, 0, -1, 0, CANVAS_HEIGHT);
@@ -31,17 +27,8 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
             sk.background(30);
 
             if (img) {
-                // Draw the raw image onto the canvas
-                //sk.drawingContext.drawImage(img, 0, 0, 64, 64);
-                //sk.image(img, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-                if (img) {
-                    const ctx2d = sk.drawingContext;
-                    ctx2d.save();
-                    ctx2d.scale(1, -1);
-                    ctx2d.drawImage(img, 0, -CANVAS_HEIGHT, 64, 64);
-                    ctx2d.restore();
-                }
+                // p5.Image respects your flipped coordinate system automatically
+                sk.image(img, 0, 0, 64, 64);
             }
         }
     };
