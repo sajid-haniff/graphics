@@ -37,6 +37,26 @@ Access individual frames in a texture atlas using the frame's name, like this:
 
 (Just use the image name without the extension.)
 */
+export const drawTextCartesian = (
+    sk,
+    text,
+    x,
+    y,
+    { alignX = sk.LEFT, alignY = sk.BASELINE } = {}
+) => {
+    const ctx2d = sk.drawingContext;
+
+    ctx2d.save();
+    ctx2d.scale(1, -1);
+
+    // Convert Cartesian y (origin bottom-left, y up) → screen coords
+    const screenY = -(sk.height - y);
+
+    sk.textAlign(alignX, alignY);
+    sk.text(text, x, screenY);
+
+    ctx2d.restore();
+};
 
 export const createAssets = () => {
 
@@ -73,13 +93,25 @@ export const createAssets = () => {
     };
 
     const loadFont = (source) => {
-        const fontFamily = source.split("/").pop().split(".")[0];
-        const newStyle = document.createElement("style");
-        const fontFace = `@font-face {font-family: '${fontFamily}'; src: url('${source}');}`;
-        newStyle.appendChild(document.createTextNode(fontFace));
-        document.head.appendChild(newStyle);
-        return Promise.resolve();
+        const fontFamily = source.split("/").pop().split(".")[0]; // filename without extension
+        const font = new FontFace(fontFamily, `url(${source})`);
+
+        return font.load()
+            .then((loadedFont) => {
+                document.fonts.add(loadedFont);
+                console.log(`✅ Font loaded: ${fontFamily} from ${source}`);
+
+                // Cache the family name directly, not just the font object
+                assets[source] = fontFamily;
+
+                return fontFamily;
+            })
+            .catch((err) => {
+                console.error(`❌ Failed to load font: ${source}`, err);
+                throw err;
+            });
     };
+
 
     const loadJson = (source) => fetch(source)
         .then((response) => {
