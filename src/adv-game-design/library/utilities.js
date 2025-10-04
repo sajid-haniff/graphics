@@ -38,7 +38,8 @@ Access individual frames in a texture atlas using the frame's name, like this:
 (Just use the image name without the extension.)
 */
 
-const createAssets = () => {
+export const createAssets = () => {
+
     const imageExtensions = ["png", "jpg", "gif"];
     const fontExtensions = ["ttf", "otf", "ttc", "woff"];
     const jsonExtensions = ["json"];
@@ -46,15 +47,30 @@ const createAssets = () => {
 
     const assets = {};
 
-    const loadImage = (source) => new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => {
-            assets[source] = image;
-            resolve(image);
-        };
-        image.onerror = reject;
-        image.src = source;
-    });
+    const loadImage = (source) => {
+
+        // If already cached, reuse it
+        if (assets[source]) return Promise.resolve(assets[source]);
+
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.crossOrigin = 'anonymous';
+
+            image.onload = () => {
+                console.log(`Loaded image: ${source} (${image.width}x${image.height})`);
+                assets[source] = image; // cache in dictionary
+                resolve(image);
+            };
+
+            image.onerror = (err) => {
+                console.error(`Failed to load image: ${source}`, err);
+                reject(err);
+            };
+
+            console.log(`🔄 Starting load: ${source}`);
+            image.src = source;
+        });
+    };
 
     const loadFont = (source) => {
         const fontFamily = source.split("/").pop().split(".")[0];
@@ -76,31 +92,15 @@ const createAssets = () => {
             if (file.frames) {
                 const baseUrl = source.replace(/[^\/]*$/, "");
                 const imageSource = baseUrl + file.meta.image;
-                return new Promise((resolve, reject) => {
-                    const image = new Image();
-                    image.onload = () => {
-                        assets[imageSource] = image;
-                        Object.entries(file.frames).forEach(([frameName, frameData]) => {
-                            assets[frameName] = { ...frameData, source: image };
-                        });
-                        resolve();
-                    };
-                    image.onerror = reject;
-                    image.src = imageSource;
+                return loadImage(imageSource).then((img) => {
+                    Object.entries(file.frames).forEach(([frameName, frameData]) => {
+                        assets[frameName] = { ...frameData, source: img };
+                    });
                 });
             }
             return Promise.resolve();
         });
 
-    /*
-    const loadSound = (source) => new Promise((resolve) => {
-        const sound = makeSound(source, () => resolve(sound));
-        sound.name = source;
-        assets[sound.name] = sound;
-    });
-
-
-     */
     const load = (sources) => {
         console.log("Loading assets...");
         return Promise.all(sources.map((source) => {
@@ -108,7 +108,6 @@ const createAssets = () => {
             if (imageExtensions.includes(extension)) return loadImage(source);
             if (fontExtensions.includes(extension)) return loadFont(source);
             if (jsonExtensions.includes(extension)) return loadJson(source);
-            //if (audioExtensions.includes(extension)) return loadSound(source);
             console.warn(`File type not recognized: ${source}`);
             return Promise.resolve();
         })).then(() => {
@@ -116,21 +115,11 @@ const createAssets = () => {
         });
     };
 
-    return { ...assets, load };
+    assets.load = load;
+    return assets;
 };
-
 export const assets = createAssets();
 
-// image-loader.js
-export const loadImageFromOrigin = (src) => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous'; // ensure CORS-safe loading
-        img.onload = () => resolve(img);
-        img.onerror = (err) => reject(err);
-        img.src = src;
-    });
-};
 
 
 
