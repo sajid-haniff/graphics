@@ -58,6 +58,41 @@ export const drawTextCartesian = (
     ctx2d.restore();
 };
 
+// blitter.js
+export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
+    const { sx, sy, tx, ty } = ctx.viewport;
+    const { win } = ctx;
+
+    // World → Device conversion based on the same transformation chain
+    const worldToDevice = (wx, wy) => {
+        // Apply world → viewport transform
+        const vx = sx * (wx - 0) + tx;
+        const vy = sy * (wy - 0) + ty;
+
+        // Apply viewport → device mapping (before reflection)
+        const dx = vx * CANVAS_WIDTH;
+        const dy = vy * CANVAS_HEIGHT;
+
+        // Apply reflection to match device coordinates
+        const reflectedY = CANVAS_HEIGHT - dy;
+
+        return { dx, dy: reflectedY };
+    };
+
+    // Blit that clears transformation stack
+    const blitImage = (img, wx, wy, w, h) => {
+        const { dx, dy } = worldToDevice(wx, wy);
+
+        sk.push();
+        sk.resetMatrix(); // clear current transform stack
+        sk.drawingContext.drawImage(img, dx, dy - h, w, h); // draw using absolute device coords
+        sk.pop();
+    };
+
+    return { blitImage };
+};
+
+
 export const createAssets = () => {
 
     const imageExtensions = ["png", "jpg", "gif"];
