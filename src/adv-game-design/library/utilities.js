@@ -42,7 +42,7 @@ export const drawTextCartesian = (
     text,
     x,
     y,
-    { alignX = sk.LEFT, alignY = sk.BASELINE } = {}
+    {alignX = sk.LEFT, alignY = sk.BASELINE} = {}
 ) => {
     const ctx2d = sk.drawingContext;
 
@@ -60,8 +60,8 @@ export const drawTextCartesian = (
 
 // blitter.js
 export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
-    const { sx, sy, tx, ty } = ctx.viewport;
-    const { win } = ctx;
+    const {sx, sy, tx, ty} = ctx.viewport;
+    const {win} = ctx;
 
     // World → Device conversion based on the same transformation chain
     const worldToDevice = (wx, wy) => {
@@ -76,12 +76,12 @@ export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
         // Apply reflection to match device coordinates
         const reflectedY = CANVAS_HEIGHT - dy;
 
-        return { dx, dy: reflectedY };
+        return {dx, dy: reflectedY};
     };
 
     // Blit that clears transformation stack
     const blitImage = (img, wx, wy, w, h) => {
-        const { dx, dy } = worldToDevice(wx, wy);
+        const {dx, dy} = worldToDevice(wx, wy);
 
         sk.push();
         sk.resetMatrix(); // clear current transform stack
@@ -89,7 +89,7 @@ export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
         sk.pop();
     };
 
-    return { blitImage };
+    return {blitImage};
 };
 
 
@@ -161,7 +161,7 @@ export const createAssets = () => {
                 const imageSource = baseUrl + file.meta.image;
                 return loadImage(imageSource).then((img) => {
                     Object.entries(file.frames).forEach(([frameName, frameData]) => {
-                        assets[frameName] = { ...frameData, source: img };
+                        assets[frameName] = {...frameData, source: img};
                     });
                 });
             }
@@ -188,8 +188,6 @@ export const createAssets = () => {
 export const assets = createAssets();
 
 
-
-
 /*
 outsideBounds
 -------------
@@ -199,7 +197,7 @@ a boundary
 */
 
 export const outsideBounds = (sprite, bounds, extra) => {
-    const { x, y, width, height } = bounds;
+    const {x, y, width, height} = bounds;
     let collision;
 
     if (sprite.x < x - sprite.width) collision = "left";
@@ -219,7 +217,7 @@ Keep a sprite contained inside a boundary
 */
 
 export const contain = (sprite, bounds, bounce = false, extra) => {
-    const { x, y, width, height } = bounds;
+    const {x, y, width, height} = bounds;
     let collision;
 
     if (sprite.x < x) {

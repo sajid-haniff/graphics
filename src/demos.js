@@ -25,6 +25,8 @@ const demos = {
     'createFlowFieldDemo': () => import('./noc/fields/flow-field'),
     'knightsTourDemo': () => import('./recursion/knights/knight-tour-demo'),
     'createRippleWaterDemo': () => import('./demos/wave/ripples'),
+    'createAsteroidsDemo': () => import('./demos/arcade/asteroids-demo'),
+    'createAsteroidsTest': () => import('./demos/arcade/asteroids-test'),
 };
 
 export default demos;

@@ -1,12 +1,12 @@
-import { createGraphicsContext2 } from '../graphics_context2';
-import { assets, drawTextCartesian, createBlitter } from './library/utilities';
+import {createGraphicsContext2} from '../graphics_context2';
+import {assets, drawTextCartesian, createBlitter} from './library/utilities';
 
 export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360) => {
-    const win = { left: 0, right: CANVAS_WIDTH, top: CANVAS_HEIGHT, bottom: 0 };
-    const view = { left: 0.0, right: 1.0, top: 1.0, bottom: 0.0 };
+    const win = {left: 0, right: CANVAS_WIDTH, top: CANVAS_HEIGHT, bottom: 0};
+    const view = {left: 0.0, right: 1.0, top: 1.0, bottom: 0.0};
     const ctx = createGraphicsContext2(win, view, CANVAS_WIDTH, CANVAS_HEIGHT, sk);
-    const { sx, sy, tx, ty } = ctx.viewport;
-    const { blitImage } = createBlitter(ctx, sk, CANVAS_WIDTH,CANVAS_HEIGHT );
+    const {sx, sy, tx, ty} = ctx.viewport;
+    const {blitImage} = createBlitter(ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     let tiger = null;
     let fontFamily = null;
@@ -55,10 +55,9 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
             // This blit ignores transformations, draws in absolute Cartesian space
 
 
-
             // Draw tiger
             if (tiger) {
-           //     ctx2d.drawImage(tiger, 0, 64, 64, 64);
+                //     ctx2d.drawImage(tiger, 0, 64, 64, 64);
                 blitImage(tiger, 0, 300, 64, 64);
             }
 
