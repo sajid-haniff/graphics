@@ -16,7 +16,7 @@ import { createBurst } from './burst';
 import { createBullet } from './bullet';
 import { createShip } from './ship';
 
-export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480) => {
+export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768) => {
     // ---- World (Y-up) & View ----
     const win = { left: -10, right: 10, bottom: -10, top: 10 };
     const view = { left: 0, right: 1, bottom: 0, top: 1 };
@@ -57,32 +57,37 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480)
     const scoreForRadius = (r) => (r >= 1.6 ? 20 : (r >= 1.0 ? 50 : 100));
 
     // ---- Asteroid split helper (uses V) ----
+    // ---- Asteroid split helper (uses V.rotate / V.length) ----
     const splitAsteroid = (a) => {
         const newR = a.radius * 0.5;
+
+        // 1) Score + VFX
         score += scoreForRadius(a.radius);
         bursts.push(createBurst(sk, a.position, THEME.burst, pixelToWorld));
 
+        // 2) Stop if fragments would be too small
         if (newR < 0.6) return;
 
-        const baseSpeed = Math.max(Math.hypot(a.velocity[0], a.velocity[1]), 0.045);
-        const spread = 22;
+        // 3) Derive child velocities from parent momentum (Y-up)
+        const baseSpeed = Math.max(V.length(a.velocity), 0.045);
+        const spreadDeg = 22;
+        const spreadRad = sk.radians(spreadDeg);
 
-        const rot = (vx, vy, deg) => {
-            const rad = sk.radians(deg);
-            const cs = Math.cos(rad), sn = Math.sin(rad);
-            return V.create(vx * cs - vy * sn, vx * sn + vy * cs);
-        };
-        const v1 = rot(a.velocity[0], a.velocity[1], +spread);
-        const v2 = rot(a.velocity[0], a.velocity[1], -spread);
+        // Rotate parent velocity by ±spread (returns new vectors)
+        const v1 = V.rotate(a.velocity, +spreadRad);
+        const v2 = V.rotate(a.velocity, -spreadRad);
 
-        const m1 = Math.hypot(v1[0], v1[1]) || 1;
-        const m2 = Math.hypot(v2[0], v2[1]) || 1;
+        // Normalize and scale with slight variance; keep a speed floor
         const s1 = baseSpeed * (0.9 + Math.random() * 0.3);
         const s2 = baseSpeed * (0.9 + Math.random() * 0.3);
+        const child1Vel = V.scale(V.normalize(v1), s1);
+        const child2Vel = V.scale(V.normalize(v2), s2);
 
-        asteroids.push(createAsteroid(sk, V.clone(a.position), newR, V.scale(v1, s1 / m1), THEME, pixelToWorld, win));
-        asteroids.push(createAsteroid(sk, V.clone(a.position), newR, V.scale(v2, s2 / m2), THEME, pixelToWorld, win));
+        // 4) Spawn children at parent position
+        asteroids.push(createAsteroid(sk, V.clone(a.position), newR, child1Vel, THEME, pixelToWorld, win));
+        asteroids.push(createAsteroid(sk, V.clone(a.position), newR, child2Vel, THEME, pixelToWorld, win));
     };
+
 
     // ---- Reset / spawn ----
     const resetGame = () => {
