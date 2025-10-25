@@ -1,23 +1,34 @@
-import { createBullet } from './bullet';
+// /src/demo/arcade/ship.js
+// Player ship (uses V for math, neon for rendering).
+// World space is Y-up; the world→device composite (in the demo) flips Y for screen.
+// IMPORTANT: forward vector uses -rotDeg so thrust/bullets align with the visual nose.
+
+import { V } from '../../lib/esm/V';
 import { neonPoly } from './neon';
+import { createBullet } from './bullet';
 
 export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onDeath) => {
-    const pos = sk.createVector(0, 0);
-    const vel = sk.createVector(0, 0);
+    // State
+    const pos = V.create(0, 0);
+    const vel = V.create(0, 0);
     let rotDeg = 0;
 
-    const ROT_SPEED = 3;
-    const THRUST    = 0.02;
-    const DAMPING   = 0.985;
+    // Tuning
+    const ROT_SPEED = 3;       // deg/frame
+    const THRUST    = 0.02;    // world units/frame^2
+    const DAMPING   = 0.985;   // inertia
 
+    // Bullets
     const BULLET_SPEED = 0.5;
     const BULLET_LIFE  = 60;
     const FIRE_COOLDOWN_MS = 220;
     let lastFireMs = 0;
 
+    // Invulnerability after death
     let invuln = 0;
     const INVULN_TIME = 90;
 
+    // Geometry (canonical Y-up)
     const SHIP_POINTS_IDLE = [
         { x:  0.0,  y:  1.0 },
         { x:  0.5,  y: -0.5 },
@@ -37,12 +48,12 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
     const SHIP_SCALE = 1.0;
     const SHIP_HIT_RADIUS = 0.7 * SHIP_SCALE;
 
-    const wrap = (v, min, max) => (v > max ? min : (v < min ? max : v));
+    const wrapCoord = (v, min, max) => (v > max ? min : (v < min ? max : v));
 
-    // 🔑 Forward vector uses -rotDeg because world->device composite flips Y.
+    // 🔑 Forward vector uses -rotDeg because render composite flips Y (screen is Y-down).
     const forwardVec = () => {
-        const a = sk.radians(-rotDeg);
-        return sk.createVector(sk.sin(a), sk.cos(a));
+        const a = -sk.radians(rotDeg);
+        return V.create(Math.sin(a), Math.cos(a));
     };
 
     const fire = () => {
@@ -50,67 +61,65 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
         if (now - lastFireMs < FIRE_COOLDOWN_MS) return;
 
         const dir = forwardVec();
-        const start = sk.createVector(pos.x + dir.x * (0.9 * SHIP_SCALE), pos.y + dir.y * (0.9 * SHIP_SCALE));
-        bullets.push(createBullet(sk, start, dir, THEME, pixelToWorld, win, BULLET_SPEED, BULLET_LIFE));
+        const muzzle = V.add(pos, V.scale(dir, 0.9 * SHIP_SCALE));
+        bullets.push(createBullet(sk, muzzle, dir, THEME, pixelToWorld, win, BULLET_SPEED, BULLET_LIFE));
+
         lastFireMs = now;
     };
 
     const explode = () => {
-        onDeath();                       // adjust lives / gameover upstream
-        pos.set(0, 0);
-        vel.set(0, 0);
+        onDeath && onDeath();        // let demo manage lives/gameOver
+        V.set(pos, 0, 0);            // reset to center
+        V.set(vel, 0, 0);
         rotDeg = 0;
         invuln = INVULN_TIME;
     };
 
     const update = () => {
-        if (isGameOver()) return false;
+        if (isGameOver && isGameOver()) return false;
 
+        // Rotation
         if (sk.keyIsDown(sk.LEFT_ARROW))  rotDeg = (rotDeg + ROT_SPEED) % 360;
         if (sk.keyIsDown(sk.RIGHT_ARROW)) rotDeg = (rotDeg - ROT_SPEED + 360) % 360;
-        const thrusting = sk.keyIsDown(sk.UP_ARROW);
 
+        // Thrust
+        const thrusting = sk.keyIsDown(sk.UP_ARROW);
         if (thrusting) {
             const dir = forwardVec();
-            vel.x += dir.x * THRUST;
-            vel.y += dir.y * THRUST;
+            V.set(vel, vel[0] + dir[0] * THRUST, vel[1] + dir[1] * THRUST);
         }
 
-        pos.add(vel);
-        vel.mult(DAMPING);
-        pos.x = wrap(pos.x, win.left, win.right);
-        pos.y = wrap(pos.y, win.bottom, win.top);
+        // Integrate + damping
+        V.set(pos, pos[0] + vel[0], pos[1] + vel[1]);
+        const damped = V.scale(vel, DAMPING);
+        V.copy(vel, damped);
 
+        // Wrap world
+        pos[0] = wrapCoord(pos[0], win.left, win.right);
+        pos[1] = wrapCoord(pos[1], win.bottom, win.top);
+
+        // Fire
         if (sk.keyIsDown(32)) fire(); // space
 
-        // Ship↔asteroid collision is handled in demo (after we move bullets/asteroids)
-        // But we keep invuln and expose radius & position if needed.
         if (invuln > 0) invuln--;
-
-        // Inject a function to allow demo to query collision
-        update.pos = pos;
-        update.radius = SHIP_HIT_RADIUS;
 
         return thrusting;
     };
 
     const draw = (thrusting) => {
         sk.push();
-        sk.translate(pos.x, pos.y);
+        sk.translate(pos[0], pos[1]);
         sk.rotate(sk.radians(rotDeg));
-        const pts = (thrusting ? SHIP_POINTS_THRUST : SHIP_POINTS_IDLE).map(p => ({ x: p.x * SHIP_SCALE, y: p.y * SHIP_SCALE }));
-        const colorHex = THEME.ship;
-        if (invuln > 0 && (Math.floor(invuln / 6) % 2 === 0)) {
-            neonPoly(sk, pts, colorHex, pixelToWorld, 1.6, true);
-        } else {
-            neonPoly(sk, pts, colorHex, pixelToWorld, 1.6, true);
-        }
+        const pts = (thrusting ? SHIP_POINTS_THRUST : SHIP_POINTS_IDLE)
+            .map(p => ({ x: p.x * SHIP_SCALE, y: p.y * SHIP_SCALE }));
+        neonPoly(sk, pts, THEME.ship, pixelToWorld, 1.6, true);
         sk.pop();
     };
 
-    // Expose minimal info for collisions from demo:
-    update.getPos = () => update.pos;
-    update.getRadius = () => update.radius;
+    // Minimal getters for collisions / state
+    const radius = () => SHIP_HIT_RADIUS;
+    const invulnerable = () => invuln > 0;
+    const position = () => pos;
 
-    return { update, draw };
+    return { update, draw, pos: position, radius, invulnerable, explode };
 };
