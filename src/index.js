@@ -22,8 +22,8 @@ const demos = {
 //const demoName = 'createRippleWaterDemo';
 //const demoName = 'createStarfieldDemo'
 //const demoName = 'createLoadImagesDemo'
-//const demoName = 'createAsteroidsDemo';
-const demoName = 'createAsteroidsTest';
+const demoName = 'createAsteroidsDemo';
+//const demoName = 'createAsteroidsTest';
 
 const runDemo = async (demoName) => {
     try {
