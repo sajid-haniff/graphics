@@ -6,6 +6,9 @@ import { createGraphicsContext2 } from '../../graphics_context2';
 import { V } from '../../lib/esm/V';
 import { M2D } from '../../lib/esm/M2D';
 
+import { createHowlerSFX } from '../../lib/esm/sfx-howler';
+import { SFX_FILES } from './sfx-map';
+
 import { makePixelToWorld, wrap, randRange, colorA } from './utils';
 import { drawGradientBG, drawLaserGrid } from './background';
 import { neonDot } from './neon';
@@ -17,6 +20,9 @@ import { createBullet } from './bullet';
 import { createShip } from './ship';
 
 export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768) => {
+
+    let SFX = null;
+
     // ---- World (Y-up) & View ----
     const win = { left: -10, right: 10, bottom: -10, top: 10 };
     const view = { left: 0, right: 1, bottom: 0, top: 1 };
@@ -46,12 +52,16 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
     const asteroids = [];
     const bullets = [];
     const bursts = [];
+    let ship;
 
     // ---- Ship ----
+    /*
     const ship = createShip(sk, THEME, pixelToWorld, win, bullets, bursts, () => gameOver, () => {
         lives -= 1;
         if (lives <= 0) gameOver = true;
     });
+    */
+
 
     // ---- Scoring curve ----
     const scoreForRadius = (r) => (r >= 1.6 ? 20 : (r >= 1.0 ? 50 : 100));
@@ -64,6 +74,9 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
         // 1) Score + VFX
         score += scoreForRadius(a.radius);
         bursts.push(createBurst(sk, a.position, THEME.burst, pixelToWorld));
+
+        // 🔊 boom (guarded if audio not ready)
+        SFX?.playRandom(['explode1','explode2','explode3'], { volume: 0.8 });
 
         // 2) Stop if fragments would be too small
         if (newR < 0.6) return;
@@ -86,6 +99,9 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
         // 4) Spawn children at parent position
         asteroids.push(createAsteroid(sk, V.clone(a.position), newR, child1Vel, THEME, pixelToWorld, win));
         asteroids.push(createAsteroid(sk, V.clone(a.position), newR, child2Vel, THEME, pixelToWorld, win));
+
+        // parent asteroid destroyed or ship exploded:
+        //sfx?.playRandom(['explode1','explode2','explode3'], { volume: 0.8 });
     };
 
 
@@ -109,6 +125,24 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
             sk.keyPressed = () => {
                 if (sk.key === 'r' || sk.key === 'R') resetGame();
             };
+
+            // Audio
+            SFX = createHowlerSFX('./assets/');
+            SFX.loadMap(SFX_FILES);
+            SFX.resumeOnFirstGesture();
+            SFX.on(); // enable audio
+
+            // create entities, pass SFX to ones that trigger sounds
+            //ship = createShip(sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onShipDeath, SFX);
+            // ufo  = createUFO(sk, THEME, pixelToWorld, win, SFX, variant); // 'large' | 'small'
+            // ...
+
+            ship = createShip(
+                sk, THEME, pixelToWorld, win, bullets, bursts,
+                () => gameOver,                      // isGameOver
+                () => { lives -= 1; if (lives <= 0) gameOver = true; },  // onDeath
+                SFX
+            );
         },
 
         display() {

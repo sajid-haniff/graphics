@@ -1,22 +1,18 @@
 // /src/demo/arcade/ship.js
-// Player ship (uses V for math, neon for rendering).
-// World space is Y-up; the world→device composite (in the demo) flips Y for screen.
-// IMPORTANT: forward vector uses -rotDeg so thrust/bullets align with the visual nose.
-
 import { V } from '../../lib/esm/V';
 import { neonPoly } from './neon';
 import { createBullet } from './bullet';
 
-export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onDeath) => {
+export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onDeath, sfx) => {
     // State
     const pos = V.create(0, 0);
     const vel = V.create(0, 0);
     let rotDeg = 0;
 
     // Tuning
-    const ROT_SPEED = 3;       // deg/frame
-    const THRUST    = 0.02;    // world units/frame^2
-    const DAMPING   = 0.985;   // inertia
+    const ROT_SPEED = 3;        // deg/frame
+    const THRUST    = 0.02;     // world units/frame^2
+    const DAMPING   = 0.985;    // inertia
 
     // Bullets
     const BULLET_SPEED = 0.5;
@@ -50,11 +46,15 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
 
     const wrapCoord = (v, min, max) => (v > max ? min : (v < min ? max : v));
 
-    // 🔑 Forward vector uses -rotDeg because render composite flips Y (screen is Y-down).
+    // Y-up forward (note the minus due to final Y-flip in the composite)
     const forwardVec = () => {
         const a = -sk.radians(rotDeg);
         return V.create(Math.sin(a), Math.cos(a));
     };
+
+    // ---- SFX state ----
+    let thrustInst = null;
+    const THRUST_VOL = 0.35;
 
     const fire = () => {
         const now = sk.millis();
@@ -64,12 +64,15 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
         const muzzle = V.add(pos, V.scale(dir, 0.9 * SHIP_SCALE));
         bullets.push(createBullet(sk, muzzle, dir, THEME, pixelToWorld, win, BULLET_SPEED, BULLET_LIFE));
 
+        sfx?.play('fire');     // 🔊 play ONLY when we actually fired
         lastFireMs = now;
     };
 
     const explode = () => {
-        onDeath && onDeath();        // let demo manage lives/gameOver
-        V.set(pos, 0, 0);            // reset to center
+        onDeath && onDeath();
+        sfx?.playRandom(['explode1','explode2','explode3'], { volume: 0.8 }); // 🔊 boom
+
+        V.set(pos, 0, 0);
         V.set(vel, 0, 0);
         rotDeg = 0;
         invuln = INVULN_TIME;
@@ -82,24 +85,29 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
         if (sk.keyIsDown(sk.LEFT_ARROW))  rotDeg = (rotDeg + ROT_SPEED) % 360;
         if (sk.keyIsDown(sk.RIGHT_ARROW)) rotDeg = (rotDeg - ROT_SPEED + 360) % 360;
 
-        // Thrust
+        // Thrust + thrust loop SFX
         const thrusting = sk.keyIsDown(sk.UP_ARROW);
         if (thrusting) {
             const dir = forwardVec();
             V.set(vel, vel[0] + dir[0] * THRUST, vel[1] + dir[1] * THRUST);
+
+            if (!thrustInst) thrustInst = sfx?.loop('thrust', { volume: 0.0 });
+            thrustInst?.setVolume(THRUST_VOL);
+        } else if (thrustInst) {
+            // simple fade-out: set to 0; (optional: stop after a short timer)
+            thrustInst.setVolume(0.0);
         }
+
+        // Fire
+        if (sk.keyIsDown(32)) fire();
 
         // Integrate + damping
         V.set(pos, pos[0] + vel[0], pos[1] + vel[1]);
-        const damped = V.scale(vel, DAMPING);
-        V.copy(vel, damped);
+        V.copy(vel, V.scale(vel, DAMPING));
 
         // Wrap world
-        pos[0] = wrapCoord(pos[0], win.left, win.right);
+        pos[0] = wrapCoord(pos[0], win.left,  win.right);
         pos[1] = wrapCoord(pos[1], win.bottom, win.top);
-
-        // Fire
-        if (sk.keyIsDown(32)) fire(); // space
 
         if (invuln > 0) invuln--;
 
@@ -116,7 +124,6 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
         sk.pop();
     };
 
-    // Minimal getters for collisions / state
     const radius = () => SHIP_HIT_RADIUS;
     const invulnerable = () => invuln > 0;
     const position = () => pos;
