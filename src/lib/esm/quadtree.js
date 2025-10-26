@@ -54,7 +54,7 @@ export const intersects = (a, b) =>
  *   bounds: {x:number,y:number,width:number,height:number}
  * }}
  */
-export const createQuadtree = (bounds, maxObjects = 8, maxLevels = 6, level = 0) => {
+export const createQuadtree = (bounds, maxObjects = 1, maxLevels = 6, level = 0) => {
     // Node-local storage closed over this factory instance.
     /** @type {any[]} */
     let objects = [];   // Rects stored directly in this node
