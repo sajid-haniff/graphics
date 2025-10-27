@@ -1,41 +1,48 @@
-// /src/demo/arcade/background.js
-// Background rendering utilities:
-// - drawGradientBG: device-space vertical gradient (call before applying world matrix)
-// - drawLaserGrid: world-space retro grid (call after applying world matrix)
+// ============================================================================
+// Background and world-grid rendering (safe color handling)
+// ============================================================================
 
-import { neonLine } from './neon';
+// Vertical linear gradient from c1 (top) to c2 (bottom)
+export const drawGradientBG = (sk, W, H, c1, c2) => {
+    const col1 = (typeof c1 === 'string' || Array.isArray(c1)) ? sk.color(c1) : c1;
+    const col2 = (typeof c2 === 'string' || Array.isArray(c2)) ? sk.color(c2) : c2;
 
-// Device-space gradient background.
-// Call with device coordinates active (i.e., BEFORE applying world matrix).
-export const drawGradientBG = (sk, CANVAS_WIDTH, CANVAS_HEIGHT, THEME) => {
-    sk.resetMatrix(); // ensure device space (y-down)
-    const steps = 64;
+    sk.push();
+    sk.noStroke();
+    const steps = Math.max(1, Math.min(256, Math.floor(H)));
     for (let i = 0; i < steps; i++) {
         const t = i / (steps - 1);
-        const c = sk.lerpColor(sk.color(THEME.bgTop), sk.color(THEME.bgBot), t);
-        sk.stroke(c);
-        sk.line(0, t * CANVAS_HEIGHT, CANVAS_WIDTH, t * CANVAS_HEIGHT);
+        const r = sk.lerp(sk.red(col1),   sk.red(col2),   t);
+        const g = sk.lerp(sk.green(col1), sk.green(col2), t);
+        const b = sk.lerp(sk.blue(col1),  sk.blue(col2),  t);
+        sk.fill(r, g, b);
+        const y = (i / steps) * H;
+        const h = H / steps + 1;
+        sk.rect(0, y, W, h);
     }
+    sk.pop();
 };
 
-// World-space laser grid.
-// Call AFTER applying the world→device matrix (Y is flipped by your composite).
-export const drawLaserGrid = (sk, win, THEME, pixelToWorld) => {
-    const y0 = win.bottom + 0.5;
-    const y1 = 0;                // “horizon”
-    const rowStep = 1.0;
-    const colCount = 16;
+// World-space laser grid, Y-up (call after applying COMPOSITE)
+export const drawLaserGrid = (sk, win, pixelToWorld) => {
+    const step = 2; // world units between grid lines
+    const lw = pixelToWorld(1);
+    sk.push();
+    sk.stroke(0, 255, 255, 40);
+    sk.strokeWeight(lw);
+    sk.noFill();
 
-    // horizontal rows
-    for (let y = y0; y <= y1; y += rowStep) {
-        neonLine(sk, win.left, y, win.right, y, THEME.bullet, pixelToWorld, 1.0);
+    for (let x = Math.ceil(win.left/step)*step; x <= win.right; x += step) {
+        sk.line(x, win.bottom, x, win.top);
+    }
+    for (let y = Math.ceil(win.bottom/step)*step; y <= win.top; y += step) {
+        sk.line(win.left, y, win.right, y);
     }
 
-    // faux-perspective verticals
-    for (let c = 0; c <= colCount; c++) {
-        const t = c / colCount;
-        const xB = sk.lerp(win.left, win.right, t);
-        const xT = sk.lerp(win.left * 0.2, win.right * 0.2, t); // squeeze near horizon
-        neonLine(sk, xB, y0, xT, y1, THEME.bullet, pixelToWorld, 1.0);
-    }
+    // Axes
+    sk.stroke(255, 100);
+    sk.line(win.left, 0, win.right, 0);
+    sk.line(0, win.bottom, 0, win.top);
+
+    sk.pop();
 };

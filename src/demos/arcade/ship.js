@@ -1,15 +1,15 @@
-// /src/demo/arcade/ship.js
+// /src/demos/arcade/ship.js
 import { V } from '../../lib/esm/V';
 import { neonPoly } from './neon';
 import { createBullet } from './bullet';
 
 export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onDeath, sfx) => {
-    // State
+    // ---------------- State ----------------
     const pos = V.create(0, 0);
     const vel = V.create(0, 0);
     let rotDeg = 0;
 
-    // Tuning
+    // ---------------- Tuning ----------------
     const ROT_SPEED = 3;        // deg/frame
     const THRUST    = 0.02;     // world units/frame^2
     const DAMPING   = 0.985;    // inertia
@@ -24,23 +24,24 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
     let invuln = 0;
     const INVULN_TIME = 90;
 
-    // Geometry (canonical Y-up)
-    const SHIP_POINTS_IDLE = [
+    // ---------------- Geometry (canonical Y-up; tip points +Y) ----------------
+    // Body outline (no flame)
+    const SHIP_POINTS_BODY = [
         { x:  0.0,  y:  1.0 },
         { x:  0.5,  y: -0.5 },
         { x:  0.0,  y: -0.2 },
         { x: -0.5,  y: -0.5 }
     ];
-    const SHIP_POINTS_THRUST = [
-        { x:  0.0,  y:  1.0 },
-        { x:  0.5,  y: -0.5 },
-        { x:  0.0,  y: -0.2 },
-        { x: -0.5,  y: -0.5 },
-        { x:  0.0,  y: -0.8 },
-        { x:  0.15, y: -0.5 },
-        { x:  0.0,  y: -0.2 },
-        { x: -0.15, y: -0.5 },
+
+    // Thrust flame shape (centered on -Y axis, sits behind ship)
+    // Drawn only when thrusting; separate color.
+    const THRUST_POINTS = [
+        { x:   0.00, y: -0.55 },
+        { x:   0.18, y: -0.95 },
+        { x:   0.00, y: -1.25 },
+        { x:  -0.18, y: -0.95 },
     ];
+
     const SHIP_SCALE = 1.0;
     const SHIP_HIT_RADIUS = 0.7 * SHIP_SCALE;
 
@@ -61,10 +62,12 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
         if (now - lastFireMs < FIRE_COOLDOWN_MS) return;
 
         const dir = forwardVec();
-        const muzzle = V.add(pos, V.scale(dir, 0.9 * SHIP_SCALE));
-        bullets.push(createBullet(sk, muzzle, dir, THEME, pixelToWorld, win, BULLET_SPEED, BULLET_LIFE));
+        // Small safety so muzzle is clearly outside ship radius
+        const SAFE_OFFSET = SHIP_HIT_RADIUS + 0.25 + 0.05; // shipR + bulletR + ε
+        const muzzle = V.add(pos, V.scale(dir, SAFE_OFFSET));
 
-        sfx?.play('fire');     // 🔊 play ONLY when we actually fired
+        bullets.push(createBullet(sk, muzzle, dir, THEME, pixelToWorld, win, BULLET_SPEED, BULLET_LIFE));
+        sfx?.play('fire'); // 🔊 only when actually fired
         lastFireMs = now;
     };
 
@@ -94,7 +97,7 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
             if (!thrustInst) thrustInst = sfx?.loop('thrust', { volume: 0.0 });
             thrustInst?.setVolume(THRUST_VOL);
         } else if (thrustInst) {
-            // simple fade-out: set to 0; (optional: stop after a short timer)
+            // Simple fade-out: mute immediately
             thrustInst.setVolume(0.0);
         }
 
@@ -118,9 +121,19 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
         sk.push();
         sk.translate(pos[0], pos[1]);
         sk.rotate(sk.radians(rotDeg));
-        const pts = (thrusting ? SHIP_POINTS_THRUST : SHIP_POINTS_IDLE)
-            .map(p => ({ x: p.x * SHIP_SCALE, y: p.y * SHIP_SCALE }));
-        neonPoly(sk, pts, THEME.ship, pixelToWorld, 1.6, true);
+
+        // Body
+        const bodyPts = SHIP_POINTS_BODY.map(p => ({ x: p.x * SHIP_SCALE, y: p.y * SHIP_SCALE }));
+        neonPoly(sk, bodyPts, THEME.ship, pixelToWorld, 1.6, true);
+
+        // Thrust flame (only while thrusting) — bright orange
+        if (thrusting) {
+            const flamePts = THRUST_POINTS.map(p => ({ x: p.x * SHIP_SCALE, y: p.y * SHIP_SCALE }));
+            const flameColor = THEME.thrust || '#ff9933'; // 🔶 bright orange fallback
+            // Slightly thicker to look hot/glowy
+            neonPoly(sk, flamePts, flameColor, pixelToWorld, 2.0, true);
+        }
+
         sk.pop();
     };
 

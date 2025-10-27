@@ -1,57 +1,64 @@
-// /src/demo/arcade/bullet.js
-// Bullet entity (V + neon).
-// - World space is Y-up. Rendering flip handled by the composite matrix in the demo.
-// - Uses V for position/velocity.
-// - Pixel-consistent glow via pixelToWorld.
+// ============================================================================
+// Bullet factory (compatible with ship.js call signature)
+// createBullet(sk, muzzleV, dirV, THEME, pixelToWorld, win, speed = 0.5, lifeFrames = 60)
+// - position: V vec2
+// - velocity: V vec2
+// - radius: number (for collisions)
+// - update(dt, win): moves, wraps, decrements ttl (supports dt or frame-based)
+// - draw(sk): neon dot
+// ============================================================================
 
 import { V } from '../../lib/esm/V';
-import { wrap } from './utils';
 import { neonDot } from './neon';
 
-/**
- * createBullet
- * @param {object} sk            p5 instance (sk)
- * @param {vec2}   startPosV     V vec2 (Float32Array[2]) starting position (world Y-up)
- * @param {vec2}   dirV          V vec2 normalized direction (use -rotDeg when built)
- * @param {object} THEME         palette object (uses THEME.bullet)
- * @param {fn}     pixelToWorld  (px:number)=>worldUnits:number
- * @param {object} win           world bounds {left,right,bottom,top}
- * @param {number} speed         world units per frame (default 0.5)
- * @param {number} life          lifetime in frames (default 60)
- */
 export const createBullet = (
     sk,
-    startPosV,
+    muzzleV,
     dirV,
     THEME,
     pixelToWorld,
     win,
     speed = 0.5,
-    life = 60
+    lifeFrames = 60
 ) => {
-    const position = V.clone(startPosV);
-    const velocity = V.scale(dirV, speed);
-    let frames = life;
+    const position = V.clone(muzzleV);
+    const velocity = V.scale(V.normalize(dirV), speed);
+    const radius = 0.25;        // collision radius (world units)
+    let ttl = lifeFrames;       // frames; we’ll also accept dt seconds
 
-    const update = () => {
-        // pos += vel
-        V.set(position, position[0] + velocity[0], position[1] + velocity[1]);
+    const wrap = (v, min, max) => (v > max ? min : (v < min ? max : v));
 
-        // wrap world
-        position[0] = wrap(position[0], win.left, win.right);
-        position[1] = wrap(position[1], win.bottom, win.top);
+    const update = (dt = undefined) => {
+        // Support both frame-stepped and dt-stepped worlds
+        const k = (typeof dt === 'number' && isFinite(dt)) ? (dt * 60.0) : 1.0;
 
-        frames -= 1;
+        // pos += vel * k
+        V.set(position, position[0] + velocity[0] * k, position[1] + velocity[1] * k);
+
+        // world wrap
+        V.set(position, wrap(position[0], win.left, win.right), wrap(position[1], win.bottom, win.top));
+
+        // life
+        ttl -= k;
     };
 
-    const draw = () => {
-        sk.push();
-        sk.translate(position[0], position[1]);
-        neonDot(sk, 3, THEME.bullet, pixelToWorld); // ~6px diameter glow
-        sk.pop();
+    const draw = (sk) => {
+        neonDot(
+            sk,
+            { x: position[0], y: position[1] },
+            THEME?.bullet ?? '#7DF',
+            pixelToWorld,
+            3 // px nominal
+        );
     };
 
-    const dead = () => frames <= 0;
-
-    return { position, update, draw, dead };
+    return {
+        position,
+        velocity,
+        radius,
+        ttl,
+        update,
+        draw,
+        get alive() { return ttl > 0; },
+    };
 };
