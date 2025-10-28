@@ -1,29 +1,46 @@
-// Expanding world-space ring at position p (V vec2).
-// Visual only (can be used to tag rocks separately if you want gameplay impact).
+// Expanding neon ring that fractures nearby asteroids.
+// Factory (no classes). Uses world Y-up coords.
+
 import { V } from '../../lib/esm/V';
 
-export const createShockwave = (sk, p, THEME, pixelToWorld, {
-    maxRadius = 4.0,   // world units
-    thicknessPx = 2,   // visual stroke in *pixels* (converted via pixelToWorld)
-    lifeFrames = 30
-} = {}) => {
-    const pos = V.clone(p);
-    let t = 0;
+export const createShockwave = (sk, centerV, THEME, pixelToWorld, opts = {}) => {
+    const pos = V.clone(centerV);
+    let r = 0;
+    let life = opts.life ?? 36;          // frames
+    const grow = opts.grow ?? 0.9;       // wu/frame
 
-    const update = () => { t += 1; };
+    const update = () => {
+        r += grow;
+        life--;
+        return life > 0;
+    };
+
     const draw = () => {
-        const k = t / lifeFrames;
-        if (k >= 1) return;
-        const r = maxRadius * k;
         sk.push();
-        sk.translate(pos[0], pos[1]);
         sk.noFill();
-        sk.stroke(THEME.burst);
-        sk.strokeWeight(pixelToWorld(thicknessPx));
-        sk.circle(0, 0, r * 2);
+
+        // hot core ring
+        sk.strokeWeight(pixelToWorld(2.4));
+        sk.stroke(THEME.shock || '#ff7a33');
+        sk.circle(pos[0], pos[1], r * 2);
+
+        // outer glow
+        sk.strokeWeight(pixelToWorld(1.2));
+        sk.stroke(THEME.shock2 || '#ffe1a8');
+        sk.circle(pos[0], pos[1], r * 1.55);
+
         sk.pop();
     };
-    const dead = () => t >= lifeFrames;
 
-    return { update, draw, dead, pos };
+    const affects = (asteroid) => {
+        const dx = asteroid.position[0] - pos[0];
+        const dy = asteroid.position[1] - pos[1];
+        const dist = Math.hypot(dx, dy);
+        return dist <= (r + asteroid.radius);
+    };
+
+    const radius = () => r;
+    const position = () => pos;
+
+    return { update, draw, affects, radius, position };
 };

@@ -1,98 +1,107 @@
-// UFO (saucer) — moves across screen, gently bobs, fires at intervals.
-// variant: 'large' | 'small' (small moves faster, scores more, fires toward ship)
+// UFO: classic saucer with jittery path + targeted fire
+// - big vs small variants (speed / fire rate / bullet speed)
+// - sfx: 'lsaucer' / 'ssaucer', 'sfire'
+// - shape is canonical Y-up; draw with neonPoly
+
 import { V } from '../../lib/esm/V';
+import { randRange } from './utils';
 import { neonPoly } from './neon';
-import { createBullet } from './bullet';
 
-export const createUFO = (sk, THEME, pixelToWorld, win, bullets, sfx, {
-  variant = 'large',
-  startX = win.left - 1.5,           // spawn off-screen left by default
-  startY = 0,
-  dir    = +1,                        // +1 → left→right, -1 → right→left
-} = {}) => {
-  const pos = V.create(startX, startY);
-  const vel = V.create(dir * (variant === 'small' ? 0.10 : 0.07), 0.0);
-  const wobbleAmp = 0.40;            // world units
-  const wobbleSpd = 0.07;            // radians/frame
-  let t = 0;                         // wobble phase
-  let alive = true;
+export const createUFO = (sk, THEME, pixelToWorld, win, getShip, sfx) => {
+    // Variant
+    const SMALL = Math.random() < 0.45; // smaller is faster & deadlier
+    const RADIUS = SMALL ? 1.2 : 1.8;
 
-  const score = variant === 'small' ? 1000 : 200;
-  const bulletSpeed = variant === 'small' ? 0.60 : 0.50;
-  const fireInterval = variant === 'small' ? 70 : 110; // frames
-  let fireTimer = 0;
+    // Start side + initial heading
+    const fromLeft = Math.random() < 0.5;
+    const x0 = fromLeft ? win.left - RADIUS * 1.5 : win.right + RADIUS * 1.5;
+    const y0 = randRange(win.bottom + 3, win.top - 3);
 
-  // simple 80s saucer outline (Y-up canonical)
-  const P = [
-    { x: -1.8, y:  0.0 },
-    { x: -1.0, y:  0.9 },
-    { x:  1.0, y:  0.9 },
-    { x:  1.8, y:  0.0 },
-    { x:  1.0, y: -0.3 },
-    { x: -1.0, y: -0.3 },
-  ];
+    // State
+    const pos = V.create(x0, y0);
+    const baseV = SMALL ? 0.18 : 0.12;         // horizontal speed (wu/frame)
+    const v = V.create(fromLeft ? baseV : -baseV, 0);
+    let t = 0;                                 // for vertical wiggle
+    const wiggleAmp = SMALL ? 1.2 : 0.8;
+    const wiggleFreq = SMALL ? 0.035 : 0.025;
 
-  // start saucer loop
-  const loopInst = sfx?.loop(variant === 'small' ? 'ssaucer' : 'lsaucer', { volume: 0.28 });
+    // Fire cadence
+    let cooldown = 0;
+    const FIRE_COOLDOWN = SMALL ? 36 : 58;     // frames
+    const BULLET_SPEED  = SMALL ? 0.72 : 0.55; // wu/frame
 
-  const wrap = (v, min, max) => (v > max ? min : (v < min ? max : v));
+    // Outline (tiny saucer, Y-up)
+    const verts = [
+        { x:  1.0, y:  0.1 }, { x:  0.5, y:  0.4 }, { x: -0.5, y:  0.4 }, { x: -1.0, y:  0.1 },
+        { x: -1.3, y: -0.1 }, { x: -0.8, y: -0.35 },{ x:  0.8, y: -0.35 },{ x:  1.3, y: -0.1 }
+    ].map(p => ({ x: p.x * RADIUS, y: p.y * RADIUS }));
 
-  const fireAt = (targetPos) => {
-    // small targets the ship, large fires roughly forward
-    let dirVec;
-    if (variant === 'small' && targetPos) {
-      const d = V.sub(targetPos, pos);
-      dirVec = V.normalize(d);
-    } else {
-      dirVec = V.normalize(V.create(dir, (Math.random() - 0.5) * 0.5));
-    }
-    bullets.push(createBullet(sk, V.clone(pos), dirVec, THEME, pixelToWorld, win, bulletSpeed, 90));
-    sfx?.play('sfire');
-  };
+    // SFX loop
+    const loopInst = sfx?.loop(SMALL ? 'ssaucer' : 'lsaucer', { volume: 0.3 });
 
-  const update = (getShipPos) => {
-    if (!alive) return;
+    const update = () => {
+        // Horizontal drift
+        V.set(pos, pos[0] + v[0], pos[1] + v[1]);
 
-    // bobbing vertical motion
-    t += wobbleSpd;
-    const wobbleY = Math.sin(t) * wobbleAmp;
+        // Vertical wiggle
+        t += wiggleFreq;
+        pos[1] += Math.sin(t) * (wiggleAmp * 0.06);
 
-    // move horizontally + bob
-    V.set(pos, pos[0] + vel[0], pos[1] + vel[1]);
-    pos[1] += wobbleY * 0.02; // gentle drift
+        // Offscreen cleanup
+        if (fromLeft ? pos[0] > win.right + RADIUS * 2 : pos[0] < win.left - RADIUS * 2) {
+            stop();
+            return false;
+        }
 
-    // world wrap
-    pos[0] = wrap(pos[0], win.left - 2, win.right + 2);
-    pos[1] = wrap(pos[1], win.bottom + 1.5, win.top - 1.5);
+        if (cooldown > 0) cooldown--;
+        return true;
+    };
 
-    // fire
-    fireTimer++;
-    if (fireTimer >= fireInterval) {
-      const target = getShipPos ? getShipPos() : null;
-      fireAt(target);
-      fireTimer = 0;
-    }
-  };
+    // Provide a fire() that returns a bullet spec or null
+    // Caller creates & manages bullet instances.
+    const tryFire = () => {
+        if (cooldown > 0) return null;
 
-  const draw = () => {
-    if (!alive) return;
-    // tiny sparkle
-    sk.push();
-    sk.translate(pos[0], pos[1]);
-    neonPoly(sk, P, THEME.ufo, pixelToWorld, 1.6, true);
-    sk.pop();
-  };
+        // Aim at ship if we have one; else random spray
+        const ship = getShip?.();
+        let dir;
+        if (ship && ship.pos) {
+            const sp = ship.pos();
+            const dx = sp[0] - pos[0];
+            const dy = sp[1] - pos[1];
+            const len = Math.hypot(dx, dy) || 1;
+            dir = V.create(dx / len, dy / len);
+        } else {
+            const a = sk.radians(randRange(0, 360));
+            dir = V.create(Math.cos(a), Math.sin(a));
+        }
 
-  const destroy = () => {
-    if (!alive) return;
-    alive = false;
-    loopInst?.stop();
-    sfx?.playRandom(['explode1','explode2','explode3'], { volume: 0.8 });
-  };
+        cooldown = FIRE_COOLDOWN;
+        sfx?.play('sfire');
+        return {
+            origin: V.clone(pos),
+            dir,
+            speed: BULLET_SPEED,
+            life: 120, // frames
+        };
+    };
 
-  const isAlive = () => alive;
-  const position = () => pos;
-  const radius = () => 1.6; // approx for collisions
+    const draw = () => {
+        sk.push();
+        sk.translate(pos[0], pos[1]);
+        neonPoly(sk, verts, THEME.ufo || '#7ef', pixelToWorld, 1.8, true);
+        // dome line
+        sk.noFill();
+        sk.stroke(255);
+        sk.strokeWeight(pixelToWorld(0.8));
+        sk.line(-0.6 * RADIUS, 0, 0.6 * RADIUS, 0);
+        sk.pop();
+    };
 
-  return { update, draw, destroy, isAlive, position, radius, score };
+    const stop = () => { loopInst?.stop?.(); };
+
+    const radius   = () => RADIUS * 0.9;
+    const position = pos;
+
+    return { update, draw, tryFire, stop, position, radius, verts };
 };

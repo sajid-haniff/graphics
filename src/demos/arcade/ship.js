@@ -10,8 +10,8 @@ export const createShip = (sk, THEME, pixelToWorld, win, bullets, bursts, isGame
     let rotDeg = 0;
 
     // ---------------- Tuning ----------------
-    const ROT_SPEED = 3;        // deg/frame
-    const THRUST    = 0.02;     // world units/frame^2
+    const ROT_SPEED = 4;        // deg/frame
+    const THRUST    = 0.03;     // world units/frame^2
     const DAMPING   = 0.985;    // inertia
 
     // Bullets

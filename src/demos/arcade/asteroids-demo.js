@@ -21,6 +21,10 @@ import { createBurst } from './burst';
 import { createQuadtree } from '../../lib/esm/quadtree';
 import { createShip } from './ship';
 
+import { createThumper } from './thumper';
+import { createShockwave } from './shockwave';
+
+
 export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768) => {
     // ---------------- View + matrices ----------------
     const win  = { left: -30, right: 30, bottom: -18, top: 18 };   // world (Y-up)
@@ -54,6 +58,11 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
     let score = 0;
     let paused = false;
 
+    let thumper = null;
+    const shockwaves = [];
+
+
+
     // 🔳 Quadtree
     const WORLD_BOUNDS = makeWorldBounds(win, 200);
     const qt = createQuadtree(WORLD_BOUNDS, { capacity: 8, maxDepth: 8 });
@@ -82,14 +91,34 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
         SFX.loadMap(SFX_FILES);
         SFX.resumeOnFirstGesture();
 
+        thumper = createThumper(sk, SFX);
+        // optional: start slightly faster
+        // thumper.setHotness(0.25);
+
+
         // Ship: (sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onDeath, sfx)
+        /*
         ship = createShip(
             sk, THEME, pixelToWorld, win,
             bullets, bursts,
             () => false,     // isGameOver
             () => {},        // onDeath
             SFX              // your SFX wrapper instance
+        );*/
+
+        // Ship: (sk, THEME, pixelToWorld, win, bullets, bursts, isGameOver, onDeath, sfx)
+        ship = createShip(
+            sk, THEME, pixelToWorld, win,
+            bullets, bursts,
+            () => false,     // isGameOver
+            () => {          // onDeath → juicy explosion
+                const p = ship?.pos ? V.clone(ship.pos()) : V.create(0,0);
+                bursts.push(createBurst(sk, p, THEME, pixelToWorld));
+                shockwaves.push(createShockwave(sk, p, THEME, pixelToWorld, { life: 20, grow: 0.3 }));
+            },
+            SFX
         );
+
 
         // Field
         asteroids.length = 0;
@@ -131,6 +160,30 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
         // Ship handles input + firing + thrust sound; returns `thrusting`
         const thrusting = ship?.update?.() ?? false;
 
+        // Drive background thumper. Increase intensity when the screen is “hot”.
+        // Example: fewer rocks → higher hotness, or lots of bullets → higher hotness.
+        if (thumper) {
+            const rockCount   = asteroids.length;
+            const bulletCount = bullets.length || 0;
+
+            // Map to 0..1: fewer rocks or lots of bullets => spicier
+            const fewRocks   = Math.max(0, Math.min(1, (6 - rockCount) / 6)); // 0 when >=6, →1 when 0
+            const manyBullets= Math.max(0, Math.min(1, (bulletCount) / 12));  // caps at 12
+            thumper.setHotness(Math.max(fewRocks, manyBullets));
+
+            thumper.update(dt);
+        }
+
+        // Shockwaves
+        for (const sw of shockwaves) {
+            const alive = sw.update();
+            if (!alive) sw.dead = true;
+        }
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+            if (shockwaves[i].dead) shockwaves.splice(i, 1);
+        }
+
+
         // Index for collisions
         rebuildQuadtree();
 
@@ -170,7 +223,14 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
                     if (!deadAsteroids.has(a)) { keepA.push(a); continue; }
 
                     score += scoreForRadius(a.radius);
+
+
+                    //shockwaves.push(
+                    //    createShockwave(sk, V.clone(a.position), THEME, pixelToWorld, { life: 18, grow: 0.05 })
+                   // );
+
                     bursts.push(createBurst(sk, a.position, THEME, pixelToWorld));
+
                     SFX.playRandom?.(['explode1','explode2','explode3']);
 
                     const newR = a.radius * 0.6;
@@ -194,6 +254,44 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
             }
             rebuildQuadtree();
         }
+        // --- Collisions: shockwaves ↔ asteroids ---
+        if (shockwaves.length) {
+            const deadAst = new Set();
+            for (const sw of shockwaves) {
+                for (const a of asteroids) {
+                    if (sw.affects(a)) deadAst.add(a);
+                }
+            }
+            if (deadAst.size) {
+                const keep = [];
+                for (const a of asteroids) {
+                    if (!deadAst.has(a)) { keep.push(a); continue; }
+
+                    score += (a.radius >= 2.4 ? 20 : a.radius >= 1.2 ? 50 : 100);
+                    bursts.push(createBurst(sk, a.position, THEME, pixelToWorld));
+
+                    const newR = a.radius * 0.6;
+                    if (newR >= 0.6) {
+                        const spread = sk.radians(22);
+                        const rot = (vx, vy, ang) => { const s=Math.sin(ang), c=Math.cos(ang); return [vx*c - vy*s, vx*s + vy*c]; };
+                        const vlen = Math.hypot(a.velocity[0], a.velocity[1]);
+                        const baseSpeed = Math.max(vlen, 0.045);
+
+                        const v1n = rot(a.velocity[0], a.velocity[1], +spread);
+                        const v2n = rot(a.velocity[0], a.velocity[1], -spread);
+                        const v1 = V.scale(V.normalize(V.create(v1n[0], v1n[1])), baseSpeed * (0.9 + Math.random()*0.3));
+                        const v2 = V.scale(V.normalize(V.create(v2n[0], v2n[1])), baseSpeed * (0.9 + Math.random()*0.3));
+
+                        keep.push(createAsteroid(sk, V.clone(a.position), newR, v1, THEME, pixelToWorld, win));
+                        keep.push(createAsteroid(sk, V.clone(a.position), newR, v2, THEME, pixelToWorld, win));
+                    }
+                }
+                asteroids.splice(0, asteroids.length, ...keep);
+                rebuildQuadtree();
+            }
+        }
+
+
 
         // --- Collisions: ship ↔ asteroids (never bullets) ---
         if (ship && !ship.invulnerable?.()) {
@@ -249,6 +347,8 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
         // Bullets
         for (const b of bullets) b.draw?.(sk);
 
+        for (const sw of shockwaves) sw.draw?.();
+
         // Optional: quadtree debug
         if (showQT && qt.debugDraw) qt.debugDraw(sk, pixelToWorld(1));
 
@@ -268,6 +368,11 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
         const k = sk.key?.toLowerCase?.();
         if (k === 'p') paused = !paused;
         if (k === 'q') showQT = !showQT;
+
+        if (k === 'p') {
+            paused = !paused;
+            thumper?.setEnabled(!paused);
+        }
     };
 
     return { setup, display, update, keyPressed };
