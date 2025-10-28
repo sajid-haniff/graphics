@@ -18,7 +18,7 @@ export const createBullet = (
     THEME,
     pixelToWorld,
     win,
-    speed = 0.5,
+    speed = 0.6,
     lifeFrames = 60
 ) => {
     const position = V.clone(muzzleV);

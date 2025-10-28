@@ -180,7 +180,7 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
                     const spread = sk.radians(22);
                     const rot = (vx, vy, ang) => { const s=Math.sin(ang), c=Math.cos(ang); return [vx*c - vy*s, vx*s + vy*c]; };
                     const vlen = Math.hypot(a.velocity[0], a.velocity[1]);
-                    const baseSpeed = Math.max(vlen, 0.045);
+                    const baseSpeed = Math.max(vlen, 0.085);
 
                     const v1n = rot(a.velocity[0], a.velocity[1], +spread);
                     const v2n = rot(a.velocity[0], a.velocity[1], -spread);
