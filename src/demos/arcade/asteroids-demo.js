@@ -321,7 +321,7 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
 
                         const v1n = rot(a.velocity[0], a.velocity[1], +spread);
                         const v2n = rot(a.velocity[0], a.velocity[1], -spread);
-                        const v1 = V.scale(V.normalize(V.create(v1n[0], v1n[1])), baseSpeed * (0.9 + Math.random() * 0.3));
+                        const v1 = V.scale(V.normalize(V.create(v1n[0], v1n[1])), baseSpeed * (0.9 + Math.random() * 0.5));
                         const v2 = V.scale(V.normalize(V.create(v2n[0], v2n[1])), baseSpeed * (0.9 + Math.random() * 0.3));
 
                         keep.push(createAsteroid(sk, V.clone(a.position), newR, v1, THEME, pixelToWorld, win));
