@@ -1,107 +1,133 @@
-// UFO: classic saucer with jittery path + targeted fire
-// - big vs small variants (speed / fire rate / bullet speed)
-// - sfx: 'lsaucer' / 'ssaucer', 'sfire'
-// - shape is canonical Y-up; draw with neonPoly
+// UFO modeled after the reference game's Alien (Big/Small).
+// API stays the same as before so asteroids-demo.js requires no changes.
+//
+// Exports: createUFO(sk, THEME, pixelToWorld, win, SFX, getShipPos, { small=false }?)
+//
+// Notes:
+// - Shape matches the repo's alien.ts points (scaled).
+// - Big saucer: slower, worse aim. Small saucer: faster, better aim.
+// - Horizontal pass across the field; occasional vertical jogs.
+// - Fires toward ship at intervals; uses 'sfire' SFX; loops 'lsaucer'/'ssaucer'.
+// - Despawns once it leaves horizontal bounds.
+//
+// Dependencies: V (vec2), randRange/wrap (utils), neonPoly (for vector look).
+// All p5 calls via `sk`.
 
 import { V } from '../../lib/esm/V';
-import { randRange } from './utils';
+import { randRange, wrap } from './utils';
 import { neonPoly } from './neon';
 
-export const createUFO = (sk, THEME, pixelToWorld, win, getShip, sfx) => {
-    // Variant
-    const SMALL = Math.random() < 0.45; // smaller is faster & deadlier
-    const RADIUS = SMALL ? 1.2 : 1.8;
+export const createUFO = (sk, THEME, pixelToWorld, win, SFX, getShipPos, { small = true } = {}) => {
+    // --- Tuning approximated to reference feel (world-units/frame) ---
+    const SCALE     = small ? 0.55 : 0.95;      // small saucer is physically smaller
+    const H_SPEED   = small ? 0.25 : 0.18;      // horizontal drift speed
+    const V_JOG     = small ? 0.20 : 0.14;      // max vertical jog speed
+    const JOG_TIME  = 1.0;                      // seconds between jog decisions
+    const FIRE_TIME = small ? 0.70 : 0.80;      // seconds between shots
+    const AIM_ERR   = small ? 0.06 : 0.20;      // radians of aim error (small aims better)
+    const BULLET_WU = small ? 0.58 : 0.48;      // bullet speed in world units
+    const RADIUS    = 1.10 * SCALE;             // collision radius
 
-    // Start side + initial heading
+    // Reference UFO silhouette (Y-up), from alien.ts (recentered a bit)
+    // Points:   [.5,-2], [1,-1], [2.5,0], [1,1], [-1,1], [-2.5,0], [-1,-1], [-.5,-2]
+    const baseVerts = [
+        { x:  0.5,  y: -2.0 },
+        { x:  1.0,  y: -1.0 },
+        { x:  2.5,  y:  0.0 },
+        { x:  1.0,  y:  1.0 },
+        { x: -1.0,  y:  1.0 },
+        { x: -2.5,  y:  0.0 },
+        { x: -1.0,  y: -1.0 },
+        { x: -0.5,  y: -2.0 },
+    ].map(p => ({ x: p.x * SCALE, y: p.y * SCALE }));
+
+    // Spawn from left/right, mid-screen-ish Y
     const fromLeft = Math.random() < 0.5;
-    const x0 = fromLeft ? win.left - RADIUS * 1.5 : win.right + RADIUS * 1.5;
-    const y0 = randRange(win.bottom + 3, win.top - 3);
+    const y0 = randRange(win.bottom + 4, win.top - 4);
+    const pos = V.create(fromLeft ? win.left - 3 : win.right + 3, y0);
+    const vel = V.create(fromLeft ? H_SPEED : -H_SPEED, 0);
 
-    // State
-    const pos = V.create(x0, y0);
-    const baseV = SMALL ? 0.18 : 0.12;         // horizontal speed (wu/frame)
-    const v = V.create(fromLeft ? baseV : -baseV, 0);
-    let t = 0;                                 // for vertical wiggle
-    const wiggleAmp = SMALL ? 1.2 : 0.8;
-    const wiggleFreq = SMALL ? 0.035 : 0.025;
+    // Timers
+    let jogTimer  = JOG_TIME * 0.5;
+    let fireTimer = FIRE_TIME * 0.5;
 
-    // Fire cadence
-    let cooldown = 0;
-    const FIRE_COOLDOWN = SMALL ? 36 : 58;     // frames
-    const BULLET_SPEED  = SMALL ? 0.72 : 0.55; // wu/frame
+    // Ambient saucer loop
+    const loopInst = SFX?.loop?.(small ? 'ssaucer' : 'lsaucer', { volume: 0.35 });
 
-    // Outline (tiny saucer, Y-up)
-    const verts = [
-        { x:  1.0, y:  0.1 }, { x:  0.5, y:  0.4 }, { x: -0.5, y:  0.4 }, { x: -1.0, y:  0.1 },
-        { x: -1.3, y: -0.1 }, { x: -0.8, y: -0.35 },{ x:  0.8, y: -0.35 },{ x:  1.3, y: -0.1 }
-    ].map(p => ({ x: p.x * RADIUS, y: p.y * RADIUS }));
+    // Public-ish props for quadtree
+    const position = pos;
+    const radius = () => RADIUS;
 
-    // SFX loop
-    const loopInst = sfx?.loop(SMALL ? 'ssaucer' : 'lsaucer', { volume: 0.3 });
-
-    const update = () => {
+    // --- Behavior ---
+    const update = (dt = 1/60) => {
         // Horizontal drift
-        V.set(pos, pos[0] + v[0], pos[1] + v[1]);
+        pos[0] += vel[0];
 
-        // Vertical wiggle
-        t += wiggleFreq;
-        pos[1] += Math.sin(t) * (wiggleAmp * 0.06);
-
-        // Offscreen cleanup
-        if (fromLeft ? pos[0] > win.right + RADIUS * 2 : pos[0] < win.left - RADIUS * 2) {
-            stop();
-            return false;
+        // Periodic vertical jogs (toggle target vy)
+        jogTimer -= dt;
+        if (jogTimer <= 0) {
+            jogTimer = JOG_TIME;
+            const dir = Math.random() < 0.5 ? -1 : 1;
+            vel[1] = dir * randRange(0.4 * V_JOG, V_JOG);
         }
 
-        if (cooldown > 0) cooldown--;
+        // Apply vertical velocity + wrap vertically
+        pos[1] = wrap(pos[1] + vel[1], win.bottom + 1, win.top - 1);
+
+        // Despawn once fully out of horizontal bounds
+        if (fromLeft && pos[0] > win.right + 4) return false;
+        if (!fromLeft && pos[0] < win.left  - 4) return false;
+
+        // Fire timer
+        fireTimer -= dt;
         return true;
-    };
-
-    // Provide a fire() that returns a bullet spec or null
-    // Caller creates & manages bullet instances.
-    const tryFire = () => {
-        if (cooldown > 0) return null;
-
-        // Aim at ship if we have one; else random spray
-        const ship = getShip?.();
-        let dir;
-        if (ship && ship.pos) {
-            const sp = ship.pos();
-            const dx = sp[0] - pos[0];
-            const dy = sp[1] - pos[1];
-            const len = Math.hypot(dx, dy) || 1;
-            dir = V.create(dx / len, dy / len);
-        } else {
-            const a = sk.radians(randRange(0, 360));
-            dir = V.create(Math.cos(a), Math.sin(a));
-        }
-
-        cooldown = FIRE_COOLDOWN;
-        sfx?.play('sfire');
-        return {
-            origin: V.clone(pos),
-            dir,
-            speed: BULLET_SPEED,
-            life: 120, // frames
-        };
     };
 
     const draw = () => {
         sk.push();
         sk.translate(pos[0], pos[1]);
-        neonPoly(sk, verts, THEME.ufo || '#7ef', pixelToWorld, 1.8, true);
-        // dome line
+
+        // Saucer hull
+        neonPoly(sk, baseVerts, THEME.asteroid, pixelToWorld, 1.4, true);
+
+        // Cross details (to match the reference's inner lines)
         sk.noFill();
         sk.stroke(255);
-        sk.strokeWeight(pixelToWorld(0.8));
-        sk.line(-0.6 * RADIUS, 0, 0.6 * RADIUS, 0);
+        sk.strokeWeight(pixelToWorld(0.9));
+        // diagonals: [1]↔[6], [2]↔[5] in the original code (indexing from 0)
+        const p = baseVerts;
+        sk.line(p[1].x, p[1].y, p[6].x, p[6].y);
+        sk.line(p[2].x, p[2].y, p[5].x, p[5].y);
+
         sk.pop();
     };
 
-    const stop = () => { loopInst?.stop?.(); };
+    // Called from game loop with an emit callback: (originV, dirV, speedWU, lifeFrames)
+    const tryFire = (emitBullet) => {
+        if (fireTimer > 0) return;
+        fireTimer = FIRE_TIME + randRange(-0.15, 0.15);
 
-    const radius   = () => RADIUS * 0.9;
-    const position = pos;
+        // Aim at ship (with error); fallback to random if no ship
+        let dir;
+        const ship = getShipPos?.();
+        if (ship) {
+            const dx = ship[0] - pos[0];
+            const dy = ship[1] - pos[1];
+            const a  = Math.atan2(dy, dx);
+            const err = randRange(-AIM_ERR, AIM_ERR);
+            dir = [Math.cos(a + err), Math.sin(a + err)];
+        } else {
+            const a = sk.radians(randRange(0, 360));
+            dir = [Math.cos(a), Math.sin(a)];
+        }
 
-    return { update, draw, tryFire, stop, position, radius, verts };
+        SFX?.play?.('sfire', { volume: 0.5 });
+        emitBullet(V.create(pos[0], pos[1]), V.create(dir[0], dir[1]), BULLET_WU, 120);
+    };
+
+    const destroy = () => {
+        loopInst?.stop?.();
+    };
+
+    return { position, radius, update, draw, tryFire, destroy, small };
 };
