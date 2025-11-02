@@ -2,6 +2,7 @@ import {unionFindDemo} from "./algorithm/union-find/uf-tester";
 import {createGridDemo} from "./logo-arts/illusion";
 import {createFractalCircleDemo} from "./recursion/circle_recursion";
 import {createRippleWaterDemo} from "./demos/wave/ripples";
+import createAustraliaMapCSPDemo from "./ai/csp/australia-map";
 
 const demos = {
     'createTriangleCirclesDemo': () => import('./geometric/triangle-circles'),
@@ -26,6 +27,8 @@ const demos = {
     'knightsTourDemo': () => import('./recursion/knights/knight-tour-demo'),
     'createRippleWaterDemo': () => import('./demos/wave/ripples'),
     'createAsteroidsDemo': () => import('./demos/arcade/asteroids-demo'),
+    'createAustraliaMapCSPDemo': () => import('./ai/csp/australia-map.js'),
+    'createEightQueensCSPDemo': () => import('./ai/csp/queens8-demo.js'),
 };
 
 export default demos;
