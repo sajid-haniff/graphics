@@ -19,6 +19,7 @@ export const buildComposites = (CANVAS_WIDTH, CANVAS_HEIGHT, viewport) => {
 
 export const makeStrokePx = (pixelToWorld) => (px) => pixelToWorld(px);
 
+
 // Stateless world (Y-up) apply
 export const applyWorld = (sk, COMPOSITE) => {
     sk.resetMatrix();

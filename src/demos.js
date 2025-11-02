@@ -29,6 +29,10 @@ const demos = {
     'createAsteroidsDemo': () => import('./demos/arcade/asteroids-demo'),
     'createAustraliaMapCSPDemo': () => import('./ai/csp/australia-map.js'),
     'createEightQueensCSPDemo': () => import('./ai/csp/queens8-demo.js'),
+    'createSudokuCSPDemo': () => import('./ai/csp/sudoku-demo.js'),
+    'createCrosswordCSPDemo': () => import('./ai/csp/crossword-demo.js'),
+    'createRiverCrossingCSPDemo': () => import('./ai/csp/river-crossing-demo.js'),
+    'createSearchMazeDemo': () => import('./ai/search/maze-demo.js'),
 };
 
 export default demos;
