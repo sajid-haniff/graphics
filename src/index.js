@@ -1,6 +1,7 @@
 import * as p5 from './lib/p5';
 import demos from './demos';
 import {unionFindDemo} from "./algorithm/union-find/uf-tester";
+import createSudokuCSPDemo from "./ai/csp/sudoku-demo";
 
 /*
 const demos = {
@@ -22,8 +23,11 @@ const demos = {
 //const demoName = 'createRippleWaterDemo';
 //const demoName = 'createStarfieldDemo'
 //const demoName = 'createLoadImagesDemo'
-const demoName = 'createAsteroidsDemo';
+//const demoName = 'createAsteroidsDemo';
 //const demoName = 'createAsteroidsTest';
+//const demoName = 'createAustraliaMapCSPDemo';
+//const demoName = 'createEightQueensCSPDemo';
+const demoName = 'createSearchMazeDemo';
 
 const runDemo = async (demoName) => {
     try {

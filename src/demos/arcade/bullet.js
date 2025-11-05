@@ -1,57 +1,105 @@
-// /src/demo/arcade/bullet.js
-// Bullet entity (V + neon).
-// - World space is Y-up. Rendering flip handled by the composite matrix in the demo.
-// - Uses V for position/velocity.
-// - Pixel-consistent glow via pixelToWorld.
+// /src/demos/arcade/bullet.js
+// Neon tracer bullet (factory, no classes). Compatible with existing callers:
+// createBullet(sk, originV, dirV, THEME, pixelToWorld, win, speed, life)
 
 import { V } from '../../lib/esm/V';
-import { wrap } from './utils';
-import { neonDot } from './neon';
+import { neonLine } from './neon';
 
-/**
- * createBullet
- * @param {object} sk            p5 instance (sk)
- * @param {vec2}   startPosV     V vec2 (Float32Array[2]) starting position (world Y-up)
- * @param {vec2}   dirV          V vec2 normalized direction (use -rotDeg when built)
- * @param {object} THEME         palette object (uses THEME.bullet)
- * @param {fn}     pixelToWorld  (px:number)=>worldUnits:number
- * @param {object} win           world bounds {left,right,bottom,top}
- * @param {number} speed         world units per frame (default 0.5)
- * @param {number} life          lifetime in frames (default 60)
- */
-export const createBullet = (
-    sk,
-    startPosV,
-    dirV,
-    THEME,
-    pixelToWorld,
-    win,
-    speed = 0.5,
-    life = 60
-) => {
-    const position = V.clone(startPosV);
-    const velocity = V.scale(dirV, speed);
-    let frames = life;
+// Wrap helpers
+const wrapCoord = (v, min, max) => (v > max ? min : (v < min ? max : v));
+
+export const createBullet = (sk, originV, dirV, THEME, pixelToWorld, win, speed = 0.5, lifeFrames = 60) => {
+    // immutable-ish state references
+    const position = V.clone(originV);
+    const dir = V.normalize(V.clone(dirV));
+    const velocity = V.scale(V.clone(dir), speed);
+
+    // Collision & lifetime
+    const radius = 0.25;      // used by quadtree/circle overlap
+    let ttl = lifeFrames;     // frames
+    let alive = true;
+
+    // Visual tuning (world units)
+    const CORE_DOT = 0.6 * radius; // diameter (wu) for tiny hot core
+    const TRAIL_LEN = 1.25;        // tracer length (wu)
+    const GLOW_W   = 2.0;          // outer glow stroke (≈px via pixelToWorld)
+    const CORE_W   = 1.2;          // inner hot stroke
+
+    // One-frame muzzle flash offset (so it looks like it “kicks off” the gun)
+    let firstFrame = true;
 
     const update = () => {
-        // pos += vel
-        V.set(position, position[0] + velocity[0], position[1] + velocity[1]);
+        if (!alive) return;
 
-        // wrap world
-        position[0] = wrap(position[0], win.left, win.right);
-        position[1] = wrap(position[1], win.bottom, win.top);
+        // Move
+        position[0] += velocity[0];
+        position[1] += velocity[1];
 
-        frames -= 1;
+        // Wrap world
+        position[0] = wrapCoord(position[0], win.left,  win.right);
+        position[1] = wrapCoord(position[1], win.bottom, win.top);
+
+        // Lifetime
+        ttl--;
+        if (ttl <= 0) alive = false;
+
+        // Only offset the very first rendered frame
+        if (firstFrame) firstFrame = false;
     };
 
     const draw = () => {
+        if (!alive) return;
+
+        // Compute back end of tracer (p2 behind the tip along -dir)
+        const p1x = position[0];
+        const p1y = position[1];
+
+        // On first frame, nudge the start a hair so it looks like a bright muzzle spit
+        const leadBoost = firstFrame ? 0.35 : 0.0;
+        const len = TRAIL_LEN + leadBoost;
+
+        const p2x = p1x - dir[0] * len;
+        const p2y = p1y - dir[1] * len;
+
+        // Glow pass
+        neonLine(
+            sk,
+            { x: p2x, y: p2y },
+            { x: p1x, y: p1y },
+            THEME.bullet || '#7DF',
+            pixelToWorld,
+            GLOW_W
+        );
+
+        // Hot core pass (thinner, overlays)
+        neonLine(
+            sk,
+            { x: p2x, y: p2y },
+            { x: p1x, y: p1y },
+            THEME.bulletCore || '#fff',
+            pixelToWorld,
+            CORE_W
+        );
+
+        // Tiny bright tip dot (helps sell speed)
         sk.push();
-        sk.translate(position[0], position[1]);
-        neonDot(sk, 3, THEME.bullet, pixelToWorld); // ~6px diameter glow
+        sk.noStroke();
+        sk.fill(255);
+        const d = Math.max(pixelToWorld(CORE_DOT), pixelToWorld(0.8)); // ~px-consistent
+        sk.circle(p1x, p1y, d);
         sk.pop();
     };
 
-    const dead = () => frames <= 0;
+    return {
+        // physics/collision API expected by the rest of your code:
+        position,
+        velocity,
+        radius,
+        ttl,
+        alive,
 
-    return { position, update, draw, dead };
+        // lifecycle
+        update,
+        draw,
+    };
 };
