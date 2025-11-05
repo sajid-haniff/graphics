@@ -23,11 +23,11 @@ const demos = {
 //const demoName = 'createRippleWaterDemo';
 //const demoName = 'createStarfieldDemo'
 //const demoName = 'createLoadImagesDemo'
-//const demoName = 'createAsteroidsDemo';
+const demoName = 'createAsteroidsDemo';
 //const demoName = 'createAsteroidsTest';
 //const demoName = 'createAustraliaMapCSPDemo';
 //const demoName = 'createEightQueensCSPDemo';
-const demoName = 'createSearchMazeDemo';
+//const demoName = 'createSearchMazeDemo';
 
 const runDemo = async (demoName) => {
     try {
@@ -55,9 +55,20 @@ const runDemo = async (demoName) => {
         new p5((sk) => {
             const sketch = demoFunction(sk);
 
-            sk.setup = sketch.setup;
-            sk.draw = sketch.display;
-            sk.mousePressed = sketch.mousePressed;
+            //sk.setup = sketch.setup;
+            //sk.draw = sketch.display;
+            //sk.mousePressed = sketch.mousePressed;
+            //sk.keyPressed = sketch.keyPressed;
+
+            // Always assign functions; call through only if provided
+            sk.setup        = () => sketch.setup?.();
+            sk.draw         = () => sketch.display?.();
+            sk.mousePressed = (...a) => sketch.mousePressed?.(...a);
+
+            // Forward both key events to one handler if present
+            const onKey = () => { sketch.keyPressed?.(sk.key); return false; };
+            sk.keyPressed = onKey;
+            sk.keyTyped   = onKey;
         });
     } catch (error) {
         console.error(`Error loading demo ${demoName}:`, error);

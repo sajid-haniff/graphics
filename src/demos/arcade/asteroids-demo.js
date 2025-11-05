@@ -71,6 +71,7 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
     const WORLD_BOUNDS = makeWorldBounds(win, 200);
     const qt = createQuadtree(WORLD_BOUNDS, { capacity: 8, maxDepth: 8 });
     let showQT = false;
+    let timescale = 1.0; // '[' slows, ']' speeds (optional)
 
     // Audio
     let SFX = null;

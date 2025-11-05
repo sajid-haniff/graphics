@@ -44,9 +44,9 @@ export const createExhaust = (sk, THEME, pixelToWorld) => {
     const draw = () => {
         for (const p of puffs) {
             const w1 = Math.max(pixelToWorld(p.w), pixelToWorld(0.6));
-            neonLine(sk, { x: p.b[0], y: p.b[1] }, { x: p.a[0], y: p.a[1] }, p.color1, pixelToWorld, w1);
+           // neonLine(sk, { x: p.b[0], y: p.b[1] }, { x: p.a[0], y: p.a[1] }, p.color1, pixelToWorld, w1);
             const w2 = Math.max(pixelToWorld(p.w * 0.5), pixelToWorld(0.5));
-            neonLine(sk, { x: p.b[0], y: p.b[1] }, { x: p.a[0], y: p.a[1] }, p.color2, pixelToWorld, w2);
+            //neonLine(sk, { x: p.b[0], y: p.b[1] }, { x: p.a[0], y: p.a[1] }, p.color2, pixelToWorld, w2);
         }
     };
 
