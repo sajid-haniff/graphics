@@ -53,12 +53,10 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
             const ctx2d = sk.drawingContext;
 
             // This blit ignores transformations, draws in absolute Cartesian space
-
-
             // Draw tiger
             if (tiger) {
                 //     ctx2d.drawImage(tiger, 0, 64, 64, 64);
-                blitImage(tiger, 0, 300, 64, 64);
+                blitImage(tiger, 0, 0, 64, 64);
             }
 
             // Draw text using loaded font

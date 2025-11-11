@@ -172,17 +172,17 @@ export const createAsteroidsDemo = (sk, CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768
 
         // Spawns
         nextUfoTimer   -= dt;
-        //nextSwarmTimer -= dt;
+        nextSwarmTimer -= dt;
 
         if (!ufo && nextUfoTimer <= 0) {
             ufo = createUFO(sk, THEME, pixelToWorld, win, SFX, () => ship?.pos?.(), { small: Math.random() < 0.99 });
             ufoAliveTime = 0;
             nextUfoTimer = 12 + Math.random()*8;
         }
-       // if (nextSwarmTimer <= 0) {
-       //     swarms.push(createSwarm(sk, THEME, pixelToWorld, win, 4 + Math.floor(Math.random()*3)));
-       //     nextSwarmTimer = 14 + Math.random()*10;
-       // }
+       if (nextSwarmTimer <= 0) {
+            swarms.push(createSwarm(sk, THEME, pixelToWorld, win, 4 + Math.floor(Math.random()*3)));
+            nextSwarmTimer = 14 + Math.random()*10;
+       }
 
         // UFO
         if (ufo) {

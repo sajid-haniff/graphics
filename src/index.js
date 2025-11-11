@@ -23,11 +23,15 @@ const demos = {
 //const demoName = 'createRippleWaterDemo';
 //const demoName = 'createStarfieldDemo'
 //const demoName = 'createLoadImagesDemo'
-const demoName = 'createAsteroidsDemo';
+//const demoName = 'createAsteroidsDemo';
 //const demoName = 'createAsteroidsTest';
 //const demoName = 'createAustraliaMapCSPDemo';
 //const demoName = 'createEightQueensCSPDemo';
 //const demoName = 'createSearchMazeDemo';
+//const demoName = 'createTimePilotDemo';
+const demoName = 'createScenegraphAccelFrictionDemo';
+
+
 
 const runDemo = async (demoName) => {
     try {

@@ -3,6 +3,7 @@ import {createGridDemo} from "./logo-arts/illusion";
 import {createFractalCircleDemo} from "./recursion/circle_recursion";
 import {createRippleWaterDemo} from "./demos/wave/ripples";
 import createAustraliaMapCSPDemo from "./ai/csp/australia-map";
+import {createTimePilotDemo} from "./demos/timepilot/timepilot-demo";
 
 const demos = {
     'createTriangleCirclesDemo': () => import('./geometric/triangle-circles'),
@@ -33,6 +34,13 @@ const demos = {
     'createCrosswordCSPDemo': () => import('./ai/csp/crossword-demo.js'),
     'createRiverCrossingCSPDemo': () => import('./ai/csp/river-crossing-demo.js'),
     'createSearchMazeDemo': () => import('./ai/search/maze-demo.js'),
+    'createTimePilotDemo': () => import('./demos/timepilot/timepilot-demo.js'),
+    'createScenegraphDemo': () => import('./adv-game-design/scene-graph-demo.js'),
+    'createScenegraphHierarchyDemo': () => import('./adv-game-design/scenegraph-hierarchy-demo'),
+    'createScenegraphNestedBoxesDemo': () => import('./adv-game-design/scenegraph-nested-boxes-demo'),
+    'createScenegraphAllSpritesDemo': () => import('./adv-game-design/scenegraph-all-sprites-demo'),
+    'createScenegraphSteeringDemo': () => import('./adv-game-design/scenegraph-steering-demo'),
+    'createScenegraphAccelFrictionDemo': () => import('./adv-game-design/scenegraph-accel-friction-demo'),
 };
 
 export default demos;
