@@ -1,12 +1,8 @@
 // src/adv-game-design/library/scenegraph.js
-// Functional scenegraph (no classes) for this repo's p5 + M2D stack.
-// Stable renderer from the "old" version, plus:
-//  - filmstrip(image, w, h[, spacing]) utility
-//  - sprite(...) supports arrays of p5.Images and filmstrip sheets
-//  - tilingSprite(width, height, source, x, y) with local clipping
-//
+// Functional scenegraph for this repo's p5 + M2D stack.
 // Rules:
-// - p5 APIs must be accessed via the provided `sk`.
+// - No classes. Plain-object factories with closures.
+// - All p5 APIs must be accessed via the provided `sk`.
 // - World is Y-up. Apply the COMPOSITE (REFLECT_Y · DEVICE · WORLD) once per frame.
 // - Pixel-consistent stroke via M2D.makePixelToWorld.
 
@@ -42,9 +38,6 @@ const createNode = (overrides = {}) => {
         add: null,
         remove: null,
         swapChildren: null,
-
-        // Optional node kind marker (used by tiling container)
-        _type: undefined
     };
 
     Object.assign(node, overrides);
@@ -108,65 +101,10 @@ export const line = (ax = 0, ay = 0, bx = 32, by = 32, stroke = 0, sw = 1, join 
 export const text = (content = "Hello!", fontSize = 12, fontName = "sans-serif", fill = 0) =>
     createNode({ _type: "text", content, fontSize, fontName, _style: { fill }, width: 0, height: 0 });
 
-// Enhanced sprite: p5.Image | p5.Image[] | filmstrip object
-export const sprite = (source) => {
-    const node = createNode({ _type: "sprite" });
-
-    // Internal frame state
-    node._frames = null;            // Array<p5.Image> OR Array<[sx,sy]>
-    node._img = null;               // p5.Image for current draw (or sheet)
-    node._sx = 0; node._sy = 0;     // source rect
-    node._sw = 0; node._sh = 0;
-
-    const initFromImage = (img) => {
-        node._img = img || null;
-        const w = img ? img.width : 0;
-        const h = img ? img.height : 0;
-        node._sx = 0; node._sy = 0; node._sw = w; node._sh = h;
-        node.width = w; node.height = h;
-    };
-
-    const initFromImageArray = (frames) => {
-        node._frames = frames.slice();
-        initFromImage(frames[0]);
-    };
-
-    const initFromFilmstrip = (fs) => {
-        // fs: { image, data: [[x,y],...], width, height }
-        node._img = fs.image;
-        node._frames = fs.data.slice(); // array of [sx, sy]
-        node._sw = fs.width; node._sh = fs.height;
-        node.width = fs.width; node.height = fs.height;
-        const [sx, sy] = node._frames[0];
-        node._sx = sx; node._sy = sy;
-    };
-
-    // Detect source shape
-    if (source && source.width !== undefined) {
-        initFromImage(source);
-    } else if (Array.isArray(source)) {
-        initFromImageArray(source);
-    } else if (source && source.image && source.data && source.width && source.height) {
-        initFromFilmstrip(source);
-    } else {
-        initFromImage(null);
-    }
-
-    // Public frame control: gotoAndStop
-    node.gotoAndStop = (i) => {
-        if (!node._frames) return;
-        if (Array.isArray(node._frames[0])) {
-            // filmstrip frames: [sx, sy]
-            const [sx, sy] = node._frames[i % node._frames.length];
-            node._sx = sx; node._sy = sy;
-        } else {
-            // array of images
-            const img = node._frames[i % node._frames.length];
-            initFromImage(img);
-        }
-    };
-
-    return node;
+export const sprite = (img /* p5.Image */) => {
+    const w = img ? img.width : 0;
+    const h = img ? img.height : 0;
+    return createNode({ _type: "sprite", img, width: w, height: h });
 };
 
 export const group = (...children) => {
@@ -207,83 +145,8 @@ export const grid = (
     return container;
 };
 
-// New: filmstrip helper that returns a sheet description compatible with sprite(...)
-export const filmstrip = (image, frameW, frameH, spacing = 0) => {
-    const positions = [];
-    const columns = Math.floor(image.width  / frameW);
-    const rows    = Math.floor(image.height / frameH);
-    const n = columns * rows;
-
-    for (let i = 0; i < n; i += 1) {
-        let x = (i % columns) * frameW;
-        let y = Math.floor(i / columns) * frameH;
-        if (spacing > 0) {
-            x += spacing + (spacing * (i % columns));
-            y += spacing + (spacing * Math.floor(i / columns));
-        }
-        positions.push([x, y]);
-    }
-    return { image, data: positions, width: frameW, height: frameH };
-};
-
-// New: tilingSprite with local clipping
-export const tilingSprite = (width, height, source, x = 0, y = 0) => {
-    // Determine tile size from source
-    const tileW = (source && source.width)  || (source && source.image && source.width)  || 0;
-    const tileH = (source && source.height) || (source && source.image && source.height) || 0;
-
-    const cols = width  >= tileW ? Math.round(width  / tileW) + 1 : 2;
-    const rows = height >= tileH ? Math.round(height / tileH) + 1 : 2;
-
-    const container = group();
-    container._type = "tilingContainer"; // renderer will clip
-    container.x = x; container.y = y;
-    container.width = width; container.height = height;
-
-    const tiles = [];
-    for (let r = 0; r < rows; r += 1) {
-        for (let c = 0; c < cols; c += 1) {
-            const s = sprite(source);
-            s.x = c * tileW;
-            s.y = r * tileH;
-            container.addChild(s);
-            tiles.push(s);
-        }
-    }
-
-    let _tileX = 0, _tileY = 0;
-    Object.defineProperties(container, {
-        tileX: {
-            get() { return _tileX; },
-            set(value) {
-                const diff = value - _tileX;
-                tiles.forEach(t => {
-                    t.x += diff;
-                    if (t.x > (cols - 1) * tileW) t.x = 0 - tileW + diff;
-                    if (t.x < 0 - tileW - diff)   t.x = (cols - 1) * tileW;
-                });
-                _tileX = value;
-            }
-        },
-        tileY: {
-            get() { return _tileY; },
-            set(value) {
-                const diff = value - _tileY;
-                tiles.forEach(t => {
-                    t.y += diff;
-                    if (t.y > (rows - 1) * tileH) t.y = 0 - tileH + diff;
-                    if (t.y < 0 - tileH - diff)   t.y = (rows - 1) * tileH;
-                });
-                _tileY = value;
-            }
-        }
-    });
-
-    return container;
-};
-
 // ------------------------------------------------------------
-// Renderer (unchanged except for sprite + tiling container branches)
+// Renderer
 // ------------------------------------------------------------
 const createRenderer = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480, worldWin = { left: -10, right: 10, bottom: -10, top: 10 }) => {
     const view = { left: 0, right: 1, bottom: 0, top: 1 };
@@ -323,20 +186,6 @@ const createRenderer = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480, worldWin = 
         }
 
         if (node.blendMode != null) sk.blendMode(node.blendMode);
-
-        // Special: tiling container with clip
-        if (node._type === "tilingContainer") {
-            dc.save();
-            dc.beginPath();
-            dc.rect(-node.width * node.pivotX, -node.height * node.pivotY, node.width, node.height);
-            dc.clip();
-            sk.translate(-node.width * node.pivotX, -node.height * node.pivotY);
-            node.children.sort(byLayer);
-            node.children.forEach(child => drawNode(child, node.alpha * parentAlpha));
-            dc.restore();
-            sk.pop();
-            return;
-        }
 
         switch (node._type) {
             case "rect": {
@@ -388,21 +237,10 @@ const createRenderer = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480, worldWin = 
             case "sprite": {
                 sk.push();
                 sk.scale(1, -1);
-                if (node._img) {
-                    const fullW = node._img.width, fullH = node._img.height;
-                    const isFull = (node._sx === 0 && node._sy === 0 && node._sw === fullW && node._sh === fullH);
-                    if (isFull) {
-                        sk.image(node._img, -node.width * node.pivotX, -node.height * node.pivotY, node.width, node.height);
-                    } else {
-                        sk.image(
-                            node._img,
-                            -node.width * node.pivotX, -node.height * node.pivotY, node.width, node.height, // dest
-                            node._sx, node._sy, node._sw, node._sh                                        // src
-                        );
-                    }
-                }
+                if (node.img) sk.image(node.img, -node.width * node.pivotX, -node.height * node.pivotY, node.width, node.height);
                 sk.pop();
                 break;
+
             }
             default: break; // groups only recurse
         }
@@ -448,7 +286,7 @@ export const createScenegraph = (
         rectangle, circle, line, text, sprite, group,
 
         // utils
-        remove, grid, byLayer, filmstrip, tilingSprite,
+        remove, grid, byLayer,
     };
 };
 

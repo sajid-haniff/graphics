@@ -41,6 +41,8 @@ const demos = {
     'createScenegraphAllSpritesDemo': () => import('./adv-game-design/scenegraph-all-sprites-demo'),
     'createScenegraphSteeringDemo': () => import('./adv-game-design/scenegraph-steering-demo'),
     'createScenegraphAccelFrictionDemo': () => import('./adv-game-design/scenegraph-accel-friction-demo'),
+    'createScenegraphTilingMaskedAnimDemo': () => import('./adv-game-design/scenegraph-tiling-masked-anim-demo'),
+    'createRotatingSquaresDemo': () => import('./adv-game-design/rotating-squares'),
 };
 
 export default demos;

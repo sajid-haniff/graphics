@@ -29,7 +29,7 @@ const demos = {
 //const demoName = 'createEightQueensCSPDemo';
 //const demoName = 'createSearchMazeDemo';
 //const demoName = 'createTimePilotDemo';
-const demoName = 'createScenegraphAccelFrictionDemo';
+const demoName = 'createRotatingSquaresDemo';
 
 
 

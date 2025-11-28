@@ -48,6 +48,8 @@ export const createScenegraphDemo = (sk, CANVAS_WIDTH = 800, CANVAS_HEIGHT = 600
             box.rotation += 0.01;
             orb.y = 2 + sk.sin(t) * 1.0;
 
+
+
             // Clear device-space, then render world
             sk.background(12);
             sg.render();
