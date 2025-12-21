@@ -68,25 +68,11 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
                 alignY: sk.CENTER
             });
 
-            // Blit frames from the atlas
-
+            // Blit frames from the atlas, using just the frame names
             if (atlasReady) {
-
-                const blit = (frameName, dx, dy, dw, dh) => {
-                    const frame = assets[frameName];
-                    if (!frame) return;
-                    const { frame: rect, source } = frame;
-                    ctx2d.drawImage(
-                        source,
-                        rect.x, rect.y, rect.w, rect.h, // src rect
-                        dx, dy, dw, dh                  // dest rect
-                    );
-                };
-
-                // Draw some animals from the atlas
-                //blitImage("cat.png", 100, 50, 64, 64);
-                //blitImage("tiger.png", 200, 50, 64, 64);
-                blit("hedgehog.png", 300, 50, 64, 64);
+                blitImage("cat.png",      100, 50, 64, 64);
+                blitImage("tiger.png",    200, 50, 64, 64);
+                blitImage("hedgehog.png", 300, 50, 64, 64);
             }
         }
     };

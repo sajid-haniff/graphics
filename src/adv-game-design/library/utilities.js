@@ -58,39 +58,68 @@ export const drawTextCartesian = (
     ctx2d.restore();
 };
 
-// blitter.js
 export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
     const {sx, sy, tx, ty} = ctx.viewport;
-    const {win} = ctx;
 
     // World → Device conversion based on the same transformation chain
     const worldToDevice = (wx, wy) => {
-        // Apply world → viewport transform
         const vx = sx * (wx - 0) + tx;
         const vy = sy * (wy - 0) + ty;
 
-        // Apply viewport → device mapping (before reflection)
         const dx = vx * CANVAS_WIDTH;
         const dy = vy * CANVAS_HEIGHT;
 
-        // Apply reflection to match device coordinates
         const reflectedY = CANVAS_HEIGHT - dy;
 
         return {dx, dy: reflectedY};
     };
 
-    // Blit that clears transformation stack
-    const blitImage = (img, wx, wy, w, h) => {
-        const {dx, dy} = worldToDevice(wx, wy);
+    // handle can be:
+    //   - string key: "cat.png" / "images/tiger.png"
+    //   - plain image (HTMLImage / p5.Image)
+    //   - atlas entry: { frame: {x,y,w,h}, source: <Image> }
+    const blitImage = (handle, wx, wy, w, h) => {
+        let img = handle;
+
+        // If a string, look it up in the shared assets map
+        if (typeof handle === "string") {
+            img = assets[handle];
+            if (!img) {
+                console.warn(`blitImage: missing asset "${handle}"`);
+                return;
+            }
+        }
+
+        const pos = worldToDevice(wx, wy);
+        const dx = pos.dx;
+        const dy = pos.dy;
+
+        const ctx2d = sk.drawingContext;
 
         sk.push();
         sk.resetMatrix(); // clear current transform stack
-        sk.drawingContext.drawImage(img, dx, dy - h, w, h); // draw using absolute device coords
+
+        // Atlas frame: { frame: {...}, source: <Image> }
+        if (img && img.frame && img.source) {
+            const rect = img.frame;
+            const atlasImage = img.source;
+
+            ctx2d.drawImage(
+                atlasImage,
+                rect.x, rect.y, rect.w, rect.h, // src rect
+                dx, dy - h, w, h                // dest rect (Y-up fix)
+            );
+        } else {
+            // Plain image: draw whole texture
+            ctx2d.drawImage(img, dx, dy - h, w, h);
+        }
+
         sk.pop();
     };
 
     return {blitImage};
 };
+
 
 
 export const createAssets = () => {
