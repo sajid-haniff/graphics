@@ -22,14 +22,14 @@ const demos = {
 //const demoName = 'knightsTourDemo';
 //const demoName = 'createRippleWaterDemo';
 //const demoName = 'createStarfieldDemo'
-//const demoName = 'createLoadImagesDemo'
+const demoName = 'createLoadImagesDemo'
 //const demoName = 'createAsteroidsDemo';
 //const demoName = 'createAsteroidsTest';
 //const demoName = 'createAustraliaMapCSPDemo';
 //const demoName = 'createEightQueensCSPDemo';
 //const demoName = 'createSearchMazeDemo';
 //const demoName = 'createTimePilotDemo';
-const demoName = 'createRotatingSquaresDemo';
+//const demoName = 'createLunarLanderDemo';
 
 
 

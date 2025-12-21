@@ -39,6 +39,8 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
                 console.log("Frame: tiger.png", assets["tiger.png"]);
                 console.log("Frame: hedgehog.png", assets["hedgehog.png"]);
 
+                console.log(assets);
+
                 atlasReady = true;
             });
         },
@@ -52,10 +54,7 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
 
             const ctx2d = sk.drawingContext;
 
-            // This blit ignores transformations, draws in absolute Cartesian space
-            // Draw tiger
             if (tiger) {
-                //     ctx2d.drawImage(tiger, 0, 64, 64, 64);
                 blitImage(tiger, 0, 0, 64, 64);
             }
 
@@ -70,8 +69,9 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
             });
 
             // Blit frames from the atlas
-            /*
+
             if (atlasReady) {
+
                 const blit = (frameName, dx, dy, dw, dh) => {
                     const frame = assets[frameName];
                     if (!frame) return;
@@ -84,10 +84,10 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
                 };
 
                 // Draw some animals from the atlas
-                blit("cat.png", 100, 50, 64, 64);
-                blit("tiger.png", 200, 50, 64, 64);
+                //blitImage("cat.png", 100, 50, 64, 64);
+                //blitImage("tiger.png", 200, 50, 64, 64);
                 blit("hedgehog.png", 300, 50, 64, 64);
-            }*/
+            }
         }
     };
 };

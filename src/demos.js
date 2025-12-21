@@ -43,6 +43,7 @@ const demos = {
     'createScenegraphAccelFrictionDemo': () => import('./adv-game-design/scenegraph-accel-friction-demo'),
     'createScenegraphTilingMaskedAnimDemo': () => import('./adv-game-design/scenegraph-tiling-masked-anim-demo'),
     'createRotatingSquaresDemo': () => import('./adv-game-design/rotating-squares'),
+    'createLunarLanderDemo': () => import('./adv-game-design/lunar-lander'),
 };
 
 export default demos;

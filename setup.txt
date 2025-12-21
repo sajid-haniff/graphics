@@ -13,3 +13,5 @@ export NODE_OPTIONS=--openssl-legacy-provider
 
 http://172.30.47.65:8080/pwd
 
+ python rendergit.py https://github.com/sajid-haniff/graphics
+
