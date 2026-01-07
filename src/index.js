@@ -22,7 +22,7 @@ const demos = {
 //const demoName = 'knightsTourDemo';
 //const demoName = 'createRippleWaterDemo';
 //const demoName = 'createStarfieldDemo'
-const demoName = 'createLoadImagesDemo'
+//const demoName = 'createLoadImagesDemo'
 //const demoName = 'createAsteroidsDemo';
 //const demoName = 'createAsteroidsTest';
 //const demoName = 'createAustraliaMapCSPDemo';
@@ -31,6 +31,7 @@ const demoName = 'createLoadImagesDemo'
 //const demoName = 'createTimePilotDemo';
 //const demoName = 'createLunarLanderDemo';
 
+const demoName = 'createScenegraphSpaceshipSpriteDemo'
 
 
 const runDemo = async (demoName) => {

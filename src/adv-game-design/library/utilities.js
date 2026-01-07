@@ -2,54 +2,32 @@
 utilities.js
 ==============
 
-This JavaScript file contains useful functions for
-adding interactivity to sprites. See the sprites.js file for
-sprite prototype objects that can use this code.
+Utility functions for:
+- Asset loading (images, fonts, JSON atlases)
+- Simple 2D helpers (blitting, movement, bounds, etc.)
 */
 
-// Dependencies
-//import {makeSound} from "../library/sound";
+// -----------------------------------------------------------------------------
+// Text helpers
+// -----------------------------------------------------------------------------
 
-/*
-assets
-------
-
-This is an object to help you load and use game assets, like images, fonts and sounds,
-and texture atlases.
-
-Here's how to use it to load an image, a font and a texture atlas:
-
-    assets.load([
-      "images/cat.png",
-      "fonts/puzzler.otf",
-      "images/animals.json",
-    ]).then(() => setup());
-
-When all the assets have finished loading, the setup function
-will run. (Replace setup with any other function you need).
-When you've loaded an asset, you can access it like this:
-
-    imageObject = assets["images/cat.png"];
-
-Access individual frames in a texture atlas using the frame's name, like this:
-
-    frame = assets["hedgehog.png"];
-
-(Just use the image name without the extension.)
-*/
+/**
+ * Draw text in Cartesian coordinates (origin bottom-left, y up),
+ * while p5/pixels remain origin top-left, y down.
+ */
 export const drawTextCartesian = (
     sk,
     text,
     x,
     y,
-    {alignX = sk.LEFT, alignY = sk.BASELINE} = {}
+    { alignX = sk.LEFT, alignY = sk.BASELINE } = {}
 ) => {
     const ctx2d = sk.drawingContext;
 
     ctx2d.save();
     ctx2d.scale(1, -1);
 
-    // Convert Cartesian y (origin bottom-left, y up) → screen coords
+    // Convert Cartesian y to screen y (p5 uses origin at top-left, y down)
     const screenY = -(sk.height - y);
 
     sk.textAlign(alignX, alignY);
@@ -58,30 +36,36 @@ export const drawTextCartesian = (
     ctx2d.restore();
 };
 
-export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
-    const {sx, sy, tx, ty} = ctx.viewport;
+// -----------------------------------------------------------------------------
+// Blitter: world → device + direct image blit
+// -----------------------------------------------------------------------------
 
-    // World → Device conversion based on the same transformation chain
+/**
+ * Create an immediate-mode blitter for drawing images / atlas frames in world space.
+ * Uses the same viewport params as your graphics context and draws via drawingContext.
+ */
+export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
+    const { sx, sy, tx, ty } = ctx.viewport;
+
+    // World → device conversion consistent with your viewport mapping
     const worldToDevice = (wx, wy) => {
-        const vx = sx * (wx - 0) + tx;
-        const vy = sy * (wy - 0) + ty;
+        const vx = sx * wx + tx;
+        const vy = sy * wy + ty;
 
         const dx = vx * CANVAS_WIDTH;
         const dy = vy * CANVAS_HEIGHT;
 
-        const reflectedY = CANVAS_HEIGHT - dy;
-
-        return {dx, dy: reflectedY};
+        // Reflect to match p5's Y-down device space
+        return { dx, dy: CANVAS_HEIGHT - dy };
     };
 
     // handle can be:
-    //   - string key: "cat.png" / "images/tiger.png"
-    //   - plain image (HTMLImage / p5.Image)
-    //   - atlas entry: { frame: {x,y,w,h}, source: <Image> }
+    //   - string key: "cat.png" / "images/tiger.png" (looked up in assets)
+    //   - DOM Image or p5.Image
+    //   - atlas entry: { frame: { x, y, w, h }, source: <Image> }
     const blitImage = (handle, wx, wy, w, h) => {
         let img = handle;
 
-        // If a string, look it up in the shared assets map
         if (typeof handle === "string") {
             img = assets[handle];
             if (!img) {
@@ -90,59 +74,56 @@ export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
             }
         }
 
-        const pos = worldToDevice(wx, wy);
-        const dx = pos.dx;
-        const dy = pos.dy;
-
+        const { dx, dy } = worldToDevice(wx, wy);
         const ctx2d = sk.drawingContext;
 
         sk.push();
-        sk.resetMatrix(); // clear current transform stack
+        sk.resetMatrix(); // draw in raw device space
 
-        // Atlas frame: { frame: {...}, source: <Image> }
+        // Atlas frame
         if (img && img.frame && img.source) {
-            const rect = img.frame;
-            const atlasImage = img.source;
-
+            const { x, y, w: fw, h: fh } = img.frame;
             ctx2d.drawImage(
-                atlasImage,
-                rect.x, rect.y, rect.w, rect.h, // src rect
-                dx, dy - h, w, h                // dest rect (Y-up fix)
+                img.source,
+                x,  y,  fw, fh,  // src
+                dx, dy - h, w,  h // dst (note dy - h for Y-up fix)
             );
         } else {
-            // Plain image: draw whole texture
+            // Full image
             ctx2d.drawImage(img, dx, dy - h, w, h);
         }
 
         sk.pop();
     };
 
-    return {blitImage};
+    return { blitImage };
 };
 
-
+// -----------------------------------------------------------------------------
+// Asset loader
+// -----------------------------------------------------------------------------
 
 export const createAssets = () => {
-
-    const imageExtensions = ["png", "jpg", "gif"];
-    const fontExtensions = ["ttf", "otf", "ttc", "woff"];
-    const jsonExtensions = ["json"];
-    const audioExtensions = ["mp3", "ogg", "wav", "webm"];
+    const imageExtensions = ["png", "jpg", "jpeg", "gif", "webp"];
+    const fontExtensions  = ["ttf", "otf", "ttc", "woff"];
+    const jsonExtensions  = ["json"];
+    const audioExtensions = ["mp3", "ogg", "wav", "webm"]; // reserved for future use
 
     const assets = {};
 
-    const loadImage = (source) => {
+    const getExtension = (source) => source.split(".").pop().toLowerCase();
 
+    const loadImage = (source) => {
         // If already cached, reuse it
         if (assets[source]) return Promise.resolve(assets[source]);
 
         return new Promise((resolve, reject) => {
             const image = new Image();
-            image.crossOrigin = 'anonymous';
+            image.crossOrigin = "anonymous";
 
             image.onload = () => {
                 console.log(`Loaded image: ${source} (${image.width}x${image.height})`);
-                assets[source] = image; // cache in dictionary
+                assets[source] = image;
                 resolve(image);
             };
 
@@ -160,14 +141,14 @@ export const createAssets = () => {
         const fontFamily = source.split("/").pop().split(".")[0]; // filename without extension
         const font = new FontFace(fontFamily, `url(${source})`);
 
-        return font.load()
+        return font
+            .load()
             .then((loadedFont) => {
                 document.fonts.add(loadedFont);
                 console.log(`✅ Font loaded: ${fontFamily} from ${source}`);
 
-                // Cache the family name directly, not just the font object
+                // Cache the family name directly (used with sk.textFont)
                 assets[source] = fontFamily;
-
                 return fontFamily;
             })
             .catch((err) => {
@@ -176,37 +157,49 @@ export const createAssets = () => {
             });
     };
 
+    const loadJson = (source) =>
+        fetch(source)
+            .then((response) => {
+                if (!response.ok) throw new Error(`Failed to load ${source}`);
+                return response.json();
+            })
+            .then((file) => {
+                file.name = source;
+                assets[source] = file;
 
-    const loadJson = (source) => fetch(source)
-        .then((response) => {
-            if (!response.ok) throw new Error(`Failed to load ${source}`);
-            return response.json();
-        })
-        .then((file) => {
-            file.name = source;
-            assets[source] = file;
-            if (file.frames) {
-                const baseUrl = source.replace(/[^\/]*$/, "");
-                const imageSource = baseUrl + file.meta.image;
-                return loadImage(imageSource).then((img) => {
-                    Object.entries(file.frames).forEach(([frameName, frameData]) => {
-                        assets[frameName] = {...frameData, source: img};
+                // Texture atlas: attach frame objects and sheet image to assets
+                if (file.frames && file.meta && file.meta.image) {
+                    const baseUrl = source.replace(/[^/]*$/, "");
+                    const imageSource = baseUrl + file.meta.image;
+
+                    return loadImage(imageSource).then((img) => {
+                        Object.entries(file.frames).forEach(([frameName, frameData]) => {
+                            assets[frameName] = { ...frameData, source: img };
+                        });
                     });
-                });
-            }
-            return Promise.resolve();
-        });
+                }
+
+                return undefined;
+            });
 
     const load = (sources) => {
         console.log("Loading assets...");
-        return Promise.all(sources.map((source) => {
-            const extension = source.split(".").pop().toLowerCase();
-            if (imageExtensions.includes(extension)) return loadImage(source);
-            if (fontExtensions.includes(extension)) return loadFont(source);
-            if (jsonExtensions.includes(extension)) return loadJson(source);
-            console.warn(`File type not recognized: ${source}`);
+
+        const tasks = sources.map((source) => {
+            const ext = getExtension(source);
+
+            if (imageExtensions.includes(ext)) return loadImage(source);
+            if (fontExtensions.includes(ext))  return loadFont(source);
+            if (jsonExtensions.includes(ext))  return loadJson(source);
+
+            if (!audioExtensions.includes(ext)) {
+                console.warn(`File type not recognized by assets.load: ${source}`);
+            }
+            // For now: ignore audio and unknown types
             return Promise.resolve();
-        })).then(() => {
+        });
+
+        return Promise.all(tasks).then(() => {
             console.log("Assets finished loading");
         });
     };
@@ -214,39 +207,28 @@ export const createAssets = () => {
     assets.load = load;
     return assets;
 };
+
 export const assets = createAssets();
 
-
-/*
-outsideBounds
--------------
-
-Check whether sprite is completely outside of
-a boundary
-*/
+// -----------------------------------------------------------------------------
+// Spatial helpers
+// -----------------------------------------------------------------------------
 
 export const outsideBounds = (sprite, bounds, extra) => {
-    const {x, y, width, height} = bounds;
+    const { x, y, width, height } = bounds;
     let collision;
 
-    if (sprite.x < x - sprite.width) collision = "left";
+    if (sprite.x < x - sprite.width)  collision = "left";
     if (sprite.y < y - sprite.height) collision = "top";
-    if (sprite.x > width) collision = "right";
-    if (sprite.y > height) collision = "bottom";
+    if (sprite.x > width)             collision = "right";
+    if (sprite.y > height)            collision = "bottom";
 
     if (collision && extra) extra(collision);
     return collision;
 };
 
-/*
-contain
--------
-
-Keep a sprite contained inside a boundary
-*/
-
 export const contain = (sprite, bounds, bounce = false, extra) => {
-    const {x, y, width, height} = bounds;
+    const { x, y, width, height } = bounds;
     let collision;
 
     if (sprite.x < x) {
@@ -281,40 +263,21 @@ export const contain = (sprite, bounds, bounce = false, extra) => {
     return collision;
 };
 
-/*
-distance
-----------------
-
-Find the distance in pixels between two sprites.
-Parameters:
-a. A sprite object with `centerX` and `centerY` properties.
-b. A sprite object with `centerX` and `centerY` properties.
-The function returns the number of pixels distance between the sprites.
-*/
+// -----------------------------------------------------------------------------
+// Movement / geometry
+// -----------------------------------------------------------------------------
 
 export const distance = (s1, s2) => {
     const vx = s2.centerX - s1.centerX;
     const vy = s2.centerY - s1.centerY;
-    return Math.sqrt(vx * vx + vy * vy);
+    return Math.hypot(vx, vy);
 };
-
-/*
-followEase
-----------------
-
-Make a sprite ease to the position of another sprite.
-Parameters:
-a. A sprite object with `centerX` and `centerY` properties. This is the `follower`
-sprite.
-b. A sprite object with `centerX` and `centerY` properties. This is the `leader` sprite that
-the follower will chase
-c. The easing value, such as 0.3. A higher number makes the follower move faster
-*/
 
 export const followEase = (follower, leader, speed) => {
     const vx = leader.centerX - follower.centerX;
     const vy = leader.centerY - follower.centerY;
-    const dist = Math.sqrt(vx * vx + vy * vy);
+    const dist = Math.hypot(vx, vy);
+
     if (dist >= 1) {
         follower.x += vx * speed;
         follower.y += vy * speed;
@@ -322,45 +285,20 @@ export const followEase = (follower, leader, speed) => {
 };
 
 export const easeProperty = (start, end, speed) => {
-    const distance = end - start;
-    return distance >= 1 ? distance * speed : 0;
+    const d = end - start;
+    return Math.abs(d) >= 1 ? d * speed : 0;
 };
-
-/*
-followConstant
-----------------
-
-Make a sprite move towards another sprite at a regular speed.
-Parameters:
-a. A sprite object with `centerX` and `centerY` properties. This is the `follower`
-sprite.
-b. A sprite object with `centerX` and `centerY` properties. This is the `leader` sprite that
-the follower will chase
-c. The speed value, such as 3. This is the pixels per frame that the sprite will move. A higher number makes the follower move faster.
-*/
 
 export const followConstant = (follower, leader, speed) => {
     const vx = leader.centerX - follower.centerX;
     const vy = leader.centerY - follower.centerY;
-    const dist = Math.sqrt(vx * vx + vy * vy);
+    const dist = Math.hypot(vx, vy);
+
     if (dist >= speed) {
         follower.x += (vx / dist) * speed;
         follower.y += (vy / dist) * speed;
     }
 };
-
-/*
-angle
------
-
-Return the angle in Radians between two sprites.
-Parameters:
-a. A sprite object with `centerX` and `centerY` properties.
-b. A sprite object with `centerX` and `centerY` properties.
-You can use it to make a sprite rotate towards another sprite like this:
-
-    box.rotation = angle(box, pointer);
-*/
 
 export const angle = (s1, s2) =>
     Math.atan2(
@@ -368,138 +306,59 @@ export const angle = (s1, s2) =>
         s2.centerX - s1.centerX
     );
 
-//### rotateAround
-//Make a sprite rotate around another sprite
-
-export const rotateSprite = (rotatingSprite, centerSprite, distance, angle) => {
+export const rotateSprite = (rotatingSprite, centerSprite, distance, a) => {
     rotatingSprite.x =
-        centerSprite.centerX - rotatingSprite.parent.x
-        + (distance * Math.cos(angle))
-        - rotatingSprite.halfWidth;
+        centerSprite.centerX - rotatingSprite.parent.x +
+        (distance * Math.cos(a)) -
+        rotatingSprite.halfWidth;
 
     rotatingSprite.y =
-        centerSprite.centerY - rotatingSprite.parent.y
-        + (distance * Math.sin(angle))
-        - rotatingSprite.halfHeight;
+        centerSprite.centerY - rotatingSprite.parent.y +
+        (distance * Math.sin(a)) -
+        rotatingSprite.halfHeight;
 };
 
-//### rotatePoint
-//Make a point rotate around another point
-
-export const rotatePoint = (pointX, pointY, distanceX, distanceY, angle) => ({
-    x: pointX + Math.cos(angle) * distanceX,
-    y: pointY + Math.sin(angle) * distanceY
+export const rotatePoint = (pointX, pointY, distanceX, distanceY, a) => ({
+    x: pointX + Math.cos(a) * distanceX,
+    y: pointY + Math.sin(a) * distanceY
 });
 
-/*
-randomInt
----------
-
-Return a random integer between a minimum and maximum value
-Parameters:
-a. An integer.
-b. An integer.
-Here's how you can use it to get a random number between, 1 and 10:
-
-    randomInt(1, 10);
-*/
+// -----------------------------------------------------------------------------
+// Random / projectiles / timing / motion
+// -----------------------------------------------------------------------------
 
 export const randomInt = (min, max) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
 
-/*
-randomFloat
----------
-
-Return a random floating point number between a minimum and maximum value
-Parameters:
-a. Any number.
-b. Any number.
-Here's how you can use it to get a random floating point number between, 1 and 10:
-
-    randomFloat(1, 10);
-*/
-
 export const randomFloat = (min, max) =>
     min + Math.random() * (max - min);
 
-/*
-shoot
----------
-*/
-
 export const shoot = (
-    shooter, angle, offsetFromCenter,
+    shooter, angleRad, offsetFromCenter,
     bulletSpeed, bulletArray, bulletSprite
 ) => {
     const bullet = bulletSprite();
+
     bullet.x =
-        shooter.centerX - bullet.halfWidth
-        + (offsetFromCenter * Math.cos(angle));
+        shooter.centerX - bullet.halfWidth +
+        (offsetFromCenter * Math.cos(angleRad));
+
     bullet.y =
-        shooter.centerY - bullet.halfHeight
-        + (offsetFromCenter * Math.sin(angle));
-    bullet.vx = Math.cos(angle) * bulletSpeed;
-    bullet.vy = Math.sin(angle) * bulletSpeed;
+        shooter.centerY - bullet.halfHeight +
+        (offsetFromCenter * Math.sin(angleRad));
+
+    bullet.vx = Math.cos(angleRad) * bulletSpeed;
+    bullet.vy = Math.sin(angleRad) * bulletSpeed;
+
     bulletArray.push(bullet);
 };
-
-/*
-Wait
-----
-
-Lets you set up a timed sequence of events
-
-    wait(1000)
-      .then(() => console.log("One"))
-      .then(() => wait(1000))
-      .then(() => console.log("Two"))
-      .then(() => wait(1000))
-      .then(() => console.log("Three"))
-*/
 
 export const wait = (duration = 0) =>
     new Promise((resolve) => setTimeout(resolve, duration));
 
-/*
-Move
-----
-
-Move a sprite by adding it's velocity to it's position
-
-    move(sprite);
-*/
-
-export const move = (...sprites) =>
+export const move = (...sprites) => {
     sprites.forEach((s) => {
         s.x += s.vx;
         s.y += s.vy;
     });
-
-//Tween functions
-
-/*
-export const slide = (sprite, x, y, time) => {
-    const tween = new TWEEN.Tween({ x: sprite.x, y: sprite.y })
-        .to({ x, y }, time);
-    tween.easing(TWEEN.Easing.Circular.Out);
-    tween.onUpdate(function () {
-        sprite.x = this.x;
-        sprite.y = this.y;
-    });
-    tween.start();
-    return tween;
 };
-
-export const fade = (sprite, alpha, time) => {
-    const tween = new TWEEN.Tween({ alpha: sprite.alpha })
-        .to({ alpha }, time);
-    tween.easing(TWEEN.Easing.Linear.None);
-    tween.onUpdate(function () {
-        sprite.alpha = this.alpha;
-    });
-    tween.start();
-    return tween;
-};
-
- */

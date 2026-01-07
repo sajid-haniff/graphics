@@ -1,387 +1,360 @@
+// src/adv-game-design/library/tween.js
+// Tween helpers for scenegraph / sprites.
+// Depends on an external game loop calling `tweens.forEach(t => t.update())`.
+
+import { wait } from "./utilities";
+
 /*
 tweens
 ------
-An array to store all the tweens in the game
+An array to store all the tweens in the game.
+Call `tweens.forEach(t => t.update())` once per frame from your main loop.
 */
-
 export let tweens = [];
 
-//Easing functions
+// ------------------------------------------------------------
+// EASING FUNCTIONS
+// ------------------------------------------------------------
 
-//Linear
-let linear = x => x;
+export const ease = {
+    // Linear
+    linear: (x) => x,
 
-//Smoothstep
-let smoothstep = x => x * x * (3 - 2 * x);
-let smoothstepSquared = x => Math.pow((x * x * (3 - 2 * x)), 2);
-let smoothstepCubed = x => Math.pow((x * x * (3 - 2 * x)), 3);
+    // Smoothstep
+    smoothstep: (x) => x * x * (3 - 2 * x),
+    smoothstepSquared: (x) => {
+        const s = x * x * (3 - 2 * x);
+        return s * s;
+    },
+    smoothstepCubed: (x) => {
+        const s = x * x * (3 - 2 * x);
+        return s * s * s;
+    },
 
-//Acceleration
-let acceleration = x => x * x;
-let accelerationCubed = x => Math.pow(x * x, 3);
+    // Acceleration
+    acceleration: (x) => x * x,
+    accelerationCubed: (x) => {
+        const a = x * x;
+        return a * a * a;
+    },
 
-//Deceleration
-let deceleration = x => 1 - Math.pow(1 - x, 2);
-let decelerationCubed = x => 1 - Math.pow(1 - x, 3);
+    // Deceleration
+    deceleration: (x) => 1 - (1 - x) * (1 - x),
+    decelerationCubed: (x) => 1 - Math.pow(1 - x, 3),
 
-//Sine
-let sine = x => Math.sin(x * Math.PI / 2);
-let sineSquared = x => Math.pow(Math.sin(x * Math.PI / 2), 2);
-let sineCubed = x => Math.pow(Math.sin(x * Math.PI / 2), 2);
-let inverseSine = x => 1 - Math.sin((1 - x) * Math.PI / 2);
-let inverseSineSquared = x => 1 - Math.pow(Math.sin((1 - x) * Math.PI / 2), 2);
-let inverseSineCubed = x => 1 - Math.pow(Math.sin((1 - x) * Math.PI / 2), 3);
-//`sineComplete` uses the whole sine curve, and the effect is the same as
-//smoothstep, but more computationally expensive.
-let sineComplete = x => 0.5 - Math.cos(-x * Math.PI) * 0.5;
+    // Sine-based
+    sine: (x) => Math.sin((x * Math.PI) / 2),
+    sineSquared: (x) => {
+        const s = Math.sin((x * Math.PI) / 2);
+        return s * s;
+    },
+    sineCubed: (x) => {
+        const s = Math.sin((x * Math.PI) / 2);
+        return s * s * s;
+    },
+    inverseSine: (x) => 1 - Math.sin(((1 - x) * Math.PI) / 2),
+    inverseSineSquared: (x) => {
+        const s = Math.sin(((1 - x) * Math.PI) / 2);
+        return 1 - s * s;
+    },
+    inverseSineCubed: (x) => {
+        const s = Math.sin(((1 - x) * Math.PI) / 2);
+        return 1 - s * s * s;
+    },
 
-//Weighted average
-//Good to use if the destination value is changing dynamically
-//arguments:
-//`p`: sprite property,
-//`d`: destination value,
-//`w`: amount to weight (5 to 50 is a good range of values to start with)
-let weightedAverage = (p, d, w) => ((p * (w - 1)) + d) / w;
-
-//Spline
-//An implementation of Catmull-Rom spline
-//arguments:
-//t: ratio
-//p0 to p3: points along the path
-let spline = (t, a, b, c, d) => {
-    return 0.5 * (
-        (2 * b) +
-        (-a + c) * t +
-        (2 * a - 5 * b + 4 * c - d) * t * t +
-        (-a + 3 * b - 3 * c + d) * t * t * t
-    );
-}
-
-//Bezier curve
-function cubicBezier(t, a, b, c, d) {
-    var t2 = t * t;
-    var t3 = t2 * t;
-    return a
-        + (-a * 3 + t * (3 * a - a * t)) * t
-        + (3 * b + t * (-6 * b + b * 3 * t)) * t
-        + (c * 3 - c * 3 * t) * t2 + d * t3;
-}
-
-
-let ease = {
-
-    //Linear
-    linear(x) {return x;},
-
-    //Smoothstep
-    smoothstep(x) {return x * x * (3 - 2 * x);},
-    smoothstepSquared(x) {return Math.pow((x * x * (3 - 2 * x)), 2);},
-    smoothstepCubed(x) {return Math.pow((x * x * (3 - 2 * x)), 3);},
-
-    //Acceleration
-    acceleration(x) {return x * x;},
-    accelerationCubed(x) {return Math.pow(x * x, 3);},
-
-    //Deceleration
-    deceleration(x) {return 1 - Math.pow(1 - x, 2);},
-    decelerationCubed(x) {return 1 - Math.pow(1 - x, 3);},
-
-    //Sine
-    sine(x) {return Math.sin(x * Math.PI / 2);},
-    sineSquared(x) {return Math.pow(Math.sin(x * Math.PI / 2), 2);},
-    sineCubed(x) {return Math.pow(Math.sin(x * Math.PI / 2), 2);},
-    inverseSine(x) {return 1 - Math.sin((1 - x) * Math.PI / 2);},
-    inverseSineSquared(x) {return 1 - Math.pow(Math.sin((1 - x) * Math.PI / 2), 2);},
-    inverseSineCubed(x) {return 1 - Math.pow(Math.sin((1 - x) * Math.PI / 2), 3);},
-
-    //Spline
-    spline (t, p0, p1, p2, p3) {
-        return 0.5 * (
+    // Spline (Catmull–Rom)
+    spline: (t, p0, p1, p2, p3) =>
+        0.5 *
+        (
             (2 * p1) +
             (-p0 + p2) * t +
             (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t +
             (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t
-        );
-    }
+        )
 };
 
-export function tweenProperty(
-    sprite,                  //Sprite object
-    property,                //String property
-    startValue,              //Tween start value
-    endValue,                //Tween end value
-    totalFrames,             //Duration in frames
-    type = ["smoothstep"],   //The easing type
-    yoyo = false,            //Yoyo?
-    delayBeforeRepeat = 0    //Delay in milliseconds before repeating
-) {
+// Cubic Bezier helper for followCurve / walkCurve
+const cubicBezier = (t, a, b, c, d) => {
+    const t2 = t * t;
+    const t3 = t2 * t;
 
-    //Create the tween object
-    let o = {};
+    return (
+        a +
+        (-a * 3 + t * (3 * a - a * t)) * t +
+        (3 * b + t * (-6 * b + 3 * b * t)) * t +
+        (3 * c - 3 * c * t) * t2 +
+        d * t3
+    );
+};
 
-    //If the tween is a spline, set the
-    //start and end magnitude values
-    if(type[0] === "spline" ){
-        o.startMagnitude = type[1];
-        o.endMagnitude = type[2];
+// ------------------------------------------------------------
+// Core tween of a single numeric property
+// ------------------------------------------------------------
+
+export const tweenProperty = (
+    sprite,                  // Sprite-like object
+    property,                // String property name
+    startValue,              // Start value
+    endValue,                // End value
+    totalFrames,             // Duration in frames
+    type = ["smoothstep"],   // Easing type: ["smoothstep"] or ["spline", startMag, endMag]
+    yoyo = false,            // Yoyo?
+    delayBeforeRepeat = 0    // Delay before repeating when yoyo=true
+) => {
+    const tween = {};
+
+    // Spline magnitudes if needed
+    if (type[0] === "spline") {
+        tween.startMagnitude = type[1];
+        tween.endMagnitude = type[2];
     }
 
-    //Use `o.start` to make a new tween using the current
-    //end point values
-    o.start = (startValue, endValue) => {
+    // Start this tween instance
+    tween.start = (startVal, endVal) => {
+        // Clone values so references to sprite props become plain numbers
+        tween.startValue = JSON.parse(JSON.stringify(startVal));
+        tween.endValue = JSON.parse(JSON.stringify(endVal));
 
-        //Clone the start and end values so that any possible references to sprite
-        //properties are converted to ordinary numbers
-        o.startValue = JSON.parse(JSON.stringify(startValue));
-        o.endValue = JSON.parse(JSON.stringify(endValue));
-        o.playing = true;
-        o.totalFrames = totalFrames;
-        o.frameCounter = 0;
+        tween.playing = true;
+        tween.totalFrames = totalFrames;
+        tween.frameCounter = 0;
 
-        //Add the tween to the global `tweens` array. The `tweens` array is
-        //updated on each frame
-        tweens.push(o);
+        tweens.push(tween);
     };
 
-    //Call `o.start` to start the tween
-    o.start(startValue, endValue);
+    // Kick off immediately
+    tween.start(startValue, endValue);
 
-    //The `update` method will be called on each frame by the game loop.
-    //This is what makes the tween move
-    o.update = () => {
+    tween.update = () => {
+        if (!tween.playing) return;
 
-        let time, curvedTime;
+        if (tween.frameCounter < tween.totalFrames) {
+            const normalizedTime = tween.frameCounter / tween.totalFrames;
 
-        if (o.playing) {
-
-            //If the elapsed frames are less than the total frames,
-            //use the tweening formulas to move the sprite
-            if (o.frameCounter < o.totalFrames) {
-
-                //Find the normalized value
-                let normalizedTime = o.frameCounter / o.totalFrames;
-
-                //Select the correct easing function from the
-                //`ease` object’s library of easing functions
-
-
-                //If it's not a spline, use one of the ordinary easing functions
-                if (type[0] !== "spline") {
-                    curvedTime = ease[type](normalizedTime);
-                }
-
-                    //If it's a spline, use the `spline` function and apply the
-                    //2 additional `type` array values as the spline's start and
-                //end points
-                else {
-                    curvedTime = ease.spline(normalizedTime, o.startMagnitude, 0, 1, o.endMagnitude);
-                }
-
-                //Interpolate the sprite's property based on the curve
-                sprite[property] = (o.endValue * curvedTime) + (o.startValue * (1 - curvedTime));
-
-                o.frameCounter += 1;
+            let curvedTime;
+            if (type[0] !== "spline") {
+                // Regular ease function: type[0] -> "smoothstep", "sine", etc.
+                const fn = ease[type[0]];
+                curvedTime = fn ? fn(normalizedTime) : normalizedTime;
+            } else {
+                // Spline using stored magnitudes
+                curvedTime = ease.spline(
+                    normalizedTime,
+                    tween.startMagnitude,
+                    0,
+                    1,
+                    tween.endMagnitude
+                );
             }
 
-            //When the tween has finished playing, run the end tasks
-            else {
-                o.end();
-            }
+            // Interpolate property
+            sprite[property] =
+                tween.endValue * curvedTime +
+                tween.startValue * (1 - curvedTime);
+
+            tween.frameCounter += 1;
+        } else {
+            tween.end();
         }
     };
 
-    //The `end` method will be called when the tween is finished
-    o.end = () => {
+    tween.end = () => {
+        tween.playing = false;
 
-        //Set `playing` to `false`
-        o.playing = false;
+        if (tween.onComplete) tween.onComplete();
 
-        //Call the tween's `onComplete` method, if it's been assigned
-        if (o.onComplete) o.onComplete();
+        const i = tweens.indexOf(tween);
+        if (i >= 0) tweens.splice(i, 1);
 
-        //Remove the tween from the `tweens` array
-        tweens.splice(tweens.indexOf(o), 1);
-
-        //If the tween's `yoyo` property is `true`, create a new tween
-        //using the same values, but use the current tween's `startValue`
-        //as the next tween's `endValue`
         if (yoyo) {
             wait(delayBeforeRepeat).then(() => {
-                o.start(o.endValue, o.startValue);
+                tween.start(tween.endValue, tween.startValue);
             });
         }
     };
 
-    //Pause and play methods
-    o.play = () => o.playing = true;
-    o.pause = () => o.playing = false;
+    tween.play = () => {
+        tween.playing = true;
+    };
 
-    //Return the tween object
-    return o;
-}
+    tween.pause = () => {
+        tween.playing = false;
+    };
 
-/* High level tween functions */
+    return tween;
+};
 
-//`fadeOut`
-export function fadeOut(sprite, frames = 60) {
-    return tweenProperty(
-        sprite, "alpha", sprite.alpha, 0, frames, ["sine"]
+// ------------------------------------------------------------
+// High-level helpers
+// ------------------------------------------------------------
+
+export const fadeOut = (sprite, frames = 60) =>
+    tweenProperty(sprite, "alpha", sprite.alpha, 0, frames, ["sine"]);
+
+export const fadeIn = (sprite, frames = 60) =>
+    tweenProperty(sprite, "alpha", sprite.alpha, 1, frames, ["sine"]);
+
+export const pulse = (sprite, frames = 60, minAlpha = 0) =>
+    tweenProperty(
+        sprite,
+        "alpha",
+        sprite.alpha,
+        minAlpha,
+        frames,
+        ["smoothstep"],
+        true
     );
-}
 
-//`fadeIn`
-export function fadeIn(sprite, frames = 60) {
-    return tweenProperty(
-        sprite, "alpha", sprite.alpha, 1, frames, ["sine"]
-    );
-}
+// ------------------------------------------------------------
+// makeTween: group multiple tweenProperty calls
+// ------------------------------------------------------------
 
-//`pulse`
-//Fades the sprite in and out at a steady rate.
-//Set the `minAlpha` to something greater than 0 if you
-//don't want the sprite to fade away completely
-export function pulse(sprite, frames = 60, minAlpha = 0) {
-    return tweenProperty(
-        sprite, "alpha", sprite.alpha, minAlpha, frames, ["smoothstep"], true
-    );
-}
+const makeTween = (tweenArgsArray) => {
+    const groupTween = {
+        tweens: []
+    };
 
-//`makeTween` is a general function for making complex tweens
-//out of multiple `tweenProperty` functions. It's one argument,
-//`tweensToAdd` is an array containing multiple `tweenProperty` calls
-
-function makeTween(tweensToAdd) {
-
-    //Create an object to manage the tweens
-    let o = {};
-
-    //Create a `tweens` array to store the new tweens
-    o.tweens = [];
-
-    //Make a new tween for each array
-    tweensToAdd.forEach(tweenPropertyArguments => {
-
-        //Use the tween property arguments to make a new tween
-        let newTween = tweenProperty(...tweenPropertyArguments);
-
-        //Push the new tween into this object's internal `tweens` array
-        o.tweens.push(newTween);
+    // Create tweens from the provided argument arrays
+    tweenArgsArray.forEach((args) => {
+        const t = tweenProperty(...args);
+        groupTween.tweens.push(t);
     });
 
-    //Add a counter to keep track of the
-    //number of tweens that have completed their actions
     let completionCounter = 0;
 
-    //`o.completed` will be called each time one of the tweens
-    //finishes
-    o.completed = () => {
-
-        //Add 1 to the `completionCounter`
+    groupTween.completed = () => {
         completionCounter += 1;
 
-        //If all tweens have finished, call the user-defined `onComplete`
-        //method, if it's been assigned. Reset the `completionCounter`
-        if (completionCounter === o.tweens.length) {
-            if (o.onComplete) o.onComplete();
+        if (completionCounter === groupTween.tweens.length) {
+            if (groupTween.onComplete) groupTween.onComplete();
             completionCounter = 0;
         }
     };
 
-    //Add `onComplete` methods to all tweens
-    o.tweens.forEach(tween => {
-        tween.onComplete = () => o.completed();
+    // Each tween signals completion back to the group
+    groupTween.tweens.forEach((t) => {
+        t.onComplete = () => groupTween.completed();
     });
 
-    //Add pause and play methods to control all the tweens
-    o.pause = () => {
-        o.tweens.forEach(tween => {
-            tween.playing = false;
-        });
-    };
-    o.play = () => {
-        o.tweens.forEach(tween => {
-            tween.playing = true;
+    groupTween.pause = () => {
+        groupTween.tweens.forEach((t) => {
+            t.playing = false;
         });
     };
 
-    //Return the tween object
-    return o;
-}
+    groupTween.play = () => {
+        groupTween.tweens.forEach((t) => {
+            t.playing = true;
+        });
+    };
 
-export function slide(
-    sprite, endX, endY,
-    frames = 60, type = ["smoothstep"], yoyo = false, delayBeforeRepeat = 0
-) {
-    return makeTween([
+    return groupTween;
+};
 
-        //Create the x axis tween
+// ------------------------------------------------------------
+// Composite / convenience tweens
+// ------------------------------------------------------------
+
+export const slide = (
+    sprite,
+    endX,
+    endY,
+    frames = 60,
+    type = ["smoothstep"],
+    yoyo = false,
+    delayBeforeRepeat = 0
+) =>
+    makeTween([
         [sprite, "x", sprite.x, endX, frames, type, yoyo, delayBeforeRepeat],
-
-        //Create the y axis tween
         [sprite, "y", sprite.y, endY, frames, type, yoyo, delayBeforeRepeat]
-
     ]);
-}
 
-export function breathe(
-    sprite, endScaleX, endScaleY,
-    frames = 60, yoyo = true, delayBeforeRepeat = 0
-) {
-    return makeTween([
-
-        //Create the scaleX tween
+export const breathe = (
+    sprite,
+    endScaleX,
+    endScaleY,
+    frames = 60,
+    yoyo = true,
+    delayBeforeRepeat = 0
+) =>
+    makeTween([
         [
-            sprite, "scaleX", sprite.scaleX, endScaleX,
-            frames, ["smoothstepSquared"], yoyo, delayBeforeRepeat
+            sprite,
+            "scaleX",
+            sprite.scaleX,
+            endScaleX,
+            frames,
+            ["smoothstepSquared"],
+            yoyo,
+            delayBeforeRepeat
         ],
-
-        //Create the scaleY tween
         [
-            sprite, "scaleY", sprite.scaleY, endScaleY,
-            frames, ["smoothstepSquared"], yoyo, delayBeforeRepeat
+            sprite,
+            "scaleY",
+            sprite.scaleY,
+            endScaleY,
+            frames,
+            ["smoothstepSquared"],
+            yoyo,
+            delayBeforeRepeat
         ]
     ]);
-}
 
-export function scale(sprite, endScaleX, endScaleY, frames = 60) {
-    return makeTween([
-
-        //Create the scaleX tween
+export const scale = (sprite, endScaleX, endScaleY, frames = 60) =>
+    makeTween([
         [
-            sprite, "scaleX", sprite.scaleX, endScaleX,
-            frames, ["smoothstep"], false
+            sprite,
+            "scaleX",
+            sprite.scaleX,
+            endScaleX,
+            frames,
+            ["smoothstep"],
+            false
         ],
-
-        //Create the scaleY tween
         [
-            sprite, "scaleY", sprite.scaleY, endScaleY,
-            frames, ["smoothstep"], false
+            sprite,
+            "scaleY",
+            sprite.scaleY,
+            endScaleY,
+            frames,
+            ["smoothstep"],
+            false
         ]
     ]);
-}
 
-export function strobe(
-    sprite, scaleFactor = 1.3, startMagnitude = 10, endMagnitude = 20,
-    frames = 10, yoyo = true, delayBeforeRepeat = 0
-) {
-    return makeTween([
-
-        //Create the scaleX tween
+export const strobe = (
+    sprite,
+    scaleFactor = 1.3,
+    startMagnitude = 10,
+    endMagnitude = 20,
+    frames = 10,
+    yoyo = true,
+    delayBeforeRepeat = 0
+) =>
+    makeTween([
         [
-            sprite, "scaleX", sprite.scaleX, scaleFactor, frames,
-            ["spline", startMagnitude, endMagnitude], yoyo, delayBeforeRepeat
-        ],
-
-        //Create the scaleY tween
-        [
-            sprite, "scaleY", sprite.scaleY, scaleFactor, frames,
+            sprite,
+            "scaleX",
+            sprite.scaleX,
+            scaleFactor,
+            frames,
             ["spline", startMagnitude, endMagnitude],
-            yoyo, delayBeforeRepeat
+            yoyo,
+            delayBeforeRepeat
+        ],
+        [
+            sprite,
+            "scaleY",
+            sprite.scaleY,
+            scaleFactor,
+            frames,
+            ["spline", startMagnitude, endMagnitude],
+            yoyo,
+            delayBeforeRepeat
         ]
     ]);
-}
 
-export function wobble(
+export const wobble = (
     sprite,
     scaleFactorX = 1.2,
     scaleFactorY = 1.2,
@@ -393,393 +366,274 @@ export function wobble(
     friction = 0.98,
     yoyo = true,
     delayBeforeRepeat = 0
-) {
-
-    let o = makeTween([
-
-        //Create the scaleX tween
+) => {
+    const groupTween = makeTween([
         [
-            sprite, "scaleX", sprite.scaleX, scaleFactorX, frames,
+            sprite,
+            "scaleX",
+            sprite.scaleX,
+            scaleFactorX,
+            frames,
             ["spline", xStartMagnitude, xEndMagnitude],
-            yoyo, delayBeforeRepeat
+            yoyo,
+            delayBeforeRepeat
         ],
-
-        //Create the scaleY tween
         [
-            sprite, "scaleY", sprite.scaleY, scaleFactorY, frames,
+            sprite,
+            "scaleY",
+            sprite.scaleY,
+            scaleFactorY,
+            frames,
             ["spline", yStartMagnitude, yEndMagnitude],
-            yoyo, delayBeforeRepeat
+            yoyo,
+            delayBeforeRepeat
         ]
     ]);
 
-    //Add some friction to the `endValue` at the end of each tween
-    o.tweens.forEach(tween => {
-        tween.onComplete = () => {
-
-            //Add friction if the `endValue` is greater than 1
-            if (tween.endValue > 1) {
-                tween.endValue *= friction;
-
-                //Set the `endValue` to 1 when the effect is finished and
-                //remove the tween from the global `tweens` array
-                if (tween.endValue <= 1) {
-                    tween.endValue = 1;
-                    removeTween(tween);
+    // Add friction to endValue at the end of each tween
+    groupTween.tweens.forEach((t) => {
+        t.onComplete = () => {
+            if (t.endValue > 1) {
+                t.endValue *= friction;
+                if (t.endValue <= 1) {
+                    t.endValue = 1;
+                    removeTween(t);
                 }
             }
         };
     });
 
-    return o;
-}
+    return groupTween;
+};
 
-/*
-removeTween
------------
-A utility to remove tweens from the game
+// ------------------------------------------------------------
+// removeTween
+// ------------------------------------------------------------
 
-*/
-export function removeTween(tweenObject) {
-
-    //Remove the tween if `tweenObject` doesn't have any nested
-    //tween objects
-    if(!tweenObject.tweens) {
+export const removeTween = (tweenObject) => {
+    // If it's a simple tween
+    if (!tweenObject.tweens) {
         tweenObject.pause();
-        tweens.splice(tweens.indexOf(tweenObject), 1);
-
-        //Otherwise, remove the nested tween objects
-    } else {
-        tweenObject.pause();
-        tweenObject.tweens.forEach(element => {
-            tweens.splice(tweens.indexOf(element), 1);
-        });
+        const i = tweens.indexOf(tweenObject);
+        if (i >= 0) tweens.splice(i, 1);
+        return;
     }
-}
 
-/*
-followCurve
-------------
-*/
+    // Group tween: pause and remove each child tween
+    tweenObject.pause();
+    tweenObject.tweens.forEach((t) => {
+        const i = tweens.indexOf(t);
+        if (i >= 0) tweens.splice(i, 1);
+    });
+};
 
-export function followCurve(
+// ------------------------------------------------------------
+// followCurve – tween along a single Bezier curve
+// ------------------------------------------------------------
+
+export const followCurve = (
     sprite,
-    pointsArray,
+    pointsArray,            // [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
     totalFrames,
     type = ["smoothstep"],
     yoyo = false,
     delayBeforeRepeat = 0
-) {
+) => {
+    const tween = {};
 
-    //Create the tween object
-    let o = {};
-
-    if(type[0] === "spline" ){
-        o.startMagnitude = type[1];
-        o.endMagnitude = type[2];
+    if (type[0] === "spline") {
+        tween.startMagnitude = type[1];
+        tween.endMagnitude = type[2];
     }
 
-    //Use `tween.start` to make a new tween using the current
-    //end point values
-    o.start = (pointsArray) => {
-        o.playing = true;
-        o.totalFrames = totalFrames;
-        o.frameCounter = 0;
-
-        //Clone the points array
-        o.pointsArray = JSON.parse(JSON.stringify(pointsArray));
-
-        //Add the tween to the global `tweens` array. The global `tweens` array is
-        //updated on each frame
-        tweens.push(o);
+    tween.start = (pts) => {
+        tween.playing = true;
+        tween.totalFrames = totalFrames;
+        tween.frameCounter = 0;
+        tween.pointsArray = JSON.parse(JSON.stringify(pts));
+        tweens.push(tween);
     };
 
-    //Call `tween.start` to start the first tween
-    o.start(pointsArray);
+    tween.start(pointsArray);
 
-    //The `update` method will be called on each frame by the game loop.
-    //This is what makes the tween move
-    o.update = () => {
+    tween.update = () => {
+        if (!tween.playing) return;
 
-        let normalizedTime, curvedTime,
-            p = o.pointsArray;
+        const p = tween.pointsArray;
 
-        if (o.playing) {
+        if (tween.frameCounter < tween.totalFrames) {
+            const normalizedTime = tween.frameCounter / tween.totalFrames;
 
-            //If the elapsed frames are less than the total frames,
-            //use the tweening formulas to move the sprite
-            if (o.frameCounter < o.totalFrames) {
-
-                //Find the normalized value
-                normalizedTime = o.frameCounter / o.totalFrames;
-
-                //Select the correct easing function
-
-                //If it's not a spline, use one of the ordinary tween
-                //functions
-                if (type[0] !== "spline") {
-                    curvedTime = ease[type](normalizedTime);
-                }
-
-                    //If it's a spline, use the `spine` function and apply the
-                    //2 additional `type` array values as the spline's start and
-                //end points
-                else {
-                    //curve = tweenFunction.spline(n, type[1], 0, 1, type[2]);
-                    curvedTime = ease.spline(normalizedTime, o.startMagnitude, 0, 1, o.endMagnitude);
-                }
-
-                //Apply the Bezier curve to the sprite's position
-                sprite.x = cubicBezier(curvedTime, p[0][0], p[1][0], p[2][0], p[3][0]);
-                sprite.y = cubicBezier(curvedTime, p[0][1], p[1][1], p[2][1], p[3][1]);
-
-                //Add one to the `elapsedFrames`
-                o.frameCounter += 1;
+            let curvedTime;
+            if (type[0] !== "spline") {
+                const fn = ease[type[0]];
+                curvedTime = fn ? fn(normalizedTime) : normalizedTime;
+            } else {
+                curvedTime = ease.spline(
+                    normalizedTime,
+                    tween.startMagnitude,
+                    0,
+                    1,
+                    tween.endMagnitude
+                );
             }
 
-            //When the tween has finished playing, run the end tasks
-            else {
-                o.end();
-            }
+            sprite.x = cubicBezier(curvedTime, p[0][0], p[1][0], p[2][0], p[3][0]);
+            sprite.y = cubicBezier(curvedTime, p[0][1], p[1][1], p[2][1], p[3][1]);
+
+            tween.frameCounter += 1;
+        } else {
+            tween.end();
         }
     };
 
-    //The `end` method will be called when the tween is finished
-    o.end = () => {
+    tween.end = () => {
+        tween.playing = false;
 
-        //Set `playing` to `false`
-        o.playing = false;
+        if (tween.onComplete) tween.onComplete();
 
-        //Call the tween's `onComplete` method, if it's been
-        //assigned
-        if (o.onComplete) o.onComplete();
+        const i = tweens.indexOf(tween);
+        if (i >= 0) tweens.splice(i, 1);
 
-        //Remove the tween from the global `tweens` array
-        tweens.splice(tweens.indexOf(o), 1);
-
-        //If the tween's `yoyo` property is `true`, reverse the array and
-        //use it to create a new tween
         if (yoyo) {
             wait(delayBeforeRepeat).then(() => {
-                o.pointsArray = o.pointsArray.reverse();
-                o.start(o.pointsArray);
+                tween.pointsArray = tween.pointsArray.reverse();
+                tween.start(tween.pointsArray);
             });
         }
     };
 
-    //Pause and play methods
-    o.pause = () => {
-        o.playing = false;
-    };
-    o.play = () => {
-        o.playing = true;
+    tween.pause = () => {
+        tween.playing = false;
     };
 
-    //Return the tween object
-    return o;
-}
+    tween.play = () => {
+        tween.playing = true;
+    };
 
+    return tween;
+};
 
-export function walkPath(
-    sprite,                   //The sprite
-    originalPathArray,        //A 2D array of waypoints
-    totalFrames = 300,        //The duration, in frames
-    type = ["smoothstep"],    //The easing type
-    loop = false,             //Should the animation loop?
-    yoyo = false,             //Shoud the direction reverse?
-    delayBetweenSections = 0  //Delay, in milliseconds, between sections
-) {
+// ------------------------------------------------------------
+// walkPath – tween along straight segments between waypoints
+// ------------------------------------------------------------
 
-    //Clone the path array so that any possible references to sprite
-    //properties are converted into ordinary numbers
-    let pathArray = JSON.parse(JSON.stringify(originalPathArray));
+export const walkPath = (
+    sprite,
+    originalPathArray,       // [[x,y], [x,y], ...]
+    totalFrames = 300,
+    type = ["smoothstep"],
+    loop = false,
+    yoyo = false,
+    delayBetweenSections = 0
+) => {
+    const pathArray = JSON.parse(JSON.stringify(originalPathArray));
+    const framesPerSegment = totalFrames / pathArray.length;
 
-    //Figure out the duration, in frames, of each path section by
-    //dividing the `totalFrames` by the length of the `pathArray`
-    let frames = totalFrames / pathArray.length;
-
-    //Set the current point to 0, which will be the first waypoint
     let currentPoint = 0;
-
-    //Make the first path using the internal `makePath` function (below)
     let tween = makePath(currentPoint);
 
-    //The `makePath` function creates a single tween between two points and
-    //then schedules the next path to be made after it
-
-    function makePath(currentPoint) {
-
-        //Use the `makeTween` function to tween the sprite's
-        //x and y position
-        let tween = makeTween([
-
-            //Create the x axis tween between the first x value in the
-            //current point and the x value in the following point
+    function makePath(startIndex) {
+        const t = makeTween([
             [
                 sprite,
                 "x",
-                pathArray[currentPoint][0],
-                pathArray[currentPoint + 1][0],
-                frames,
+                pathArray[startIndex][0],
+                pathArray[startIndex + 1][0],
+                framesPerSegment,
                 type
             ],
-
-            //Create the y axis tween in the same way
             [
                 sprite,
                 "y",
-                pathArray[currentPoint][1],
-                pathArray[currentPoint + 1][1],
-                frames,
+                pathArray[startIndex][1],
+                pathArray[startIndex + 1][1],
+                framesPerSegment,
                 type
             ]
         ]);
 
-        //When the tween is complete, advance the `currentPoint` by one.
-        //Add an optional delay between path segments, and then make the
-        //next connecting path
-        tween.onComplete = () => {
-
-            //Advance to the next point
+        t.onComplete = () => {
             currentPoint += 1;
 
-            //If the sprite hasn't reached the end of the
-            //path, tween the sprite to the next point
             if (currentPoint < pathArray.length - 1) {
                 wait(delayBetweenSections).then(() => {
                     tween = makePath(currentPoint);
                 });
-            }
+            } else if (loop) {
+                if (yoyo) pathArray.reverse();
 
-                //If we've reached the end of the path, optionally
-            //loop and yoyo it
-            else {
-
-                //Reverse the path if `loop` is `true`
-                if (loop) {
-
-                    //Reverse the array if `yoyo` is `true`
-                    if (yoyo) pathArray.reverse();
-
-                    //Optionally wait before restarting
-                    wait(delayBetweenSections).then(() => {
-
-                        //Reset the `currentPoint` to 0 so that we can
-                        //restart at the first point
-                        currentPoint = 0;
-
-                        //Set the sprite to the first point
-                        sprite.x = pathArray[0][0];
-                        sprite.y = pathArray[0][1];
-
-                        //Make the first new path
-                        tween = makePath(currentPoint);
-
-                        //... and so it continues!
-                    });
-                }
+                wait(delayBetweenSections).then(() => {
+                    currentPoint = 0;
+                    sprite.x = pathArray[0][0];
+                    sprite.y = pathArray[0][1];
+                    tween = makePath(currentPoint);
+                });
             }
         };
 
-        //Return the path tween to the main function
-        return tween;
+        return t;
     }
 
-    //Pass the tween back to the main program
     return tween;
-}
+};
 
-export function walkCurve(
-    sprite,                  //The sprite
-    pathArray,               //2D array of Bezier curves
-    totalFrames = 300,       //The duration, in frames
-    type = ["smoothstep"],   //The easing type
-    loop = false,            //Should the animation loop?
-    yoyo = false,            //Should the direction reverse?
-    delayBeforeContinue = 0  //Delay, in milliseconds, between sections
-) {
+// ------------------------------------------------------------
+// walkCurve – tween along a sequence of Bezier curves
+// ------------------------------------------------------------
 
-    //Divide the `totalFrames` into sections for each part of the path
-    let frames = totalFrames / pathArray.length;
+export const walkCurve = (
+    sprite,
+    pathArray,              // [curve0, curve1, ...], each curve is [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
+    totalFrames = 300,
+    type = ["smoothstep"],
+    loop = false,
+    yoyo = false,
+    delayBeforeContinue = 0
+) => {
+    const framesPerCurve = totalFrames / pathArray.length;
 
-    //Set the current curve to 0, which will be the first one
     let currentCurve = 0;
-
-    //Make the first path
     let tween = makePath(currentCurve);
 
-    function makePath(currentCurve) {
-
-        //Use the custom `followCurve` function to make
-        //a sprite follow a curve
-        let tween = followCurve(
+    function makePath(curveIndex) {
+        const t = followCurve(
             sprite,
-            pathArray[currentCurve],
-            frames,
+            pathArray[curveIndex],
+            framesPerCurve,
             type
         );
 
-        //When the tween is complete, advance the `currentCurve` by one.
-        //Add an optional delay between path segments, and then make the
-        //next path
-        tween.onComplete = () => {
+        t.onComplete = () => {
             currentCurve += 1;
+
             if (currentCurve < pathArray.length) {
                 wait(delayBeforeContinue).then(() => {
                     tween = makePath(currentCurve);
                 });
-            }
-
-                //If we've reached the end of the path, optionally
-            //loop and reverse it
-            else {
-                if (loop) {
-                    if (yoyo) {
-
-                        //Reverse order of the curves in the `pathArray`
-                        pathArray.reverse();
-
-                        //Reverse the order of the points in each curve
-                        pathArray.forEach(curveArray => curveArray.reverse());
-                    }
-
-                    //After an optional delay, reset the sprite to the
-                    //beginning of the path and make the next new path
-                    wait(delayBeforeContinue).then(() => {
-                        currentCurve = 0;
-                        sprite.x = pathArray[0][0];
-                        sprite.y = pathArray[0][1];
-                        tween = makePath(currentCurve);
-                    });
+            } else if (loop) {
+                if (yoyo) {
+                    // Reverse order of curves and points for yoyo
+                    pathArray.reverse();
+                    pathArray.forEach((curve) => curve.reverse());
                 }
+
+                wait(delayBeforeContinue).then(() => {
+                    currentCurve = 0;
+
+                    // Reset sprite to first point of first curve
+                    const firstCurve = pathArray[0];
+                    const firstPoint = firstCurve[0];
+                    sprite.x = firstPoint[0];
+                    sprite.y = firstPoint[1];
+
+                    tween = makePath(currentCurve);
+                });
             }
         };
 
-        //Return the path tween to the main function
-        return tween;
+        return t;
     }
 
-    //Pass the tween back to the main program
     return tween;
-}
-
-/*
-Wait
-----
-
-Lets you set up a timed sequence of events
-
-    wait(1000)
-      .then(() => console.log("One"))
-      .then(() => wait(1000))
-      .then(() => console.log("Two"))
-      .then(() => wait(1000))
-      .then(() => console.log("Three"))
-
-*/
-
-function wait(duration = 0) {
-    return new Promise((resolve, reject) => {
-        setTimeout(resolve, duration);
-    });
-}
-
+};

@@ -83,3 +83,5 @@ export const createLoadImagesDemo = (sk, CANVAS_WIDTH = 640, CANVAS_HEIGHT = 360
         }
     };
 };
+
+export default createLoadImagesDemo;

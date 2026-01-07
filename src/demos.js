@@ -4,6 +4,8 @@ import {createFractalCircleDemo} from "./recursion/circle_recursion";
 import {createRippleWaterDemo} from "./demos/wave/ripples";
 import createAustraliaMapCSPDemo from "./ai/csp/australia-map";
 import {createTimePilotDemo} from "./demos/timepilot/timepilot-demo";
+import {createScenegraphSpaceshipSpriteDemo} from "./adv-game-design/scenegraph-spaceship-sprite-demo";
+
 
 const demos = {
     'createTriangleCirclesDemo': () => import('./geometric/triangle-circles'),
@@ -44,6 +46,8 @@ const demos = {
     'createScenegraphTilingMaskedAnimDemo': () => import('./adv-game-design/scenegraph-tiling-masked-anim-demo'),
     'createRotatingSquaresDemo': () => import('./adv-game-design/rotating-squares'),
     'createLunarLanderDemo': () => import('./adv-game-design/lunar-lander'),
+    'createSpaceshipAtlasDemo': () => import('./adv-game-design/loadSpaceshipAtlasDemo'),
+    'createScenegraphSpaceshipSpriteDemo': () => import('./adv-game-design/scenegraph-spaceship-sprite-demo')
 };
 
 export default demos;
