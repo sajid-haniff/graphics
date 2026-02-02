@@ -47,7 +47,13 @@ const demos = {
     'createRotatingSquaresDemo': () => import('./adv-game-design/rotating-squares'),
     'createLunarLanderDemo': () => import('./adv-game-design/lunar-lander'),
     'createSpaceshipAtlasDemo': () => import('./adv-game-design/loadSpaceshipAtlasDemo'),
-    'createScenegraphSpaceshipSpriteDemo': () => import('./adv-game-design/scenegraph-spaceship-sprite-demo')
+    'createScenegraphSpaceshipSpriteDemo': () => import('./adv-game-design/scenegraph-spaceship-sprite-demo'),
+    'createScenegraphBehaviorsSpaceshipDemo': () => import('./adv-game-design/scenegraph-behaviors-spaceship-demo'),
+    'createScenegraphInteractiveDemo': () => import('./adv-game-design/scenegraph-interactive-demo'),
+    'createScenegraphKeyboardAsteroidsDemo': () => import('./adv-game-design/createKeyboardShipDemo'),
+    'createScenegraphButtonAtlasDemo': () => import('./adv-game-design/scenegraph-button-atlas-demo'),
+
+
 };
 
 export default demos;

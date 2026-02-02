@@ -31,7 +31,7 @@ const demos = {
 //const demoName = 'createTimePilotDemo';
 //const demoName = 'createLunarLanderDemo';
 
-const demoName = 'createScenegraphSpaceshipSpriteDemo'
+const demoName = 'createScenegraphButtonAtlasDemo'
 
 
 const runDemo = async (demoName) => {
@@ -69,11 +69,22 @@ const runDemo = async (demoName) => {
             sk.setup        = () => sketch.setup?.();
             sk.draw         = () => sketch.display?.();
             sk.mousePressed = (...a) => sketch.mousePressed?.(...a);
+            sk.mouseReleased = (...a) => sketch.mouseReleased?.(...a);
+            sk.mouseMoved    = (...a) => sketch.mouseMoved?.(...a);
+            sk.mouseDragged  = (...a) => sketch.mouseDragged?.(...a);
+            sk.mouseWheel    = (...a) => sketch.mouseWheel?.(...a);
+            sk.mouseClicked  = (...a) => sketch.mouseClicked?.(...a);
+            sk.doubleClicked = (...a) => sketch.doubleClicked?.(...a);
 
+            // Keyboard Events
             // Forward both key events to one handler if present
             const onKey = () => { sketch.keyPressed?.(sk.key); return false; };
             sk.keyPressed = onKey;
             sk.keyTyped   = onKey;
+            sk.keyReleased = () => { sketch.keyReleased?.(sk.key); return false; };
+
+            // Window Events
+            sk.windowResized = (...a) => sketch.windowResized?.(...a);
         });
     } catch (error) {
         console.error(`Error loading demo ${demoName}:`, error);
