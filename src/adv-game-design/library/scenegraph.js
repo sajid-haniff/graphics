@@ -13,7 +13,14 @@
 //
 // Rules:
 // - p5 APIs must be accessed via the provided `sk`.
-// - World is Y-up. COMPOSITE (REFLECT_Y · DEVICE · WORLD) is applied once per frame.
+// - World is Y-up (Cartesian coordinates). 
+//   In standard screen space (p5/HTML5 Canvas), Y increases downwards.
+//   This library maps the world so that Y increases upwards, matching standard 2D physics
+//   and mathematical conventions.
+// - This is achieved via a COMPOSITE transform (REFLECT_Y · DEVICE · WORLD) 
+//   applied at the root of the render tree.
+// - As a result, rotation is clockwise for positive values in this Y-up space,
+//   so we negate `node.rotation` at draw time to maintain standard CCW behavior.
 // - Pixel-consistent stroke via M2D.makePixelToWorld.
 
 import { createGraphicsContext2 } from "../../graphics_context2";
@@ -402,6 +409,10 @@ const createRenderer = (
     const ctx2 = createGraphicsContext2(worldWin, view, CANVAS_WIDTH, CANVAS_HEIGHT, sk);
     const { sx, sy, tx, ty } = ctx2.viewport;
 
+    // The COMPOSITE matrix maps world-space units to screen pixels while flipping the Y-axis.
+    // 1. WORLD: Maps world coordinates to a [0, 1] normalized view volume.
+    // 2. DEVICE: Scales the normalized view to the CANVAS_WIDTH and CANVAS_HEIGHT.
+    // 3. REFLECT_Y: Flips the Y-axis so that Y=0 is at the bottom and Y=CANVAS_HEIGHT is at the top.
     const REFLECT_Y = M2D.fromValues(1, 0, 0, -1, 0, CANVAS_HEIGHT);
     const DEVICE    = M2D.fromValues(CANVAS_WIDTH, 0, 0, CANVAS_HEIGHT, 0, 0);
     const WORLD     = M2D.fromValues(sx, 0, 0, sy, tx, ty);

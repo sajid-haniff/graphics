@@ -80,7 +80,7 @@ export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
         sk.push();
         sk.resetMatrix(); // draw in raw device space
 
-        // Atlas frame
+        // Atlas frame or ImageBitmap/Image
         if (img && img.frame && img.source) {
             const { x, y, w: fw, h: fh } = img.frame;
             ctx2d.drawImage(
@@ -88,9 +88,17 @@ export const createBlitter = (ctx, sk, CANVAS_WIDTH, CANVAS_HEIGHT) => {
                 x,  y,  fw, fh,  // src
                 dx, dy - h, w,  h // dst (note dy - h for Y-up fix)
             );
-        } else {
-            // Full image
+        } else if (img instanceof ImageBitmap || img instanceof HTMLImageElement || img instanceof HTMLCanvasElement || img instanceof OffscreenCanvas) {
+            // Standard drawable
             ctx2d.drawImage(img, dx, dy - h, w, h);
+        } else if (img) {
+            // Fallback for objects that might not be instances of the above but are drawable
+            // (e.g. if loaded in a different context/iframe, though unlikely here)
+            try {
+                ctx2d.drawImage(img, dx, dy - h, w, h);
+            } catch (e) {
+                console.error("blitImage: Failed to draw image", img, e);
+            }
         }
 
         sk.pop();
@@ -113,23 +121,63 @@ export const createAssets = () => {
 
     const getExtension = (source) => source.split(".").pop().toLowerCase();
 
-    const loadImage = (source) => {
+    const loadImage = (source, options = {}) => {
+        const { useBitmap = true, signal = null } = options;
+
         // If already cached, reuse it
         if (assets[source]) return Promise.resolve(assets[source]);
+
+        if (signal && signal.aborted) {
+            return Promise.reject(new DOMException("Aborted", "AbortError"));
+        }
 
         return new Promise((resolve, reject) => {
             const image = new Image();
             image.crossOrigin = "anonymous";
 
+            const cleanup = () => {
+                image.onload = null;
+                image.onerror = null;
+                if (signal) {
+                    signal.removeEventListener("abort", onAbort);
+                }
+            };
+
+            const onAbort = () => {
+                cleanup();
+                image.src = ""; // Stop loading
+                reject(new DOMException("Aborted", "AbortError"));
+            };
+
+            if (signal) {
+                signal.addEventListener("abort", onAbort);
+            }
+
             image.onload = () => {
-                console.log(`Loaded image: ${source} (${image.width}x${image.height})`);
-                assets[source] = image;
-                resolve(image);
+                cleanup();
+                if (useBitmap && typeof createImageBitmap === "function") {
+                    createImageBitmap(image)
+                        .then((bitmap) => {
+                            console.log(`Loaded image (Bitmap): ${source} (${bitmap.width}x${bitmap.height})`);
+                            assets[source] = bitmap;
+                            resolve(bitmap);
+                        })
+                        .catch((err) => {
+                            console.warn(`createImageBitmap failed for ${source}, falling back to Image element`, err);
+                            assets[source] = image;
+                            resolve(image);
+                        });
+                } else {
+                    console.log(`Loaded image (Element): ${source} (${image.width}x${image.height})`);
+                    assets[source] = image;
+                    resolve(image);
+                }
             };
 
             image.onerror = (err) => {
+                cleanup();
                 console.error(`Failed to load image: ${source}`, err);
-                reject(err);
+                reject(new Error(`Failed to load image: ${source}`));
             };
 
             console.log(`🔄 Starting load: ${source}`);
@@ -157,8 +205,8 @@ export const createAssets = () => {
             });
     };
 
-    const loadJson = (source) =>
-        fetch(source)
+    const loadJson = (source, options = {}) =>
+        fetch(source, { signal: options.signal })
             .then((response) => {
                 if (!response.ok) throw new Error(`Failed to load ${source}`);
                 return response.json();
@@ -172,7 +220,7 @@ export const createAssets = () => {
                     const baseUrl = source.replace(/[^/]*$/, "");
                     const imageSource = baseUrl + file.meta.image;
 
-                    return loadImage(imageSource).then((img) => {
+                    return loadImage(imageSource, options).then((img) => {
                         Object.entries(file.frames).forEach(([frameName, frameData]) => {
                             assets[frameName] = { ...frameData, source: img };
                         });
@@ -182,15 +230,15 @@ export const createAssets = () => {
                 return undefined;
             });
 
-    const load = (sources) => {
+    const load = (sources, options = {}) => {
         console.log("Loading assets...");
 
         const tasks = sources.map((source) => {
             const ext = getExtension(source);
 
-            if (imageExtensions.includes(ext)) return loadImage(source);
+            if (imageExtensions.includes(ext)) return loadImage(source, options);
             if (fontExtensions.includes(ext))  return loadFont(source);
-            if (jsonExtensions.includes(ext))  return loadJson(source);
+            if (jsonExtensions.includes(ext))  return loadJson(source, options);
 
             if (!audioExtensions.includes(ext)) {
                 console.warn(`File type not recognized by assets.load: ${source}`);

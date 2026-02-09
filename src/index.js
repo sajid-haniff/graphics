@@ -31,7 +31,7 @@ const demos = {
 //const demoName = 'createTimePilotDemo';
 //const demoName = 'createLunarLanderDemo';
 
-const demoName = 'createScenegraphButtonAtlasDemo'
+const demoName = 'createScenegraphPhysicsThrustDemo'
 
 
 const runDemo = async (demoName) => {

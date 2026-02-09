@@ -4,7 +4,8 @@
 //  - attachBody(node, options) -> body
 //  - updatePhysics(dt)
 //  - removeBody(bodyOrNode), clearBodies()
-//  - Helpers: applyForwardForce, applyForwardImpulse, confineBodyToAABB, aabbOverlap
+//  - Helpers: applyForwardForce, applyForwardImpulse, setForwardSpeed,
+//             applyQuadraticDrag, confineBodyToAABB, aabbOverlap
 //
 // This does NOT modify scenegraph.js. It operates on nodes created by
 // createScenegraph (or any object with x, y, rotation, width, height).
@@ -47,24 +48,6 @@ const forwardDirFromAngle = (angleRad) => {
 // Body creation / core API
 // ------------------------------------------------------------
 
-/**
- * Attach a physics "body" to a scenegraph node.
- *
- * Options:
- *  - position:   initial position (vec2 or [x,y]); defaults to node.x/node.y
- *  - velocity:   initial velocity (vec2 or [x,y])
- *  - acceleration: initial acceleration (vec2 or [x,y])
- *  - force:      initial force accumulator (vec2)
- *  - angle:      initial angle (radians), defaults to node.rotation || 0
- *  - angularVelocity: initial angular velocity (rad/s)
- *  - torque:     initial torque accumulator
- *  - mass:       scalar; mass <= 0 => static body (invMass = 0)
- *  - fixedRotation: if true, ignores torque/angularVelocity
- *  - linearDamping: 0..1 (1 = no damping)
- *  - angularDamping: 0..1
- *  - maxSpeed:   cap on linear speed (Infinity = uncapped)
- *  - gravity:    per-body gravity vector (vec2)
- */
 export const attachBody = (node, {
     position         = null,
     velocity         = null,
@@ -90,8 +73,6 @@ export const attachBody = (node, {
     let angVel      = angularVelocity;
     let torqueAccum = torque;
     const gravityVec = gravity ? toVec(gravity, 0, 0) : V.zero();
-
-    // ------------ public-ish operations (closures) ------------
 
     const applyForce = (f) => {
         if (!f) return;
@@ -157,16 +138,11 @@ export const attachBody = (node, {
         acc = V.scale(totalForce, invMass);
 
         // Semi-implicit Euler:
-        // v += a * dt
         vel = V.add(vel, V.scale(acc, dt));
-        // Limit speed
         vel = clampSpeed(vel, maxSpeed);
-        // Apply linear damping
         vel = V.scale(vel, linearDamping);
-        // p += v * dt
         pos = V.add(pos, V.scale(vel, dt));
 
-        // Angular integration (if allowed)
         if (!fixedRotation) {
             const angularAcc = torqueAccum * invMass;
             angVel += angularAcc * dt;
@@ -174,14 +150,12 @@ export const attachBody = (node, {
             bodyAngle += angVel * dt;
         }
 
-        // Sync back to node
         if (node) {
             node.x = pos[0];
             node.y = pos[1];
             node.rotation = bodyAngle;
         }
 
-        // Clear force/torque for next frame
         forceAccum  = V.zero();
         torqueAccum = 0;
     };
@@ -205,7 +179,6 @@ export const attachBody = (node, {
     const body = {
         node,
 
-        // scalar props
         mass,
         invMass,
         fixedRotation,
@@ -213,7 +186,6 @@ export const attachBody = (node, {
         linearDamping,
         angularDamping,
 
-        // live accessors
         get position() { return V.clone(pos); },
         set position(p) { setPosition(p); },
 
@@ -226,7 +198,6 @@ export const attachBody = (node, {
         get angularVelocity() { return angVel; },
         set angularVelocity(w) { angVel = w; },
 
-        // methods
         applyForce,
         applyImpulse,
         applyTorque,
@@ -247,10 +218,6 @@ export const attachBody = (node, {
 // Main update loop
 // ------------------------------------------------------------
 
-/**
- * Step all registered bodies forward in time by dt (seconds).
- * Call once per frame from your demo, before sg.render().
- */
 export const updatePhysics = (dt) => {
     for (let i = 0; i < bodies.length; i += 1) {
         bodies[i].step(dt);
@@ -274,28 +241,18 @@ export const getBodies = () => bodies.slice();
 // Directional helpers (Y-up forward thrust)
 // ------------------------------------------------------------
 
-/**
- * Apply a force in the node's forward direction (based on its rotation).
- * magnitude: scalar.
- */
 export const applyForwardForce = (body, magnitude = 1) => {
     if (!body) return;
     const dir = forwardDirFromAngle(body.angle);
     body.applyForce(V.scale(dir, magnitude));
 };
 
-/**
- * Apply an impulse (instant velocity change) in the node's forward direction.
- */
 export const applyForwardImpulse = (body, magnitude = 1) => {
     if (!body) return;
     const dir = forwardDirFromAngle(body.angle);
     body.applyImpulse(V.scale(dir, magnitude));
 };
 
-/**
- * Set the body's velocity to point forward with a given speed.
- */
 export const setForwardSpeed = (body, speed = 0) => {
     if (!body) return;
     const dir = forwardDirFromAngle(body.angle);
@@ -303,14 +260,30 @@ export const setForwardSpeed = (body, speed = 0) => {
 };
 
 // ------------------------------------------------------------
-// Bounds + simple collision helpers
+// Drag / resistance helpers
 // ------------------------------------------------------------
 
 /**
- * Confine a body to an axis-aligned box.
- * bounds: { left, right, bottom, top }
- * bounce: coefficient of restitution (0 = stick, 1 = perfectly elastic)
+ * Apply quadratic drag (air resistance) to the body:
+ *   F_drag = -k * |v|^2 * v_hat
+ * k is a scalar drag coefficient; larger k = stronger drag.
  */
+export const applyQuadraticDrag = (body, k = 0.5) => {
+    if (!body || typeof body.applyForce !== "function") return;
+    const v = body.velocity;
+    const speed = V.length(v);
+    if (speed < 1e-6) return;
+
+    const mag = k * speed * speed;
+    const dragDir = V.scale(v, -1 / speed); // -v_hat
+    const F = V.scale(dragDir, mag);
+    body.applyForce(F);
+};
+
+// ------------------------------------------------------------
+// Bounds + simple collision helpers
+// ------------------------------------------------------------
+
 export const confineBodyToAABB = (body, bounds, bounce = 0) => {
     if (!body || !body.node || !bounds) return;
 
@@ -346,10 +319,6 @@ export const confineBodyToAABB = (body, bounds, bounce = 0) => {
     body.velocity = V.create(vx, vy);
 };
 
-/**
- * Simple AABB overlap test between two scenegraph nodes.
- * Uses node.x/node.y as center, node.width/height, pivot assumed at 0.5/0.5.
- */
 export const aabbOverlap = (nodeA, nodeB, padding = 0) => {
     if (!nodeA || !nodeB) return false;
 

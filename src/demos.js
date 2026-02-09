@@ -52,6 +52,8 @@ const demos = {
     'createScenegraphInteractiveDemo': () => import('./adv-game-design/scenegraph-interactive-demo'),
     'createScenegraphKeyboardAsteroidsDemo': () => import('./adv-game-design/createKeyboardShipDemo'),
     'createScenegraphButtonAtlasDemo': () => import('./adv-game-design/scenegraph-button-atlas-demo'),
+    'createScenegraphFractalUIDemo': () => import('./adv-game-design/scenegraph-fractal-ui-demo'),
+    'createScenegraphPhysicsThrustDemo': () => import('./adv-game-design/scenegraph-physics-thrust-demo'),
 
 
 };
