@@ -27,56 +27,6 @@ import { createGraphicsContext2 } from "../../graphics_context2";
 import { M2D } from "../../lib/esm/M2D";
 
 // ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
-
-// Shared node graph methods (attached by reference, not per-node closures)
-const addChild = (parent, child) => {
-    if (!child) return parent;
-    if (child.parent) child.parent.removeChild(child);
-    child.parent = parent;
-    parent.children.push(child);
-    parent.childrenDirty = true;
-    return parent;
-};
-
-const removeChild = (parent, child) => {
-    const i = parent.children.indexOf(child);
-    if (i >= 0) {
-        parent.children.splice(i, 1);
-        child.parent = null;
-    }
-    return parent;
-};
-
-const addMany = (parent, ...children) => {
-    children.forEach((c) => addChild(parent, c));
-    return parent;
-};
-
-const removeMany = (parent, ...children) => {
-    children.forEach((c) => removeChild(parent, c));
-    return parent;
-};
-
-const swapChildren = (parent, a, b) => {
-    const ia = parent.children.indexOf(a);
-    const ib = parent.children.indexOf(b);
-    if (ia >= 0 && ib >= 0) {
-        [parent.children[ia], parent.children[ib]] = [parent.children[ib], parent.children[ia]];
-    }
-    return parent;
-};
-
-const isAtlasFrame = (src) => !!(src && src.frame && src.source);
-const isFilmstripObject = (src) =>
-    !!(src && src.image && src.data && src.width && src.height);
-const isTilesetRect = (src) =>
-    !!(src && src.image &&
-        src.x !== undefined && src.y !== undefined &&
-        src.width !== undefined && src.height !== undefined);
-
-// ------------------------------------------------------------
 // Core node factory
 // ------------------------------------------------------------
 const createNode = (overrides = {}) => {
@@ -99,19 +49,49 @@ const createNode = (overrides = {}) => {
         parent: null,
         children: [],
         _layer: 0,
-        childrenDirty: false,  // tracks when children need re-sorting by layer
 
-        // Methods: arrow functions that capture `node`
-        addChild:  (child)        => addChild(node, child),
-        removeChild: (child)      => removeChild(node, child),
-        add:         (...children) => addMany(node, ...children),
-        remove:      (...children) => removeMany(node, ...children),
-        swapChildren: (a, b)      => swapChildren(node, a, b),
+        // Methods
+        addChild: null,
+        removeChild: null,
+        add: null,
+        remove: null,
+        swapChildren: null,
+
         // Optional node kind marker (used by renderer)
         _type: undefined
     };
 
     Object.assign(node, overrides);
+
+    node.addChild = (child) => {
+        if (!child) return node;
+        if (child.parent) child.parent.removeChild(child);
+        child.parent = node;
+        node.children.push(child);
+        node.children.sort((a, b) => a._layer - b._layer);
+        return node;
+    };
+
+    node.removeChild = (child) => {
+        const i = node.children.indexOf(child);
+        if (i >= 0) {
+            node.children.splice(i, 1);
+            child.parent = null;
+        }
+        return node;
+    };
+
+    node.add = (...children) => { children.forEach(node.addChild); return node; };
+    node.remove = (...children) => { children.forEach(node.removeChild); return node; };
+
+    node.swapChildren = (a, b) => {
+        const ia = node.children.indexOf(a);
+        const ib = node.children.indexOf(b);
+        if (ia >= 0 && ib >= 0) {
+            [node.children[ia], node.children[ib]] = [node.children[ib], node.children[ia]];
+        }
+        return node;
+    };
 
     Object.defineProperties(node, {
         layer: {
@@ -119,7 +99,7 @@ const createNode = (overrides = {}) => {
             set: (v) => {
                 node._layer = v;
                 if (node.parent) {
-                    node.parent.childrenDirty = true;
+                    node.parent.children.sort((a, b) => a._layer - b._layer);
                 }
             }
         },
@@ -127,8 +107,8 @@ const createNode = (overrides = {}) => {
         halfHeight: { get: () => node.height / 2 },
         centerX:    { get: () => node.x + node.width * 0.5 },
         centerY:    { get: () => node.y + node.height * 0.5 },
-        // NOTE: previous gx/gy accessors have been removed.
-        // Global/world-space queries should be done via matrices, not scalar accumulation.
+        gx:         { get: () => (node.parent ? node.x + node.parent.gx : node.x) },
+        gy:         { get: () => (node.parent ? node.y + node.parent.gy : node.y) },
     });
 
     return node;
@@ -150,119 +130,136 @@ export const text = (content = "Hello!", fontSize = 12, fontName = "sans-serif",
     createNode({ _type: "text", content, fontSize, fontName, _style: { fill }, width: 0, height: 0 });
 
 // ------------------------------------------------------------
-// Sprite factory (canonical frame representation)
+// Sprite factory
 // Mirrors the old display sprite source shapes but in node form.
-// After init, node._frames is always an array of:
-//   { image, sx, sy, sw, sh }
 // ------------------------------------------------------------
+const isAtlasFrame = (src) => !!(src && src.frame && src.source);
+const isFilmstripObject = (src) =>
+    !!(src && src.image && src.data && src.width && src.height);
+const isTilesetRect = (src) =>
+    !!(src && src.image &&
+        src.x !== undefined && src.y !== undefined &&
+        src.width !== undefined && src.height !== undefined);
+
+// Enhanced sprite: Image | Image[] | filmstrip | atlas frame(s) | tileset rect
 export const sprite = (source) => {
     const node = createNode({ _type: "sprite" });
 
-    // Internal frame state (canonicalized)
-    node._frames = [];   // Array<{ image, sx, sy, sw, sh }>
-    node._frameIndex = 0;
-    node._img = null;    // current image
+    // Internal frame state (matches "display" semantics, but without timers)
+    node._frames = null; // Array<Image> OR Array<[sx,sy]> OR Array<atlasFrame>
+    node._img    = null; // underlying image (DOM Image or p5.Graphics)
     node._sx = 0; node._sy = 0;
     node._sw = 0; node._sh = 0;
 
-    const addFrame = (image, sx, sy, sw, sh) => {
-        node._frames.push({
-            image,
-            sx: sx || 0,
-            sy: sy || 0,
-            sw: sw || 0,
-            sh: sh || 0
-        });
+    const initFromImage = (img) => {
+        node._img = img || null;
+        const w = img ? img.width  : 0;
+        const h = img ? img.height : 0;
+        node._sx = 0; node._sy = 0; node._sw = w; node._sh = h;
+        node.width = w; node.height = h;
     };
 
-    const initFromSource = (src) => {
-        if (!src) return;
-
-        // Array: atlas frames or images
-        if (Array.isArray(src)) {
-            const first = src[0];
-            if (!first) return;
-
-            if (isAtlasFrame(first)) {
-                // Array<{ frame:{x,y,w,h}, source }>
-                src.forEach((frameObj) => {
-                    if (!frameObj) return;
-                    const img   = frameObj.source || null;
-                    const frame = frameObj.frame || { x: 0, y: 0, w: 0, h: 0 };
-                    addFrame(img, frame.x, frame.y, frame.w, frame.h);
-                });
-            } else if (first && first.width !== undefined) {
-                // Array<Image>
-                src.forEach((img) => {
-                    if (!img) return;
-                    const w = img.width  || 0;
-                    const h = img.height || 0;
-                    addFrame(img, 0, 0, w, h);
-                });
-            }
-
-        } else if (isAtlasFrame(src)) {
-            // { frame:{x,y,w,h}, source }
-            const img   = src.source || null;
-            const frame = src.frame || { x: 0, y: 0, w: 0, h: 0 };
-            addFrame(img, frame.x, frame.y, frame.w, frame.h);
-
-        } else if (isFilmstripObject(src)) {
-            // { image, data:[[sx,sy],...], width, height }
-            const img = src.image || null;
-            const fw  = src.width  || 0;
-            const fh  = src.height || 0;
-            (src.data || []).forEach((pos) => {
-                const sx = pos[0] || 0;
-                const sy = pos[1] || 0;
-                addFrame(img, sx, sy, fw, fh);
-            });
-
-        } else if (isTilesetRect(src)) {
-            // { image, x, y, width, height }
-            const img = src.image || null;
-            addFrame(img, src.x, src.y, src.width, src.height);
-
-        } else if (src.width !== undefined) {
-            // Single Image (DOM or p5.Image)
-            const img = src;
-            const w = img.width  || 0;
-            const h = img.height || 0;
-            addFrame(img, 0, 0, w, h);
-        }
+    // Array<Image>
+    const initFromImageArray = (frames) => {
+        node._frames = frames.slice();
+        initFromImage(frames[0]);
     };
 
-    const applyFrame = (index) => {
-        if (!node._frames.length) return;
-        const len = node._frames.length;
-        const i = ((index % len) + len) % len;
-        node._frameIndex = i;
-
-        const frame = node._frames[i];
-        node._img = frame.image || null;
-        node._sx  = frame.sx || 0;
-        node._sy  = frame.sy || 0;
-        node._sw  = frame.sw || 0;
-        node._sh  = frame.sh || 0;
-
+    // { frame: {x,y,w,h}, source: Image }
+    const initFromAtlasFrame = (frameObj) => {
+        const img   = frameObj.source;
+        const frame = frameObj.frame || { x: 0, y: 0, w: 0, h: 0 };
+        node._img = img || null;
+        node._sx  = frame.x || 0;
+        node._sy  = frame.y || 0;
+        node._sw  = frame.w || 0;
+        node._sh  = frame.h || 0;
         node.width  = node._sw;
         node.height = node._sh;
     };
 
-    initFromSource(source);
+    // Array<{ frame, source }>
+    const initFromAtlasFrameArray = (frames) => {
+        node._frames = frames.slice();
+        initFromAtlasFrame(frames[0]);
+    };
 
-    if (node._frames.length) {
-        applyFrame(0);
+    // { image, x, y, width, height }
+    const initFromTilesetRect = (ts) => {
+        node._img = ts.image || null;
+        node._sx  = ts.x || 0;
+        node._sy  = ts.y || 0;
+        node._sw  = ts.width  || 0;
+        node._sh  = ts.height || 0;
+        node.width  = node._sw;
+        node.height = node._sh;
+    };
+
+    // { image, data: [[x,y],...], width, height }
+    const initFromFilmstrip = (fs) => {
+        node._img    = fs.image;
+        node._frames = fs.data.slice(); // [ [sx,sy], ... ]
+        node._sw     = fs.width;
+        node._sh     = fs.height;
+        node.width   = fs.width;
+        node.height  = fs.height;
+        const [sx, sy] = node._frames[0];
+        node._sx = sx; node._sy = sy;
+    };
+
+    // --- Detect source shape (order matters) -------------------
+    if (!source) {
+        initFromImage(null);
+
+    } else if (Array.isArray(source)) {
+        const first = source[0];
+        if (!first) {
+            initFromImage(null);
+        } else if (isAtlasFrame(first)) {
+            initFromAtlasFrameArray(source);
+        } else if (first && first.width !== undefined) {
+            initFromImageArray(source);
+        } else {
+            initFromImage(null);
+        }
+
+    } else if (isAtlasFrame(source)) {
+        initFromAtlasFrame(source);
+
+    } else if (isFilmstripObject(source)) {
+        initFromFilmstrip(source);
+
+    } else if (isTilesetRect(source)) {
+        initFromTilesetRect(source);
+
+    } else if (source.width !== undefined) { // Image (DOM or p5.Image)
+        initFromImage(source);
+
     } else {
-        node._img = null;
-        node.width = 0;
-        node.height = 0;
+        initFromImage(null);
     }
 
-    // Frame control: caller-driven time
+    // Frame control: similar to display's gotoAndStop, but time is driven by caller.
     node.gotoAndStop = (i) => {
         if (!node._frames || !node._frames.length) return;
-        applyFrame(i);
+
+        const len   = node._frames.length;
+        const index = ((i % len) + len) % len;
+        const first = node._frames[0];
+
+        if (Array.isArray(first)) {
+            // filmstrip frames: [sx, sy]
+            const [sx, sy] = node._frames[index];
+            node._sx = sx; node._sy = sy;
+
+        } else if (isAtlasFrame(first)) {
+            // array of atlas frames
+            initFromAtlasFrame(node._frames[index]);
+
+        } else {
+            // array of images
+            initFromImage(node._frames[index]);
+        }
     };
 
     // Optional convenience alias (closer to old display API)
@@ -344,12 +341,10 @@ export const filmstrip = (image, frameW, frameH, spacing = 0) => {
 
 // Tiling sprite with local clipping (similar intent to display's tilingSprite)
 export const tilingSprite = (width, height, source, x = 0, y = 0) => {
-    const tileW = source
-        ? (source.width ?? (source.image ? source.image.width : 0))
-        : 0;
-    const tileH = source
-        ? (source.height ?? (source.image ? source.image.height : 0))
-        : 0;
+    const tileW = (source && source.width)  ||
+        (source && source.image && source.width)  || 0;
+    const tileH = (source && source.height) ||
+        (source && source.image && source.height) || 0;
 
     const cols = width  >= tileW ? Math.round(width  / tileW) + 1 : 2;
     const rows = height >= tileH ? Math.round(height / tileH) + 1 : 2;
@@ -425,105 +420,6 @@ const createRenderer = (
 
     const pixelToWorld = M2D.makePixelToWorld(COMPOSITE);
 
-    // DRAWERS map: type -> draw function
-    const DRAWERS = {
-        rect: (node, dc) => {
-            const { fill, stroke, sw } = node._style || {};
-            if (fill != null) sk.fill(fill); else sk.noFill();
-            if (stroke != null && (sw ?? 1) > 0) {
-                sk.stroke(stroke);
-                sk.strokeWeight(pixelToWorld(sw || 1));
-            } else {
-                sk.noStroke();
-            }
-            sk.rect(
-                -node.width * node.pivotX,
-                -node.height * node.pivotY,
-                node.width,
-                node.height
-            );
-        },
-
-        circle: (node, dc) => {
-            const { fill, stroke, sw } = node._style || {};
-            if (fill != null) sk.fill(fill); else sk.noFill();
-            if (stroke != null && (sw ?? 1) > 0) {
-                sk.stroke(stroke);
-                sk.strokeWeight(pixelToWorld(sw || 1));
-            } else {
-                sk.noStroke();
-            }
-            const cx = -node.width * node.pivotX + node.width / 2;
-            const cy = -node.height * node.pivotY + node.height / 2;
-            sk.ellipse(cx, cy, node.width, node.height);
-        },
-
-        line: (node, dc) => {
-            const { stroke, sw, join } = node._style || {};
-            sk.noFill();
-            if (stroke != null) sk.stroke(stroke); else sk.noStroke();
-            sk.strokeWeight(pixelToWorld(sw || 1));
-
-            const prevJoin = dc.lineJoin;
-            if (join) dc.lineJoin = join;
-
-            sk.line(node.ax, node.ay, node.bx, node.by);
-            dc.lineJoin = prevJoin;
-        },
-
-        text: (node, dc) => {
-            const { fill } = node._style || {};
-            if (fill != null) sk.fill(fill); else sk.noFill();
-            sk.noStroke();
-            sk.textSize(node.fontSize);
-            sk.textFont(node.fontName);
-            sk.textAlign(sk.LEFT, sk.TOP);
-
-            if (!node._measured) {
-                const w = sk.textWidth(node.content);
-                const h = node.fontSize;
-                node.width  = Math.max(node.width, w);
-                node.height = Math.max(node.height, h);
-                node._measured = true;
-            }
-
-            sk.push();
-            sk.scale(1, -1);
-            sk.text(
-                node.content,
-                -node.width * node.pivotX,
-                -node.height * node.pivotY
-            );
-            sk.pop();
-        },
-
-        sprite: (node, dc) => {
-            sk.push();
-            sk.scale(1, -1);
-
-            if (node._img) {
-                const dx = -node.width  * node.pivotX;
-                const dy = -node.height * node.pivotY;
-                const dw = node.width;
-                const dh = node.height;
-
-                if (node._sw && node._sh) {
-                    // drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
-                    dc.drawImage(
-                        node._img,
-                        node._sx, node._sy, node._sw, node._sh,
-                        dx, dy, dw, dh
-                    );
-                } else {
-                    // fallback: full image
-                    dc.drawImage(node._img, dx, dy, dw, dh);
-                }
-            }
-
-            sk.pop();
-        }
-    };
-
     const drawNode = (node, parentAlpha = 1) => {
         if (!node.visible) return;
 
@@ -565,31 +461,134 @@ const createRenderer = (
                 node.height
             );
             dc.clip();
-
-            if (node.children && node.children.length) {
-                if (node.childrenDirty) {
-                    node.children.sort(byLayer);
-                    node.childrenDirty = false;
-                }
-                sk.translate(-node.width * node.pivotX, -node.height * node.pivotY);
-                node.children.forEach((child) => drawNode(child, node.alpha * parentAlpha));
-            }
-
+            sk.translate(-node.width * node.pivotX, -node.height * node.pivotY);
+            node.children.sort(byLayer);
+            node.children.forEach((child) => drawNode(child, node.alpha * parentAlpha));
             dc.restore();
             sk.pop();
             return;
         }
 
-        // Type-specific draw
-        const drawer = DRAWERS[node._type];
-        if (drawer) drawer(node, dc);
-
-        // Children
-        if (node.children && node.children.length) {
-            if (node.childrenDirty) {
-                node.children.sort(byLayer);
-                node.childrenDirty = false;
+        switch (node._type) {
+            case "rect": {
+                const { fill, stroke, sw } = node._style || {};
+                if (fill != null) sk.fill(fill); else sk.noFill();
+                if (stroke != null && (sw ?? 1) > 0) {
+                    sk.stroke(stroke);
+                    sk.strokeWeight(pixelToWorld(sw || 1));
+                } else {
+                    sk.noStroke();
+                }
+                sk.rect(
+                    -node.width * node.pivotX,
+                    -node.height * node.pivotY,
+                    node.width,
+                    node.height
+                );
+                break;
             }
+
+            case "circle": {
+                const { fill, stroke, sw } = node._style || {};
+                if (fill != null) sk.fill(fill); else sk.noFill();
+                if (stroke != null && (sw ?? 1) > 0) {
+                    sk.stroke(stroke);
+                    sk.strokeWeight(pixelToWorld(sw || 1));
+                } else {
+                    sk.noStroke();
+                }
+                const cx = -node.width * node.pivotX + node.width / 2;
+                const cy = -node.height * node.pivotY + node.height / 2;
+                sk.ellipse(cx, cy, node.width, node.height);
+                break;
+            }
+
+            case "line": {
+                const { stroke, sw, join } = node._style || {};
+                sk.noFill();
+                if (stroke != null) sk.stroke(stroke); else sk.noStroke();
+                sk.strokeWeight(pixelToWorld(sw || 1));
+
+                const prevJoin = dc.lineJoin;
+                if (join) dc.lineJoin = join;
+
+                sk.line(node.ax, node.ay, node.bx, node.by);
+                dc.lineJoin = prevJoin;
+                break;
+            }
+
+            case "text": {
+                const { fill } = node._style || {};
+                if (fill != null) sk.fill(fill); else sk.noFill();
+                sk.noStroke();
+                sk.textSize(node.fontSize);
+                sk.textFont(node.fontName);
+                sk.textAlign(sk.LEFT, sk.TOP);
+
+                if (!node._measured) {
+                    const w = sk.textWidth(node.content);
+                    const h = node.fontSize;
+                    node.width  = Math.max(node.width, w);
+                    node.height = Math.max(node.height, h);
+                    node._measured = true;
+                }
+
+                sk.push();
+                sk.scale(1, -1);
+                sk.text(
+                    node.content,
+                    -node.width * node.pivotX,
+                    -node.height * node.pivotY
+                );
+                sk.pop();
+                break;
+            }
+
+            case "sprite": {
+                sk.push();
+                sk.scale(1, -1);
+
+                if (node._img) {
+                    const fullW = node._img.width  || 0;
+                    const fullH = node._img.height || 0;
+
+                    const dx = -node.width  * node.pivotX;
+                    const dy = -node.height * node.pivotY;
+                    const dw = node.width;
+                    const dh = node.height;
+
+                    const hasSrc = node._sw && node._sh;
+                    const matchesFull =
+                        node._sx === 0 &&
+                        node._sy === 0 &&
+                        node._sw === fullW &&
+                        node._sh === fullH;
+
+                    const isFull = !hasSrc || matchesFull;
+
+                    if (isFull) {
+                        // drawImage(image, dx, dy, dw, dh)
+                        dc.drawImage(node._img, dx, dy, dw, dh);
+                    } else {
+                        // drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
+                        dc.drawImage(
+                            node._img,
+                            node._sx, node._sy, node._sw, node._sh,
+                            dx, dy, dw, dh
+                        );
+                    }
+                }
+
+                sk.pop();
+                break;
+            }
+
+            default:
+                break; // groups only recurse
+        }
+
+        if (node.children && node.children.length) {
+            node.children.sort(byLayer);
             // move origin to parent's top-left (relative to pivot) for children
             sk.translate(-node.width * node.pivotX, -node.height * node.pivotY);
             node.children.forEach((child) => drawNode(child, node.alpha * parentAlpha));

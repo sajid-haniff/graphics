@@ -5,6 +5,7 @@ import {createRippleWaterDemo} from "./demos/wave/ripples";
 import createAustraliaMapCSPDemo from "./ai/csp/australia-map";
 import {createTimePilotDemo} from "./demos/timepilot/timepilot-demo";
 import {createScenegraphSpaceshipSpriteDemo} from "./adv-game-design/scenegraph-spaceship-sprite-demo";
+import createScenegraphTransformDemo from "./adv-game-design/createScenegraphTransformDemo";
 
 
 const demos = {
@@ -54,6 +55,8 @@ const demos = {
     'createScenegraphButtonAtlasDemo': () => import('./adv-game-design/scenegraph-button-atlas-demo'),
     'createScenegraphFractalUIDemo': () => import('./adv-game-design/scenegraph-fractal-ui-demo'),
     'createScenegraphPhysicsThrustDemo': () => import('./adv-game-design/scenegraph-physics-thrust-demo'),
+    'createScenegraphTransformDemo': () => import('./adv-game-design/createScenegraphTransformDemo'),
+
 
 
 };
