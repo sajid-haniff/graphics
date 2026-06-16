@@ -24,6 +24,7 @@ const demos = {
     'simulateSpringSystem': () => import('./physics/kinematics/spring-simulation.js'),
     'createMinEditDemo': () => import('./algorithm/dynamic/min-edit-demo.js'),
     'createLoadImagesDemo': () => import('./adv-game-design/loadImagesDemo'),
+    'createConvolutionDemo': () => import('./image-processing/convolution-demo'),
     'createWorleyDemo': () => import('./worley-pattern/worley-demo'),
     'createStarfieldDemo': () => import('./space/starfield3'),
     'createMatrixRainDemo': () => import('./noc/visuals/matrix-rain'),
