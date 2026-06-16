@@ -1,3 +1,12 @@
+/**
+ * Named convolution kernels used by the demo.
+ *
+ * `matrix` holds the sampling weights. `divisor` normalizes filters whose
+ * weights intentionally sum above 1, such as blur kernels. `offset` shifts the
+ * final RGB values after normalization; an offset of 128 makes signed filters
+ * such as Sobel and Emboss visible because negative responses would otherwise
+ * clamp to black.
+ */
 export const KERNELS = {
     identity: {
         name: "Identity",
@@ -85,9 +94,21 @@ export const KERNELS = {
     }
 };
 
+/**
+ * Clamp a numeric value into an inclusive range.
+ *
+ * In this module it is used both for color channels (`0..255`) and for edge
+ * sampling coordinates (`0..width - 1`, `0..height - 1`).
+ */
 export const clamp = (value, min = 0, max = 255) =>
     Math.max(min, Math.min(max, value));
 
+/**
+ * Create a p5.Image prepared for direct pixel writes.
+ *
+ * The output image is separate from the source image so convolution never reads
+ * pixels that have already been overwritten earlier in the same pass.
+ */
 export const createImageBuffer = (sk, width, height) => {
     const image = sk.createImage(width, height);
     image.loadPixels();
@@ -96,6 +117,13 @@ export const createImageBuffer = (sk, width, height) => {
 
 const pixelIndex = (x, y, width) => (y * width + x) * 4;
 
+/**
+ * Validate the kernel shape expected by the sampling loop.
+ *
+ * Odd square kernels have one unambiguous center cell. That center maps to the
+ * destination pixel being written; every other cell is interpreted as an offset
+ * around that pixel.
+ */
 const validateKernel = (matrix) => {
     const size = matrix.length;
 
@@ -110,6 +138,13 @@ const validateKernel = (matrix) => {
     }
 };
 
+/**
+ * Resolve the normalization divisor for a kernel.
+ *
+ * If the caller provides an explicit divisor, use it. Otherwise use the sum of
+ * the weights, falling back to 1 for edge-detection kernels whose weights sum
+ * to zero.
+ */
 const kernelDivisor = (matrix, divisor) => {
     if (divisor !== undefined && divisor !== null) return divisor || 1;
 
@@ -123,9 +158,15 @@ const kernelDivisor = (matrix, divisor) => {
     return sum || 1;
 };
 
-// A convolution kernel samples the source pixels around one destination pixel.
-// Each neighboring color is multiplied by the matching kernel weight, summed,
-// normalized, then written into the output image.
+/**
+ * Apply one convolution kernel at one destination pixel.
+ *
+ * The kernel samples neighboring source pixels around `(x, y)`. Each RGB channel
+ * is accumulated independently so color relationships are preserved instead of
+ * collapsing the image to grayscale. Edge samples are clamped to the nearest
+ * valid source pixel, which keeps border pixels defined without shrinking the
+ * output image.
+ */
 export const applyKernel = (
     sourcePixels,
     targetPixels,
@@ -137,6 +178,8 @@ export const applyKernel = (
     divisor = 1,
     offset = 0
 ) => {
+    // For a 3x3 kernel, center is 1; for 5x5, center is 2. Subtracting this
+    // value converts kernel coordinates into source-pixel offsets around (x, y).
     const center = Math.floor(matrix.length / 2);
     const targetIndex = pixelIndex(x, y, width);
     let r = 0;
@@ -163,9 +206,19 @@ export const applyKernel = (
     targetPixels[targetIndex] = clamp((r / divisor) + offset);
     targetPixels[targetIndex + 1] = clamp((g / divisor) + offset);
     targetPixels[targetIndex + 2] = clamp((b / divisor) + offset);
+    // Preserve the source alpha so the identity kernel is a pixel-perfect copy,
+    // including transparent or antialiased PNG edges.
     targetPixels[targetIndex + 3] = sourcePixels[centerIndex + 3];
 };
 
+/**
+ * Apply a full-image convolution filter to a p5.Image.
+ *
+ * `sourceImage.loadPixels()` exposes the immutable input for this pass, while
+ * `output.loadPixels()` prepares a separate target buffer. Keeping those arrays
+ * separate is the key engineering constraint: convolution must sample the
+ * original neighborhood for every pixel, not partially filtered neighbors.
+ */
 export const applyConvolution = (sk, sourceImage, kernel, targetImage = null) => {
     const matrix = kernel.matrix || kernel;
     validateKernel(matrix);
@@ -181,8 +234,6 @@ export const applyConvolution = (sk, sourceImage, kernel, targetImage = null) =>
     sourceImage.loadPixels();
     output.loadPixels();
 
-    // Edge samples are clamped to the image bounds so every output pixel can use
-    // the same kernel shape, including pixels on the border.
     for (let y = 0; y < sourceImage.height; y += 1) {
         for (let x = 0; x < sourceImage.width; x += 1) {
             applyKernel(

@@ -1,5 +1,9 @@
 import { KERNELS, applyConvolution } from "./convolution";
 
+/**
+ * Filter order is part of the demo controls: number keys 1-9 map directly to
+ * this array. Keep this list in sync with the instruction text rendered below.
+ */
 const FILTERS = [
     KERNELS.identity,
     KERNELS.boxBlur,
@@ -14,6 +18,11 @@ const FILTERS = [
 
 const IMAGE_SOURCE = "images/tiger.png";
 
+/**
+ * Compute an image rectangle that fits inside a fixed panel while preserving
+ * the source aspect ratio. The original and filtered views use the same fitted
+ * size so visual differences come from the filter, not stretching.
+ */
 const fitRect = (sourceWidth, sourceHeight, maxWidth, maxHeight) => {
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight);
     const width = sourceWidth * scale;
@@ -21,6 +30,12 @@ const fitRect = (sourceWidth, sourceHeight, maxWidth, maxHeight) => {
     return { width, height };
 };
 
+/**
+ * Draw the active kernel as a small matrix.
+ *
+ * This is intentionally a simple device-space overlay, matching the rest of the
+ * demo UI rather than introducing scenegraph or world-transform machinery.
+ */
 const drawKernel = (sk, kernel, x, y) => {
     const matrix = kernel.matrix;
     const cellW = 44;
@@ -45,6 +60,15 @@ const drawKernel = (sk, kernel, x, y) => {
     }
 };
 
+/**
+ * Create a p5 demo that shows an original image beside a manually convolved
+ * output image.
+ *
+ * The demo uses only device-space rendering: image pixels and UI labels are
+ * easier to compare when p5's default top-left coordinate system is left intact.
+ * `src/index.js` can be switched to this factory for manual testing, but the
+ * permanent integration point is the dynamic registry in `src/demos.js`.
+ */
 export const createConvolutionDemo = (sk, CANVAS_WIDTH = 960, CANVAS_HEIGHT = 540) => {
     let sourceImage = null;
     let filteredImage = null;
@@ -54,6 +78,11 @@ export const createConvolutionDemo = (sk, CANVAS_WIDTH = 960, CANVAS_HEIGHT = 54
 
     const selectedKernel = () => FILTERS[selectedIndex];
 
+    /**
+     * Recompute only when the source image arrives or the selected filter
+     * changes. Convolution touches every pixel, so doing this work every frame
+     * would obscure the implementation with unnecessary performance cost.
+     */
     const recompute = () => {
         if (!sourceImage) return;
         filteredImage = applyConvolution(sk, sourceImage, selectedKernel(), filteredImage);
@@ -92,6 +121,8 @@ export const createConvolutionDemo = (sk, CANVAS_WIDTH = 960, CANVAS_HEIGHT = 54
     return {
         setup() {
             sk.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+            // Keep canvas pixels and CSS pixels aligned so visual comparisons and
+            // text placement are stable on high-DPI displays.
             sk.pixelDensity?.(1);
 
             sk.loadImage(
@@ -120,6 +151,8 @@ export const createConvolutionDemo = (sk, CANVAS_WIDTH = 960, CANVAS_HEIGHT = 54
             }
 
             sk.background(18);
+            // No world transform is used in this demo; reset defensively before
+            // drawing the image pair and explanatory UI.
             sk.resetMatrix();
 
             const margin = 32;
