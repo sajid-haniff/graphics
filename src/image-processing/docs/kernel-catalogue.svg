@@ -1,0 +1,107 @@
+<svg viewBox="0 0 860 560" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', monospace">
+  <rect width="860" height="560" fill="#0d1117"/>
+
+  <text x="430" y="32" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="600" font-family="system-ui, sans-serif">Kernel Catalogue — All 9 Filters</text>
+
+  <!-- Helper: each kernel card is 175w × 140h -->
+  <!-- Row 1: identity, boxBlur, gaussianBlur -->
+  <!-- Row 2: sharpen, edgeDetect, emboss -->
+  <!-- Row 3: sobelX, sobelY, laplacian -->
+
+  <!-- ===================== ROW 1 ===================== -->
+
+  <!-- IDENTITY -->
+  <rect x="20" y="48" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="107" y="68" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Identity</text>
+  <text x="107" y="83" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">pass-through, no change</text>
+  <!-- 3x3 matrix -->
+  <text x="60" y="105" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="107" y="105" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="154" y="105" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="60" y="123" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="107" y="123" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="700">1</text><text x="154" y="123" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="60" y="141" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="107" y="141" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="154" y="141" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="107" y="184" text-anchor="middle" fill="#30363d" font-size="10" font-family="system-ui, sans-serif">÷ 1</text>
+
+  <!-- BOX BLUR -->
+  <rect x="213" y="48" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="300" y="68" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Box Blur</text>
+  <text x="300" y="83" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">equal-weight average</text>
+  <text x="253" y="105" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="300" y="105" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="347" y="105" text-anchor="middle" fill="#388bfd" font-size="13">1</text>
+  <text x="253" y="123" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="300" y="123" text-anchor="middle" fill="#58a6ff" font-size="14" font-weight="700">1</text><text x="347" y="123" text-anchor="middle" fill="#388bfd" font-size="13">1</text>
+  <text x="253" y="141" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="300" y="141" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="347" y="141" text-anchor="middle" fill="#388bfd" font-size="13">1</text>
+  <text x="300" y="184" text-anchor="middle" fill="#388bfd" font-size="10" font-family="system-ui, sans-serif">÷ 9  (all equal weight)</text>
+
+  <!-- GAUSSIAN BLUR -->
+  <rect x="406" y="48" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="493" y="68" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Gaussian Blur</text>
+  <text x="493" y="83" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">centre-weighted average</text>
+  <text x="447" y="105" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="493" y="105" text-anchor="middle" fill="#388bfd" font-size="14" font-weight="600">2</text><text x="540" y="105" text-anchor="middle" fill="#388bfd" font-size="13">1</text>
+  <text x="447" y="123" text-anchor="middle" fill="#388bfd" font-size="14" font-weight="600">2</text><text x="493" y="123" text-anchor="middle" fill="#58a6ff" font-size="15" font-weight="700">4</text><text x="540" y="123" text-anchor="middle" fill="#388bfd" font-size="14" font-weight="600">2</text>
+  <text x="447" y="141" text-anchor="middle" fill="#388bfd" font-size="13">1</text><text x="493" y="141" text-anchor="middle" fill="#388bfd" font-size="14" font-weight="600">2</text><text x="540" y="141" text-anchor="middle" fill="#388bfd" font-size="13">1</text>
+  <text x="493" y="184" text-anchor="middle" fill="#388bfd" font-size="10" font-family="system-ui, sans-serif">÷ 16  (Gaussian bell curve)</text>
+
+  <!-- SHARPEN -->
+  <rect x="599" y="48" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="686" y="68" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Sharpen</text>
+  <text x="686" y="83" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">identity + edge boost</text>
+  <text x="640" y="105" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="686" y="105" text-anchor="middle" fill="#f85149" font-size="14" font-weight="600">−1</text><text x="733" y="105" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="640" y="123" text-anchor="middle" fill="#f85149" font-size="14" font-weight="600">−1</text><text x="686" y="123" text-anchor="middle" fill="#3fb950" font-size="15" font-weight="700">5</text><text x="733" y="123" text-anchor="middle" fill="#f85149" font-size="14" font-weight="600">−1</text>
+  <text x="640" y="141" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="686" y="141" text-anchor="middle" fill="#f85149" font-size="14" font-weight="600">−1</text><text x="733" y="141" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="686" y="184" text-anchor="middle" fill="#3fb950" font-size="10" font-family="system-ui, sans-serif">÷ 1  (sum = 1, no brightness shift)</text>
+
+  <!-- ===================== ROW 2 ===================== -->
+
+  <!-- EDGE DETECT -->
+  <rect x="20" y="218" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="107" y="238" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Edge Detect</text>
+  <text x="107" y="253" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">Laplacian, all directions</text>
+  <text x="60" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="107" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="154" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text>
+  <text x="60" y="293" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="107" y="293" text-anchor="middle" fill="#3fb950" font-size="15" font-weight="700">8</text><text x="154" y="293" text-anchor="middle" fill="#f85149" font-size="13">−1</text>
+  <text x="60" y="311" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="107" y="311" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="154" y="311" text-anchor="middle" fill="#f85149" font-size="13">−1</text>
+  <text x="107" y="354" text-anchor="middle" fill="#f85149" font-size="10" font-family="system-ui, sans-serif">sum = 0 → black background</text>
+
+  <!-- EMBOSS -->
+  <rect x="213" y="218" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="300" y="238" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Emboss</text>
+  <text x="300" y="253" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">diagonal gradient relief</text>
+  <text x="253" y="275" text-anchor="middle" fill="#f85149" font-size="13">−2</text><text x="300" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="347" y="275" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="253" y="293" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="300" y="293" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="600">1</text><text x="347" y="293" text-anchor="middle" fill="#e6edf3" font-size="13">1</text>
+  <text x="253" y="311" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="300" y="311" text-anchor="middle" fill="#e6edf3" font-size="13">1</text><text x="347" y="311" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="600">2</text>
+  <text x="300" y="354" text-anchor="middle" fill="#f0883e" font-size="10" font-family="system-ui, sans-serif">÷ 1, + 128 offset (grey neutral)</text>
+
+  <!-- SOBEL X -->
+  <rect x="406" y="218" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="493" y="238" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Sobel X</text>
+  <text x="493" y="253" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">horizontal edge gradient</text>
+  <text x="447" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="493" y="275" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="540" y="275" text-anchor="middle" fill="#3fb950" font-size="13">+1</text>
+  <text x="447" y="293" text-anchor="middle" fill="#f85149" font-size="14" font-weight="600">−2</text><text x="493" y="293" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="540" y="293" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="600">+2</text>
+  <text x="447" y="311" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="493" y="311" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="540" y="311" text-anchor="middle" fill="#3fb950" font-size="13">+1</text>
+  <text x="493" y="354" text-anchor="middle" fill="#f0883e" font-size="10" font-family="system-ui, sans-serif">÷ 1, + 128 offset</text>
+
+  <!-- SOBEL Y -->
+  <rect x="599" y="218" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="686" y="238" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Sobel Y</text>
+  <text x="686" y="253" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">vertical edge gradient</text>
+  <text x="640" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="686" y="275" text-anchor="middle" fill="#f85149" font-size="14" font-weight="600">−2</text><text x="733" y="275" text-anchor="middle" fill="#f85149" font-size="13">−1</text>
+  <text x="640" y="293" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="686" y="293" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="733" y="293" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="640" y="311" text-anchor="middle" fill="#3fb950" font-size="13">+1</text><text x="686" y="311" text-anchor="middle" fill="#3fb950" font-size="14" font-weight="600">+2</text><text x="733" y="311" text-anchor="middle" fill="#3fb950" font-size="13">+1</text>
+  <text x="686" y="354" text-anchor="middle" fill="#f0883e" font-size="10" font-family="system-ui, sans-serif">÷ 1, + 128 offset</text>
+
+  <!-- ===================== ROW 3 ===================== -->
+
+  <!-- LAPLACIAN -->
+  <rect x="20" y="388" width="175" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="107" y="408" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Laplacian</text>
+  <text x="107" y="423" text-anchor="middle" fill="#484f58" font-size="9.5" font-family="system-ui, sans-serif">second derivative edges</text>
+  <text x="60"  y="445" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="107" y="445" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="154" y="445" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="60"  y="463" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="107" y="463" text-anchor="middle" fill="#3fb950" font-size="15" font-weight="700">4</text><text x="154" y="463" text-anchor="middle" fill="#f85149" font-size="13">−1</text>
+  <text x="60"  y="481" text-anchor="middle" fill="#484f58" font-size="13">0</text><text x="107" y="481" text-anchor="middle" fill="#f85149" font-size="13">−1</text><text x="154" y="481" text-anchor="middle" fill="#484f58" font-size="13">0</text>
+  <text x="107" y="524" text-anchor="middle" fill="#f85149" font-size="10" font-family="system-ui, sans-serif">cross-shaped, sum = 0</text>
+
+  <!-- LEGEND -->
+  <rect x="213" y="388" width="600" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="230" y="412" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Legend &amp; Patterns</text>
+  <circle cx="230" cy="432" r="5" fill="#388bfd"/><text x="243" y="436" fill="#e6edf3" font-size="10.5" font-family="system-ui, sans-serif">Positive weights  — contribute the neighbour's colour</text>
+  <circle cx="230" cy="452" r="5" fill="#f85149"/><text x="243" y="456" fill="#e6edf3" font-size="10.5" font-family="system-ui, sans-serif">Negative weights — subtract the neighbour's colour</text>
+  <circle cx="230" cy="472" r="5" fill="#f0883e"/><text x="243" y="476" fill="#e6edf3" font-size="10.5" font-family="system-ui, sans-serif">offset = 128     — centres output at mid-grey so negatives are visible</text>
+  <circle cx="230" cy="492" r="5" fill="#58a6ff"/><text x="243" y="496" fill="#e6edf3" font-size="10.5" font-family="system-ui, sans-serif">Sum = 1 (Identity, Sharpen) — preserves overall brightness</text>
+  <circle cx="230" cy="512" r="5" fill="#3fb950"/><text x="243" y="516" fill="#e6edf3" font-size="10.5" font-family="system-ui, sans-serif">Sum = 0 (Edge, Laplacian)  — black background; only edges glow</text>
+</svg>

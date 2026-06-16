@@ -1,0 +1,93 @@
+<svg viewBox="0 0 860 340" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', monospace">
+  <rect width="860" height="340" fill="#0d1117"/>
+
+  <text x="430" y="30" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="600" font-family="system-ui, sans-serif">Code Architecture — Call Flow</text>
+
+  <!-- ── BOXES ── -->
+  <!-- applyConvolution -->
+  <rect x="20" y="54" width="200" height="80" rx="6" fill="#1a2035" stroke="#388bfd" stroke-width="1.5"/>
+  <text x="120" y="78" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="600">applyConvolution()</text>
+  <text x="120" y="96" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">sk, sourceImage, kernel</text>
+  <text x="120" y="112" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">targetImage?</text>
+  <text x="120" y="126" text-anchor="middle" fill="#484f58" font-size="9" font-family="system-ui, sans-serif">convolution.js:88</text>
+
+  <!-- validateKernel -->
+  <rect x="270" y="54" width="160" height="56" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="350" y="76" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">validateKernel()</text>
+  <text x="350" y="92" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">odd size · square shape</text>
+  <text x="350" y="104" text-anchor="middle" fill="#484f58" font-size="9" font-family="system-ui, sans-serif">throws on bad input</text>
+
+  <!-- kernelDivisor -->
+  <rect x="270" y="128" width="160" height="56" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="350" y="150" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">kernelDivisor()</text>
+  <text x="350" y="166" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">use explicit divisor</text>
+  <text x="350" y="180" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">or auto-sum matrix</text>
+
+  <!-- createImageBuffer -->
+  <rect x="270" y="202" width="160" height="56" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="350" y="224" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">createImageBuffer()</text>
+  <text x="350" y="240" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">reuse target if same</text>
+  <text x="350" y="254" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">dimensions, else new</text>
+
+  <!-- pixel loop -->
+  <rect x="480" y="54" width="180" height="80" rx="6" fill="#1a2035" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="570" y="76" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="600">pixel loop</text>
+  <text x="570" y="94" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">for y in height</text>
+  <text x="570" y="108" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">  for x in width</text>
+  <text x="570" y="122" text-anchor="middle" fill="#f0883e" font-size="9" font-family="system-ui, sans-serif">O(W × H × K²)</text>
+
+  <!-- applyKernel -->
+  <rect x="480" y="152" width="180" height="110" rx="6" fill="#1a2035" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="570" y="174" text-anchor="middle" fill="#bc8cff" font-size="11" font-weight="600">applyKernel()</text>
+  <text x="570" y="192" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">for ky, kx in kernel</text>
+  <text x="570" y="208" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">  sampleX/Y = clamp()</text>
+  <text x="570" y="224" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">  r += src[idx] * K[ky][kx]</text>
+  <text x="570" y="240" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">write R, G, B, keep A</text>
+  <text x="570" y="254" text-anchor="middle" fill="#484f58" font-size="9" font-family="system-ui, sans-serif">convolution.js:70</text>
+
+  <!-- output -->
+  <rect x="710" y="54" width="130" height="80" rx="6" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="775" y="80" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">p5 Image</text>
+  <text x="775" y="98" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">updatePixels()</text>
+  <text x="775" y="114" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">returned to caller</text>
+  <text x="775" y="128" text-anchor="middle" fill="#484f58" font-size="9" font-family="system-ui, sans-serif">same size as source</text>
+
+  <!-- clamp util -->
+  <rect x="710" y="152" width="130" height="56" rx="6" fill="#161b22" stroke="#8b949e" stroke-width="1"/>
+  <text x="775" y="174" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="600">clamp(v, 0, 255)</text>
+  <text x="775" y="192" text-anchor="middle" fill="#484f58" font-size="10" font-family="system-ui, sans-serif">Math.max(0,</text>
+  <text x="775" y="206" text-anchor="middle" fill="#484f58" font-size="10" font-family="system-ui, sans-serif">  Math.min(255, v))</text>
+
+  <!-- ── ARROWS ── -->
+  <!-- applyConvolution → validate -->
+  <line x1="220" y1="76" x2="268" y2="76" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- applyConvolution → divisor -->
+  <line x1="220" y1="94" x2="255" y2="94" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="255" y1="94" x2="255" y2="156" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="255" y1="156" x2="268" y2="156" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- applyConvolution → createBuffer -->
+  <line x1="220" y1="112" x2="255" y2="112" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="255" y1="112" x2="255" y2="230" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="255" y1="230" x2="268" y2="230" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- applyConvolution → pixel loop -->
+  <line x1="220" y1="90" x2="455" y2="90" stroke="#30363d" stroke-width="1.5"/>
+  <line x1="455" y1="90" x2="478" y2="90" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- pixel loop → applyKernel -->
+  <line x1="570" y1="134" x2="570" y2="150" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- applyKernel → clamp -->
+  <line x1="660" y1="200" x2="708" y2="180" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- pixel loop → output -->
+  <line x1="660" y1="90" x2="708" y2="90" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- arrow marker -->
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="#484f58"/>
+    </marker>
+  </defs>
+
+  <!-- ── COMPLEXITY NOTE ── -->
+  <rect x="20" y="278" width="820" height="46" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="40" y="300" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Complexity:  O(W × H × K²)  —  every output pixel reads K² source pixels.  A 3×3 kernel on a 1920×1080 image = ~17 M pixel reads.</text>
+  <text x="40" y="316" fill="#484f58" font-size="10.5" font-family="system-ui, sans-serif">Alpha is always copied from the source centre pixel unchanged (line 87).  Separable kernels (Gaussian) could be split into two 1D passes for O(W×H×K) performance — not yet implemented.</text>
+</svg>

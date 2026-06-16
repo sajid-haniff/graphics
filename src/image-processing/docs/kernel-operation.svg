@@ -1,0 +1,143 @@
+<svg viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, 'Cascadia Code', 'Fira Code', monospace">
+  <rect width="860" height="420" fill="#0d1117"/>
+
+  <!-- Title -->
+  <text x="430" y="36" text-anchor="middle" fill="#e6edf3" font-size="15" font-weight="600" font-family="system-ui, sans-serif">How a Convolution Kernel Works</text>
+
+  <!-- ── SOURCE IMAGE GRID ── -->
+  <text x="70" y="68" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Source image pixels</text>
+
+  <!-- Grid cells: 5×5 -->
+  <!-- Row 0 -->
+  <rect x="20"  y="76" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60"  y="76" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="100" y="76" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="140" y="76" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="180" y="76" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <!-- Row 1 -->
+  <rect x="20"  y="108" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <!-- Highlighted 3×3 neighbourhood -->
+  <rect x="60"  y="108" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="100" y="108" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="140" y="108" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="180" y="108" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <!-- Row 2 -->
+  <rect x="20"  y="140" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60"  y="140" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <!-- Center pixel -->
+  <rect x="100" y="140" width="40" height="32" fill="#1f3a5c" stroke="#58a6ff" stroke-width="2"/>
+  <rect x="140" y="140" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="180" y="140" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <!-- Row 3 -->
+  <rect x="20"  y="172" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60"  y="172" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="100" y="172" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="140" y="172" width="40" height="32" fill="#1c2d3a" stroke="#388bfd" stroke-width="1.5"/>
+  <rect x="180" y="172" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <!-- Row 4 -->
+  <rect x="20"  y="204" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="60"  y="204" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="100" y="204" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="140" y="204" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <rect x="180" y="204" width="40" height="32" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Pixel values -->
+  <text x="40"  y="97"  text-anchor="middle" fill="#484f58" font-size="10">120</text>
+  <text x="80"  y="97"  text-anchor="middle" fill="#484f58" font-size="10">132</text>
+  <text x="120" y="97"  text-anchor="middle" fill="#484f58" font-size="10">115</text>
+  <text x="160" y="97"  text-anchor="middle" fill="#484f58" font-size="10">98</text>
+  <text x="200" y="97"  text-anchor="middle" fill="#484f58" font-size="10">87</text>
+
+  <text x="40"  y="129" text-anchor="middle" fill="#484f58" font-size="10">110</text>
+  <text x="80"  y="129" text-anchor="middle" fill="#8b949e" font-size="10">140</text>
+  <text x="120" y="129" text-anchor="middle" fill="#8b949e" font-size="10">160</text>
+  <text x="160" y="129" text-anchor="middle" fill="#8b949e" font-size="10">130</text>
+  <text x="200" y="129" text-anchor="middle" fill="#484f58" font-size="10">95</text>
+
+  <text x="40"  y="161" text-anchor="middle" fill="#484f58" font-size="10">105</text>
+  <text x="80"  y="161" text-anchor="middle" fill="#8b949e" font-size="10">150</text>
+  <text x="120" y="161" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="600">180</text>
+  <text x="160" y="161" text-anchor="middle" fill="#8b949e" font-size="10">145</text>
+  <text x="200" y="161" text-anchor="middle" fill="#484f58" font-size="10">100</text>
+
+  <text x="40"  y="193" text-anchor="middle" fill="#484f58" font-size="10">95</text>
+  <text x="80"  y="193" text-anchor="middle" fill="#8b949e" font-size="10">125</text>
+  <text x="120" y="193" text-anchor="middle" fill="#8b949e" font-size="10">138</text>
+  <text x="160" y="193" text-anchor="middle" fill="#8b949e" font-size="10">120</text>
+  <text x="200" y="193" text-anchor="middle" fill="#484f58" font-size="10">88</text>
+
+  <text x="40"  y="225" text-anchor="middle" fill="#484f58" font-size="10">82</text>
+  <text x="80"  y="225" text-anchor="middle" fill="#484f58" font-size="10">90</text>
+  <text x="120" y="225" text-anchor="middle" fill="#484f58" font-size="10">105</text>
+  <text x="160" y="225" text-anchor="middle" fill="#484f58" font-size="10">98</text>
+  <text x="200" y="225" text-anchor="middle" fill="#484f58" font-size="10">75</text>
+
+  <!-- Center label -->
+  <text x="120" y="254" text-anchor="middle" fill="#58a6ff" font-size="10" font-family="system-ui, sans-serif">(x, y) target pixel</text>
+
+  <!-- ── MULTIPLY ARROW ── -->
+  <text x="260" y="155" text-anchor="middle" fill="#3fb950" font-size="22">⊗</text>
+  <text x="260" y="172" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">element-wise</text>
+  <text x="260" y="184" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">multiply</text>
+
+  <!-- ── KERNEL GRID ── -->
+  <text x="370" y="68" text-anchor="middle" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">Gaussian kernel (÷ 16)</text>
+
+  <rect x="310" y="108" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="350" y="108" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="390" y="108" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="310" y="140" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="350" y="140" width="40" height="32" fill="#1f3a1f" stroke="#3fb950" stroke-width="2"/>
+  <rect x="390" y="140" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="310" y="172" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="350" y="172" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+  <rect x="390" y="172" width="40" height="32" fill="#1a2d1a" stroke="#3fb950" stroke-width="1.5"/>
+
+  <text x="330" y="129" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">1</text>
+  <text x="370" y="129" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">2</text>
+  <text x="410" y="129" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">1</text>
+  <text x="330" y="161" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">2</text>
+  <text x="370" y="161" text-anchor="middle" fill="#56d364" font-size="13" font-weight="700">4</text>
+  <text x="410" y="161" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">2</text>
+  <text x="330" y="193" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">1</text>
+  <text x="370" y="193" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">2</text>
+  <text x="410" y="193" text-anchor="middle" fill="#3fb950" font-size="12" font-weight="500">1</text>
+
+  <!-- ── SUM ARROW ── -->
+  <text x="470" y="148" text-anchor="middle" fill="#e6edf3" font-size="20">→</text>
+  <text x="470" y="166" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">sum all</text>
+  <text x="470" y="178" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">products</text>
+
+  <!-- ── SUM BOX ── -->
+  <rect x="500" y="110" width="120" height="80" rx="6" fill="#161b22" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="560" y="133" text-anchor="middle" fill="#f0883e" font-size="10" font-family="system-ui, sans-serif">Weighted sum (R)</text>
+  <text x="560" y="153" text-anchor="middle" fill="#e6edf3" font-size="11">1·140 + 2·160 +</text>
+  <text x="560" y="167" text-anchor="middle" fill="#e6edf3" font-size="11">1·130 + 2·150 +</text>
+  <text x="560" y="181" text-anchor="middle" fill="#e6edf3" font-size="11">4·180 + … = 2544</text>
+
+  <!-- ── DIVIDE ARROW ── -->
+  <text x="650" y="148" text-anchor="middle" fill="#e6edf3" font-size="20">→</text>
+  <text x="650" y="166" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">÷ divisor</text>
+  <text x="650" y="178" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">+ clamp</text>
+
+  <!-- ── OUTPUT PIXEL ── -->
+  <rect x="680" y="110" width="80" height="80" rx="6" fill="#1f1a2e" stroke="#bc8cff" stroke-width="2"/>
+  <text x="720" y="140" text-anchor="middle" fill="#bc8cff" font-size="10" font-family="system-ui, sans-serif">Output pixel</text>
+  <text x="720" y="159" text-anchor="middle" fill="#e6edf3" font-size="18" font-weight="700">159</text>
+  <text x="720" y="178" text-anchor="middle" fill="#8b949e" font-size="10" font-family="system-ui, sans-serif">2544 / 16</text>
+
+  <!-- ── FORMULA SECTION ── -->
+  <rect x="20" y="285" width="820" height="110" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="40" y="308" fill="#8b949e" font-size="11" font-family="system-ui, sans-serif">General formula for output pixel at (x, y) — applied independently per R, G, B channel:</text>
+
+  <text x="430" y="338" text-anchor="middle" fill="#e6edf3" font-size="14" font-weight="500">
+    output(x,y) = clamp( Σ  Σ  K[ky][kx] · src(x+kx−c, y+ky−c) / divisor  +  offset )
+  </text>
+
+  <text x="40" y="368" fill="#8b949e" font-size="10.5" font-family="system-ui, sans-serif">  K        — kernel matrix weight at position [ky][kx]</text>
+  <text x="280" y="368" fill="#8b949e" font-size="10.5" font-family="system-ui, sans-serif">  src      — source pixel value (clamped to image bounds)</text>
+  <text x="560" y="368" fill="#8b949e" font-size="10.5" font-family="system-ui, sans-serif">  c = ⌊size/2⌋  — kernel center</text>
+
+  <text x="40" y="386" fill="#8b949e" font-size="10.5" font-family="system-ui, sans-serif">  divisor  — normalises sum (auto-computed as Σ K if not set)</text>
+  <text x="380" y="386" fill="#8b949e" font-size="10.5" font-family="system-ui, sans-serif">  offset   — brightness shift (128 for Sobel/Emboss to centre around grey)</text>
+</svg>
