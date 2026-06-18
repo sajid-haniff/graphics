@@ -32,7 +32,8 @@ const demos = {
 //const demoName = 'createLunarLanderDemo';
 
 //const demoName = 'createScenegraphTransformDemo'
-const demoName = 'createConvolutionDemo'
+//const demoName = 'createConvolutionDemo'
+const demoName = 'createLunarLanderArcadeDemo'
 
 const runDemo = async (demoName) => {
     try {

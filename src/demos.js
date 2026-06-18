@@ -48,6 +48,7 @@ const demos = {
     'createScenegraphTilingMaskedAnimDemo': () => import('./adv-game-design/scenegraph-tiling-masked-anim-demo'),
     'createRotatingSquaresDemo': () => import('./adv-game-design/rotating-squares'),
     'createLunarLanderDemo': () => import('./adv-game-design/lunar-lander'),
+    'createLunarLanderArcadeDemo': () => import('./demos/lunar-lander/lunar-lander-demo'),
     'createSpaceshipAtlasDemo': () => import('./adv-game-design/loadSpaceshipAtlasDemo'),
     'createScenegraphSpaceshipSpriteDemo': () => import('./adv-game-design/scenegraph-spaceship-sprite-demo'),
     'createScenegraphBehaviorsSpaceshipDemo': () => import('./adv-game-design/scenegraph-behaviors-spaceship-demo'),
