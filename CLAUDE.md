@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Engineering Philosophy
+
+Full rationale: `ENGINEERING_PHILOSOPHY.md`. This is a personal CS canon, not a product — success means someone can recover the mathematics, the algorithm, and the engineering decision from the repo, not just see passing code.
+
+**Resemblance principle:** implementation should mirror the mathematical/algorithmic object it derives from. Prefer writing out `const I = (a*A + b*B + c*C) / (a + b + c)` over an opaque `ctx.incircle(...)` — the derivation stays visible, not hidden behind a helper.
+
+**New topic structure:**
+topic/
+algorithm.js
+algorithm-demo.js
+docs/
+topic.md
+svg/
+
 ## Development Commands
 
 ```bash
