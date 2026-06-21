@@ -99,8 +99,19 @@ const padTypes = [
     { difficulty: 'EXPERT', label: '5X', multiplier: 5, widthFrac: 0.014 },
 ];
 
-export const generateTerrain = (seed, win) => {
-    const rand = lcg(seed);
+const mixSeed = (seed, chunkIndex) =>
+    (Math.imul(seed >>> 0, 1103515245) ^ Math.imul(chunkIndex | 0, 2654435761)) >>> 0;
+
+const makeChunkWin = (baseWin, chunkWidth, chunkIndex) => ({
+    left: baseWin.left + chunkIndex * chunkWidth,
+    right: baseWin.right + chunkIndex * chunkWidth,
+    bottom: baseWin.bottom,
+    top: baseWin.top,
+});
+
+const generateChunk = (seed, baseWin, chunkWidth, chunkIndex) => {
+    const rand = lcg(mixSeed(seed, chunkIndex));
+    const win = makeChunkWin(baseWin, chunkWidth, chunkIndex);
     const W    = win.right  - win.left;
     const H    = win.top    - win.bottom;
 
@@ -321,17 +332,99 @@ export const generateTerrain = (seed, win) => {
     };
 
     return {
+        index: chunkIndex,
         vertices,
         pads: pads.sort((a, b) => a.x1 - b.x1),
         bounds,
     };
 };
 
+export const generateTerrain = (seed, win) => {
+    const chunkWidth = win.right - win.left;
+    const chunks = {};
+
+    const terrain = {
+        seed: seed >>> 0,
+        baseWin: { ...win },
+        chunkWidth,
+        chunks,
+    };
+
+    terrain.getChunk = (chunkIndex) => {
+        if (chunks[chunkIndex]) return chunks[chunkIndex];
+
+        const chunk = generateChunk(terrain.seed, terrain.baseWin, terrain.chunkWidth, chunkIndex);
+        const prev = chunks[chunkIndex - 1];
+        const next = chunks[chunkIndex + 1];
+        const H = terrain.baseWin.top - terrain.baseWin.bottom;
+        const maxDeltaY = H * 0.18;
+
+        if (prev) {
+            chunk.vertices[0].y = prev.vertices[prev.vertices.length - 1].y;
+        }
+        if (next) {
+            chunk.vertices[chunk.vertices.length - 1].y = next.vertices[0].y;
+        }
+
+        if (prev || next) {
+            const heights = chunk.vertices.map(v => v.y);
+            if (prev) heights[0] = prev.vertices[prev.vertices.length - 1].y;
+            if (next) heights[heights.length - 1] = next.vertices[0].y;
+            limitSlopes(heights, maxDeltaY);
+            for (let i = 0; i < heights.length; i++) chunk.vertices[i].y = heights[i];
+            chunk.bounds = {
+                left: chunk.vertices[0].x,
+                right: chunk.vertices[chunk.vertices.length - 1].x,
+                bottom: Math.min(...heights),
+                top: Math.max(...heights),
+            };
+        }
+
+        chunks[chunkIndex] = chunk;
+        return chunk;
+    };
+
+    const initial = terrain.getChunk(0);
+    terrain.vertices = initial.vertices;
+    terrain.pads = initial.pads;
+    terrain.bounds = initial.bounds;
+    return terrain;
+};
+
+const chunkIndexForX = (terrain, x) =>
+    Math.floor((x - terrain.baseWin.left) / terrain.chunkWidth);
+
+export const getVisibleTerrain = (terrain, win) => {
+    const first = chunkIndexForX(terrain, win.left) - 1;
+    const last = chunkIndexForX(terrain, win.right) + 1;
+    const vertices = [];
+    const pads = [];
+
+    for (let idx = first; idx <= last; idx++) {
+        const chunk = terrain.getChunk(idx);
+        for (const v of chunk.vertices) {
+            if (v.x < win.left - terrain.chunkWidth * 0.05 ||
+                v.x > win.right + terrain.chunkWidth * 0.05) continue;
+            if (vertices.length && Math.abs(vertices[vertices.length - 1].x - v.x) < 1e-6) {
+                vertices[vertices.length - 1] = v;
+            } else {
+                vertices.push(v);
+            }
+        }
+        for (const pad of chunk.pads) {
+            if (pad.x2 >= win.left && pad.x1 <= win.right) pads.push(pad);
+        }
+    }
+
+    return { vertices, pads };
+};
+
 // ---------- Queries ----------
 
 // Piecewise-linear height at world-x
 export const heightAt = (terrain, x) => {
-    const v = terrain.vertices;
+    const chunk = terrain.getChunk ? terrain.getChunk(chunkIndexForX(terrain, x)) : terrain;
+    const v = chunk.vertices;
     if (x <= v[0].x)              return v[0].y;
     if (x >= v[v.length - 1].x)   return v[v.length - 1].y;
     for (let i = 0; i < v.length - 1; i++) {
@@ -345,7 +438,8 @@ export const heightAt = (terrain, x) => {
 
 // Returns the landing pad whose x-span contains x, or null
 export const findPadUnder = (terrain, x) => {
-    for (const pad of terrain.pads) {
+    const chunk = terrain.getChunk ? terrain.getChunk(chunkIndexForX(terrain, x)) : terrain;
+    for (const pad of chunk.pads) {
         if (x >= pad.x1 && x <= pad.x2) return pad;
     }
     return null;

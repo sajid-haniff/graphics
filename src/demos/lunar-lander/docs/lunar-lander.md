@@ -30,3 +30,16 @@ Landing pads are selected after terrain shaping from slope-aware candidate shelv
 - EXPERT: very narrow ridge or gorge-side shelf, `5x`.
 
 The exact pad vertices are flat. The neighboring terrain blends toward the pad height over one or two samples so pads read as carved shelves rather than rectangular cuts.
+
+## Spawn Profiles
+
+The lander starts with nonzero downward velocity on purpose. The player begins already descending, matching the classic arcade feel where the first decision matters immediately.
+
+| Profile | Initial VY | Initial VX | Fuel | Altitude |
+|---------|------------|------------|------|----------|
+| EASY | -2.5 | 0 | 100 | 75 |
+| NORMAL | -3.5 | seeded random [-0.5, 0.5] | 95 | 95 |
+| HARD | -5.0 | seeded random [-1.0, 1.0] | 85 | 110 |
+| CHALLENGE | -7.0 | seeded random [-2.0, 2.0] | 75 | 125 |
+
+Spawn X is chosen from deterministic terrain-aware candidates: gorge floors, ridges, pad neighborhoods, and spaces between pads. The same terrain seed and profile produce replayable starts, while profile changes intentionally alter the initial velocity, fuel, and spawn candidate selection.
