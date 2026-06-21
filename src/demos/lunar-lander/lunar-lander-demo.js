@@ -52,6 +52,11 @@ const LEG_R = [
 
 // Foot level: lowest point of the leg tips in local Y (used for ground contact)
 const FOOT_Y = -0.82 * S;
+const MIN_SHIP_PIXELS = 22;
+const MAX_RENDER_SCALE = 1.8;
+const SHIP_HEIGHT_WORLD =
+    Math.max(...BODY_PTS.map(p => p.y)) -
+    Math.min(FOOT_Y, ...BODY_PTS.map(p => p.y));
 
 // Flame nozzle base edges (local coords, below the body base)
 const NOZZLE_L = { x: -0.16 * S, y: -0.50 * S };
@@ -68,6 +73,10 @@ const rotPt = (p, theta) => {
 // Map a local polygon into world space
 const toWorld = (pts, cx, cy, theta) =>
     pts.map(p => { const r = rotPt(p, theta); return { x: r.x + cx, y: r.y + cy }; });
+
+const scalePt = (p, s) => ({ x: p.x * s, y: p.y * s });
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // ---------- Visual palette ----------
 const C = {
@@ -87,21 +96,99 @@ const C = {
 // ---------- Factory ----------
 export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
-    // ---------- World window + COMPOSITE — exact asteroids-demo.js pattern ----------
-    const win = { left: -32, right: 32, bottom: -18, top: 22 };
-
-    // WORLD maps world coords → normalised [0,1] viewport
-    const sw = 1 / (win.right  - win.left);
-    const sh = 1 / (win.top    - win.bottom);
-    const tw = -win.left   * sw;
-    const th = -win.bottom * sh;
-    const WORLD     = M2D.fromValues(sw, 0, 0, sh, tw, th);
+    // ---------- World bounds + camera-space COMPOSITE ----------
+    const win = { left: -120, right: 120, bottom: -70, top: 90 };
     const DEVICE    = M2D.fromValues(W,  0, 0, H,  0,  0);
     const REFLECT_Y = M2D.fromValues(1,  0, 0, -1, 0,  H);
-    const COMPOSITE = M2D.multiply(M2D.multiply(REFLECT_Y, DEVICE), WORLD);
+    const ASPECT    = W / H;
+
+    const makeComposite = (visibleWin) => {
+        // WORLD maps the current camera window into normalised [0,1] viewport.
+        const sw = 1 / (visibleWin.right  - visibleWin.left);
+        const sh = 1 / (visibleWin.top    - visibleWin.bottom);
+        const tw = -visibleWin.left   * sw;
+        const th = -visibleWin.bottom * sh;
+        const WORLD = M2D.fromValues(sw, 0, 0, sh, tw, th);
+        return M2D.multiply(M2D.multiply(REFLECT_Y, DEVICE), WORLD);
+    };
+
+    const cameraWin = (camera) => {
+        const halfW = camera.halfH * ASPECT;
+        return {
+            left:   camera.center[0] - halfW,
+            right:  camera.center[0] + halfW,
+            bottom: camera.center[1] - camera.halfH,
+            top:    camera.center[1] + camera.halfH,
+        };
+    };
+
+    const clampCamera = (camera) => {
+        const worldHalfH = (win.top - win.bottom) * 0.5;
+        const worldHalfW = (win.right - win.left) * 0.5;
+        const maxHalfHForWidth = worldHalfW / ASPECT;
+        camera.halfH = Math.min(camera.halfH, worldHalfH, maxHalfHForWidth);
+        camera.targetHalfH = Math.min(camera.targetHalfH, worldHalfH, maxHalfHForWidth);
+
+        const halfW = camera.halfH * ASPECT;
+        camera.center[0] = clamp(camera.center[0], win.left + halfW, win.right - halfW);
+        camera.center[1] = clamp(camera.center[1], win.bottom + camera.halfH, win.top - camera.halfH);
+        return camera;
+    };
+
+    const createCamera = (s) => clampCamera({
+        center: [s.pos[0], s.pos[1] - 22.0],
+        halfH:  72.0,
+        targetHalfH: 72.0,
+    });
+
+    const updateCamera = (camera, s, dt) => {
+        const groundY = terrain ? heightAt(terrain, s.pos[0]) : win.bottom;
+        const altitude = Math.max(0, s.pos[1] - groundY);
+        const speed = Math.hypot(s.vel[0], s.vel[1]);
+        const speedZoom = clamp(speed * 0.8, 0, 8);
+
+        let targetHalfH;
+        let yBias;
+        if (altitude > 45) {
+            targetHalfH = clamp(65 + speedZoom + (altitude - 45) * 0.12, 65, 85);
+            yBias = 0.45;
+        } else if (altitude < 18) {
+            targetHalfH = clamp(24 + altitude * 0.35 + speedZoom * 0.35, 24, 38);
+            yBias = 0.20;
+        } else {
+            const t = (altitude - 18) / 27;
+            targetHalfH = clamp(42 + t * 23 + speedZoom * 0.45, 42, 65);
+            yBias = 0.32;
+        }
+        camera.targetHalfH = targetHalfH;
+
+        // Camera framing trades off scale and control: high altitude favours
+        // gorge context, while low altitude favours precision near pads.
+        const lookDown = camera.targetHalfH * yBias;
+        const leadX = clamp(s.vel[0] * 1.25, -camera.targetHalfH * 0.7, camera.targetHalfH * 0.7);
+        const targetCenter = [
+            s.pos[0] + leadX,
+            s.pos[1] - lookDown,
+        ];
+
+        const posAlpha = 1 - Math.exp(-3.2 * dt);
+        const zoomAlpha = 1 - Math.exp(-2.2 * dt);
+        camera.center[0] += (targetCenter[0] - camera.center[0]) * posAlpha;
+        camera.center[1] += (targetCenter[1] - camera.center[1]) * posAlpha;
+        camera.halfH += (camera.targetHalfH - camera.halfH) * zoomAlpha;
+
+        return clampCamera(camera);
+    };
+
+    const landerRenderScale = (visibleWin) => {
+        const visibleWorldHeight = visibleWin.top - visibleWin.bottom;
+        const shipPixels = SHIP_HEIGHT_WORLD / visibleWorldHeight * H;
+        if (shipPixels >= MIN_SHIP_PIXELS) return 1;
+        return Math.min(MAX_RENDER_SCALE, MIN_SHIP_PIXELS / shipPixels);
+    };
 
     // pixelToWorld(px) → world units — used for strokeWeight parity with neon helpers
-    const pixelToWorld = M2D.makePixelToWorld(COMPOSITE);
+    let pixelToWorld = M2D.makePixelToWorld(makeComposite(win));
 
     // ---------- Systems ----------
     let SFX   = null;
@@ -110,6 +197,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     // ---------- Game state ----------
     let terrain     = null;
     let state       = null;   // lander dynamics state (see lander-dynamics.js)
+    let camera      = null;
     let phase       = 'playing';   // 'playing' | 'landed' | 'crashed' | 'gameover'
     let score       = 0;
     let hiScore     = 0;
@@ -146,6 +234,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         resetTimer  = 0;
         flameLen    = 0;
         boosterCooldown = 0;
+        camera      = createCamera(state);
     };
 
     // ---------- Setup ----------
@@ -306,15 +395,6 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         for (const v of vertices) sk.vertex(v.x, v.y);
         sk.endShape();
 
-        // Filled terrain below the polyline (close down to bottom of world)
-        sk.fill(10, 18, 32, 200);
-        sk.noStroke();
-        sk.beginShape();
-        sk.vertex(vertices[0].x, win.bottom);
-        for (const v of vertices) sk.vertex(v.x, v.y);
-        sk.vertex(vertices[vertices.length - 1].x, win.bottom);
-        sk.endShape(sk.CLOSE);
-
         // Landing pads
         for (const pad of pads) {
             const col = pad.multiplier > 1 ? C.padHard : C.padEasy;
@@ -325,27 +405,30 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         }
     };
 
-    const drawLander = () => {
+    const drawLander = (renderScale = 1) => {
         const { pos, theta } = state;
         const [cx, cy] = pos;
+        const bodyPts = BODY_PTS.map(p => scalePt(p, renderScale));
+        const legL = LEG_L.map(p => scalePt(p, renderScale));
+        const legR = LEG_R.map(p => scalePt(p, renderScale));
 
         // Body hull
-        neonPoly(sk, toWorld(BODY_PTS, cx, cy, theta), C.lander, pixelToWorld, 1.5, true);
+        neonPoly(sk, toWorld(bodyPts, cx, cy, theta), C.lander, pixelToWorld, 1.5, true);
 
         // Landing legs
-        const [lL0, lL1] = toWorld(LEG_L, cx, cy, theta);
-        const [lR0, lR1] = toWorld(LEG_R, cx, cy, theta);
+        const [lL0, lL1] = toWorld(legL, cx, cy, theta);
+        const [lR0, lR1] = toWorld(legR, cx, cy, theta);
         neonLine(sk, lL0, lL1, C.lander, pixelToWorld, 1.2);
         neonLine(sk, lR0, lR1, C.lander, pixelToWorld, 1.2);
 
         // Flame jet (when thrusting)
         if (flameLen > 0.02) {
-            const jitter   = (Math.random() - 0.5) * 0.10 * S;
-            const jetDepth = flameLen * 1.6 * S;
-            const tipLocal = { x: jitter, y: FOOT_Y * 0.5 - jetDepth };
+            const jitter   = (Math.random() - 0.5) * 0.10 * S * renderScale;
+            const jetDepth = flameLen * 1.6 * S * renderScale;
+            const tipLocal = { x: jitter, y: FOOT_Y * 0.5 * renderScale - jetDepth };
 
-            const nL  = rotPt(NOZZLE_L, theta);
-            const nR  = rotPt(NOZZLE_R, theta);
+            const nL  = rotPt(scalePt(NOZZLE_L, renderScale), theta);
+            const nR  = rotPt(scalePt(NOZZLE_R, renderScale), theta);
             const tip = rotPt(tipLocal,  theta);
 
             const wNL  = { x: nL.x  + cx, y: nL.y  + cy };
@@ -357,6 +440,20 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             // Bright core
             neonPoly(sk, [wNL, wTip, wNR], C.flameCore, pixelToWorld, 1.2, false);
         }
+    };
+
+    const drawPadLabels = (COMPOSITE) => {
+        sk.resetMatrix();
+        sk.noStroke();
+        sk.textFont('monospace');
+        sk.textAlign(sk.CENTER, sk.BOTTOM);
+        sk.textSize(11);
+        for (const pad of terrain.pads) {
+            const p = M2D.transformPoint(COMPOSITE, [(pad.x1 + pad.x2) * 0.5, pad.y + 1.8]);
+            sk.fill(pad.multiplier > 1 ? C.padHard : C.padEasy);
+            sk.text(pad.label, p[0], p[1]);
+        }
+        sk.textAlign(sk.LEFT, sk.BASELINE);
     };
 
     const drawHUD = () => {
@@ -447,6 +544,11 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         );
 
         update(dt);
+        if (state) updateCamera(camera, state, dt);
+
+        const visibleWin = cameraWin(camera);
+        const COMPOSITE = makeComposite(visibleWin);
+        pixelToWorld = M2D.makePixelToWorld(COMPOSITE);
 
         sk.background(C.bg);
 
@@ -456,7 +558,8 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         sk.applyMatrix(...M2D.toArgs(COMPOSITE));
 
         drawTerrain();
-        if (state) drawLander();
+        if (state) drawLander(landerRenderScale(visibleWin));
+        drawPadLabels(COMPOSITE);
 
         // HUD is always in device space
         drawHUD();

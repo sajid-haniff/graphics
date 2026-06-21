@@ -26,9 +26,11 @@ export const ENGINE_ACCEL      = 5.0;   // m/s² — peak thrust acceleration at
 export const BURN_RATE         = 0.4;   // fuel units / s at τ = 1
 
 // Rotation (playtested starting point — retune via these exports)
-export const RCS_ALPHA         = 9.0;   // rad/s² — angular acceleration from RCS thrusters
+export const RCS_ALPHA         = 7.0;   // rad/s² — angular acceleration from RCS thrusters
 export const OMEGA_MAX         = 3.0;   // rad/s — hard cap on spin rate
-export const OMEGA_DAMPING_RATE = 1.5;  // 1/s  — continuous-time exponential decay rate
+export const OMEGA_DAMPING_RATE = 1.9
+
+;  // 1/s  — continuous-time exponential decay rate
 
 // Fuel
 export const FUEL_START        = 100.0;
