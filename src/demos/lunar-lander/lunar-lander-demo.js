@@ -81,6 +81,21 @@ const scalePt = (p, s) => ({ x: p.x * s, y: p.y * s });
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+const lcg = (seed) => {
+    let s = seed >>> 0;
+    return () => {
+        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+        return s / 0x100000000;
+    };
+};
+
+const SPAWN_PROFILES = [
+    { name: 'EASY',      vy: -2.5, vxRange: 0.0, fuel: 100, altitude: 75 },
+    { name: 'NORMAL',    vy: -3.5, vxRange: 0.5, fuel: 95,  altitude: 95 },
+    { name: 'HARD',      vy: -5.0, vxRange: 1.0, fuel: 85,  altitude: 110 },
+    { name: 'CHALLENGE', vy: -7.0, vxRange: 2.0, fuel: 75,  altitude: 125 },
+];
+
 // ---------- Visual palette ----------
 const C = {
     bg:       '#040810',
@@ -195,6 +210,8 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     let SFX   = null;
     let shake = null;
     let starfield = null;
+    let roundSeed = 0;
+    let roundNumber = 0;
 
     // ---------- Game state ----------
     let terrain     = null;
@@ -210,6 +227,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     let flameLen    = 0;          // 0..1 — smoothed flame length for rendering
     let lastThrottle = 0;         // actual effective throttle used for audio/HUD/flame
     let boosterCooldown = 0;      // seconds until next booster-sfx chirp is allowed
+    let profileIdx = 1;           // NORMAL by default
 
     // Score constants
     const BASE_SCORE        = 1000;
@@ -221,19 +239,78 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     const RESET_DELAY       = 3.0;
 
     // ---- Spawn helpers ----
-    const spawnState = () => ({
-        pos:   [0, win.top - 4],
-        vel:   [0.0, 0.0],
-        theta: 0,
-        omega: 0,
-        fuel:  FUEL_START,
-    });
+    const chooseSpawnX = (rand, profile) => {
+        const baseLeft = win.left;
+        const baseRight = win.right;
+        const pads = terrain.pads || [];
+        const candidates = [];
+        const scored = [];
+
+        const addCandidate = (x, kind = 'terrain') => {
+            const margin = profile.altitude * 0.25;
+            const cx = clamp(x, baseLeft + margin, baseRight - margin);
+            const groundY = heightAt(terrain, cx);
+            const topPenalty = Math.max(0, groundY + profile.altitude - (win.top - 8));
+            scored.push({
+                x: cx,
+                kind,
+                score: topPenalty * 20 + rand(),
+            });
+        };
+
+        if (pads.length >= 2) {
+            const sorted = [...pads].sort((a, b) => a.x1 - b.x1);
+            for (let i = 0; i < sorted.length - 1; i++) {
+                candidates.push((sorted[i].x2 + sorted[i + 1].x1) * 0.5);
+            }
+        }
+        for (const pad of pads) {
+            if (pad.multiplier >= 2) candidates.push((pad.x1 + pad.x2) * 0.5 + (rand() - 0.5) * 24);
+        }
+
+        let lowX = 0, lowY = Infinity, highX = 0, highY = -Infinity;
+        for (let i = 0; i <= 24; i++) {
+            const x = baseLeft + (baseRight - baseLeft) * i / 24;
+            const y = heightAt(terrain, x);
+            if (y < lowY) { lowY = y; lowX = x; }
+            if (y > highY) { highY = y; highX = x; }
+        }
+        candidates.push(lowX + (rand() - 0.5) * 28);
+        candidates.push(highX + (rand() - 0.5) * 20);
+        candidates.push((lowX + highX) * 0.5);
+
+        for (const x of candidates) addCandidate(x);
+        scored.sort((a, b) => a.score - b.score);
+        const pickCount = Math.min(scored.length, profile.name === 'EASY' ? 5 : 3);
+        return (scored[Math.floor(rand() * pickCount)] || { x: 0 }).x;
+    };
+
+    const spawnState = () => {
+        const profile = SPAWN_PROFILES[profileIdx];
+        const rand = lcg((roundSeed ^ Math.imul(roundNumber + 1, 0x9e3779b9) ^ (profileIdx << 16)) >>> 0);
+        const spawnX = chooseSpawnX(rand, profile);
+        const groundY = heightAt(terrain, spawnX);
+        const spawnY = groundY + profile.altitude;
+        const vx = profile.vxRange === 0 ? 0 : (rand() * 2 - 1) * profile.vxRange;
+
+        return {
+            pos:   [spawnX, spawnY],
+            vel:   [vx, profile.vy],
+            theta: 0,
+            omega: 0,
+            fuel:  Math.min(FUEL_START, profile.fuel),
+        };
+    };
 
     const startRound = (newSeed = true) => {
         if (newSeed || !terrain) {
             const seed = (Math.random() * 0xffffffff) >>> 0;
+            roundSeed = seed;
+            roundNumber = 0;
             terrain = generateTerrain(seed, win);
             starfield = createLunarStarfield(seed ^ 0x7a17c9d3, 220);
+        } else {
+            roundNumber += 1;
         }
         state       = spawnState();
         phase       = 'playing';
@@ -491,13 +568,14 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const fuel = state ? Math.round(state.fuel / FUEL_START * 100) : 0;
         const ang  = state ? (state.theta * 180 / Math.PI).toFixed(1) : '—';
         const throt = lastThrottle > 0 ? '100%' : '  0%';
+        const profileName = SPAWN_PROFILES[profileIdx].name;
 
         sk.textSize(13);
         sk.fill(C.hud);
         sk.text(`SCORE ${score}   HI ${hiScore}   LIVES ${'♦'.repeat(Math.max(0, lives))}`, 10, 20);
         sk.text(`ALT ${altAboveGround}m   VY ${vy}m/s   VX ${vx}m/s`, 10, 38);
         sk.text(`FUEL ${fuel}%   THROTTLE ${throt}   TILT ${ang}°`, 10, 56);
-        sk.text(`↑ Thrust   ← → Rotate   [R] Reset`, 10, 74);
+        sk.text(`PROFILE ${profileName}   ↑ Thrust   ← → Rotate   [R] Reset   [D] Difficulty`, 10, 74);
 
         // Fuel bar — right side
         const barW = 120, barH = 9, bx = W - barW - 12, by = 12;
@@ -600,6 +678,13 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             score  = 0;
             phase  = 'playing';
             startRound(true);
+        } else if (k === 'd') {
+            profileIdx = (profileIdx + 1) % SPAWN_PROFILES.length;
+            if (engineInst) { engineInst.stop?.(); engineInst = null; }
+            lives  = 3;
+            score  = 0;
+            phase  = 'playing';
+            startRound(false);
         }
     };
 
