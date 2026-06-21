@@ -23,14 +23,12 @@
 // Physics
 export const G_MOON            = 1.62;  // m/s² — Moon surface gravity (~1/6 Earth's)
 export const ENGINE_ACCEL      = 5.0;   // m/s² — peak thrust acceleration at full throttle (constant mass v1)
-export const BURN_RATE         = 0.4;   // fuel units / s at τ = 1
+export const BURN_RATE         = 7.0;   // arcade fuel units / s at τ = 1 (~14s full burn)
 
 // Rotation (playtested starting point — retune via these exports)
 export const RCS_ALPHA         = 7.0;   // rad/s² — angular acceleration from RCS thrusters
 export const OMEGA_MAX         = 3.0;   // rad/s — hard cap on spin rate
-export const OMEGA_DAMPING_RATE = 1.9
-
-;  // 1/s  — continuous-time exponential decay rate
+export const OMEGA_DAMPING_RATE = 1.9;  // 1/s  — continuous-time exponential decay rate
 
 // Fuel
 export const FUEL_START        = 100.0;
@@ -49,13 +47,16 @@ export const OMEGA_SAFE = 0.5;  // rad/s — max spin rate for safe landing
 // [sin(theta), cos(theta)].
 const thrustDir = (theta) => [Math.sin(theta), Math.cos(theta)];
 
+export const effectiveThrottle = (state, input) =>
+    (state.fuel > 0 && input.thrust) ? 1.0 : 0.0;
+
 // step: single semi-implicit Euler step.
 // Returns a new state; the input state is never mutated.
 export const step = (state, input, dt) => {
     const { pos, vel, theta, omega, fuel } = state;
 
     // Throttle: binary for v1.  Variable mass is a v2 extension (see docs/).
-    const tau = (fuel > 0 && input.thrust) ? 1.0 : 0.0;
+    const tau = effectiveThrottle(state, input);
     const td  = thrustDir(theta);
 
     // Linear acceleration:  a = [T·sin θ,  −g_moon + T·cos θ]

@@ -20,11 +20,14 @@ import { createCameraShake } from '../arcade/camera-shake';
 import { LUNAR_SFX_FILES } from './lunar-lander-sfx-map';
 import {
     step,
+    effectiveThrottle,
     classifyTouchdown,
     FUEL_START,
     V_SAFE_Y, V_SAFE_X, THETA_SAFE, OMEGA_SAFE,
 } from './lander-dynamics';
-import { generateTerrain, heightAt, findPadUnder } from './terrain';
+import { generateTerrain, getVisibleTerrain, heightAt, findPadUnder } from './terrain';
+import { createLunarStarfield } from './starfield';
+import { createLanderExplosion } from './lander-explosion';
 
 // ---------- Lander geometry — Y-up local coords, theta=0 = nose up (+Y) ----------
 // Scale factor: 1 world unit ≈ 1 m at the chosen win, so the lander is ~2 m tall.
@@ -129,8 +132,6 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         camera.halfH = Math.min(camera.halfH, worldHalfH, maxHalfHForWidth);
         camera.targetHalfH = Math.min(camera.targetHalfH, worldHalfH, maxHalfHForWidth);
 
-        const halfW = camera.halfH * ASPECT;
-        camera.center[0] = clamp(camera.center[0], win.left + halfW, win.right - halfW);
         camera.center[1] = clamp(camera.center[1], win.bottom + camera.halfH, win.top - camera.halfH);
         return camera;
     };
@@ -193,11 +194,13 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     // ---------- Systems ----------
     let SFX   = null;
     let shake = null;
+    let starfield = null;
 
     // ---------- Game state ----------
     let terrain     = null;
     let state       = null;   // lander dynamics state (see lander-dynamics.js)
     let camera      = null;
+    let explosion   = null;
     let phase       = 'playing';   // 'playing' | 'landed' | 'crashed' | 'gameover'
     let score       = 0;
     let hiScore     = 0;
@@ -205,6 +208,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     let resetTimer  = 0;          // seconds until auto-respawn
     let engineInst  = null;       // looping engine-sound handle
     let flameLen    = 0;          // 0..1 — smoothed flame length for rendering
+    let lastThrottle = 0;         // actual effective throttle used for audio/HUD/flame
     let boosterCooldown = 0;      // seconds until next booster-sfx chirp is allowed
 
     // Score constants
@@ -227,12 +231,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
     const startRound = (newSeed = true) => {
         if (newSeed || !terrain) {
-            terrain = generateTerrain((Math.random() * 0xffffffff) >>> 0, win);
+            const seed = (Math.random() * 0xffffffff) >>> 0;
+            terrain = generateTerrain(seed, win);
+            starfield = createLunarStarfield(seed ^ 0x7a17c9d3, 220);
         }
         state       = spawnState();
         phase       = 'playing';
         resetTimer  = 0;
         flameLen    = 0;
+        lastThrottle = 0;
+        explosion   = null;
         boosterCooldown = 0;
         camera      = createCamera(state);
     };
@@ -295,6 +303,9 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     // ---------- Update ----------
     const update = (dt) => {
         if (phase !== 'playing') {
+            lastThrottle = 0;
+            explosion?.update(dt);
+            if (explosion?.done()) explosion = null;
             resetTimer -= dt;
             if (resetTimer <= 0) {
                 if (lives > 0) startRound(phase === 'landed');
@@ -305,10 +316,11 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         }
 
         const input = readInput();
-        const thrusting = input.thrust && (state.fuel > 0);
+        const actualThrottle = effectiveThrottle(state, input);
+        lastThrottle = actualThrottle;
 
         // Engine loop sound
-        if (thrusting) {
+        if (actualThrottle > 0) {
             if (!engineInst) engineInst = SFX?.loop('engine', { volume: 0.30 });
         } else {
             if (engineInst) { engineInst.stop?.(); engineInst = null; }
@@ -325,7 +337,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         state = step(state, input, dt);
 
         // Smooth flame length (eases visually, never tied to a fixed rate)
-        const targetFlame = thrusting ? 1.0 : 0.0;
+        const targetFlame = actualThrottle;
         flameLen += (targetFlame - flameLen) * Math.min(1, dt * 12);
 
         // ---------- Ground contact ----------
@@ -336,6 +348,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const groundY    = heightAt(terrain, state.pos[0]);
 
         if (footWorldY <= groundY) {
+            const impactState = state;
             // Snap lander so feet rest exactly on surface
             const overlap = groundY - footWorldY;
             state = {
@@ -346,6 +359,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             };
 
             if (engineInst) { engineInst.stop?.(); engineInst = null; }
+            lastThrottle = 0;
 
             const pad     = findPadUnder(terrain, state.pos[0]);
             const verdict = classifyTouchdown(state, pad);
@@ -373,7 +387,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
                 lives -= 1;
                 phase  = 'crashed';
                 SFX?.playRandom(['crash1', 'crash2']);
-                shake?.kick(16, 0.50);
+                const boomSeed = ((state.pos[0] * 1000) | 0) ^ ((state.pos[1] * 1000) | 0) ^ ((Date.now() & 0xffff) << 8);
+                explosion = createLanderExplosion(boomSeed >>> 0, {
+                    ...impactState,
+                    pos: state.pos,
+                }, {
+                    bodyPts: BODY_PTS,
+                    legL: LEG_L,
+                    legR: LEG_R,
+                });
+                shake?.kick(28, 0.75);
             }
 
             resetTimer = RESET_DELAY;
@@ -384,9 +407,8 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
     // ---------- Rendering ----------
 
-    const drawTerrain = () => {
-        const { vertices, pads } = terrain;
-
+    const drawTerrain = (visibleTerrain) => {
+        const { vertices, pads } = visibleTerrain;
         // Craggy terrain polyline
         sk.noFill();
         sk.stroke(C.terrain);
@@ -442,13 +464,13 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         }
     };
 
-    const drawPadLabels = (COMPOSITE) => {
+    const drawPadLabels = (COMPOSITE, visibleTerrain) => {
         sk.resetMatrix();
         sk.noStroke();
         sk.textFont('monospace');
         sk.textAlign(sk.CENTER, sk.BOTTOM);
         sk.textSize(11);
-        for (const pad of terrain.pads) {
+        for (const pad of visibleTerrain.pads) {
             const p = M2D.transformPoint(COMPOSITE, [(pad.x1 + pad.x2) * 0.5, pad.y + 1.8]);
             sk.fill(pad.multiplier > 1 ? C.padHard : C.padEasy);
             sk.text(pad.label, p[0], p[1]);
@@ -468,7 +490,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const vx   = state ? state.vel[0].toFixed(2) : '—';
         const fuel = state ? Math.round(state.fuel / FUEL_START * 100) : 0;
         const ang  = state ? (state.theta * 180 / Math.PI).toFixed(1) : '—';
-        const throt = (state && state.fuel > 0 && readInput().thrust) ? '100%' : '  0%';
+        const throt = lastThrottle > 0 ? '100%' : '  0%';
 
         sk.textSize(13);
         sk.fill(C.hud);
@@ -545,21 +567,25 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
         update(dt);
         if (state) updateCamera(camera, state, dt);
+        starfield?.update(dt);
 
         const visibleWin = cameraWin(camera);
         const COMPOSITE = makeComposite(visibleWin);
         pixelToWorld = M2D.makePixelToWorld(COMPOSITE);
+        const visibleTerrain = getVisibleTerrain(terrain, visibleWin);
 
         sk.background(C.bg);
+        starfield?.display(sk, camera, W, H);
 
         const [dx, dy] = shake ? shake.offset() : [0, 0];
         sk.resetMatrix();
         sk.translate(dx, dy);
         sk.applyMatrix(...M2D.toArgs(COMPOSITE));
 
-        drawTerrain();
-        if (state) drawLander(landerRenderScale(visibleWin));
-        drawPadLabels(COMPOSITE);
+        drawTerrain(visibleTerrain);
+        if (explosion) explosion.display(sk, pixelToWorld);
+        if (state && phase !== 'crashed') drawLander(landerRenderScale(visibleWin));
+        drawPadLabels(COMPOSITE, visibleTerrain);
 
         // HUD is always in device space
         drawHUD();
