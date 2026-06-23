@@ -1,0 +1,147 @@
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#040810;font-family:monospace">
+
+  <!-- Title -->
+  <text x="360" y="28" text-anchor="middle" fill="#bbccee" font-size="13" letter-spacing="2">COORDINATE SYSTEM   ·   COMPOSITE TRANSFORM PIPELINE</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- LEFT PANEL: Y-up world space -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <g transform="translate(60,60)">
+    <text x="85" y="-10" text-anchor="middle" fill="#5577aa" font-size="11" letter-spacing="1">WORLD SPACE  (Y-up)</text>
+
+    <!-- axes -->
+    <line x1="85" y1="260" x2="85" y2="20"  stroke="#5577aa" stroke-width="1.2"/>
+    <line x1="20" y1="200" x2="200" y2="200" stroke="#5577aa" stroke-width="1.2"/>
+
+    <!-- arrow heads -->
+    <polygon points="85,14 80,26 90,26"  fill="#5577aa"/>
+    <polygon points="206,200 194,195 194,205" fill="#5577aa"/>
+
+    <!-- axis labels -->
+    <text x="92" y="18" fill="#5577aa" font-size="11">+Y ↑</text>
+    <text x="198" y="215" fill="#5577aa" font-size="11">+X</text>
+    <text x="55" y="205" fill="#5577aa" font-size="10">O</text>
+
+    <!-- terrain polyline (world Y-up) -->
+    <polyline points="20,200 40,188 55,195 70,165 88,155 105,170 120,158 138,180 155,172 175,195 195,200"
+              fill="none" stroke="#5577aa" stroke-width="2" stroke-linejoin="round"/>
+
+    <!-- lander schematic in world space -->
+    <g transform="translate(88,120)">
+      <!-- body polygon -->
+      <polygon points="0,-18 10,-5 12,8 0,14 -12,8 -10,-5"
+               fill="none" stroke="#00eeff" stroke-width="1.8"/>
+      <!-- legs -->
+      <line x1="-12" y1="8" x2="-20" y2="22" stroke="#00eeff" stroke-width="1.4"/>
+      <line x1="12"  y1="8" x2="20"  y2="22" stroke="#00eeff" stroke-width="1.4"/>
+      <!-- thrust dir arrow (nose up) -->
+      <line x1="0" y1="-18" x2="0" y2="-36" stroke="#ff9933" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <polygon points="0,-40 -3,-33 3,-33" fill="#ff9933"/>
+      <text x="5" y="-36" fill="#ff9933" font-size="9">thrust dir</text>
+      <!-- theta = 0 label -->
+      <text x="14" y="-10" fill="#bbccee" font-size="9">θ=0</text>
+      <text x="14" y="0"  fill="#bbccee" font-size="9">nose=+Y</text>
+    </g>
+
+    <!-- annotation: pos vector -->
+    <line x1="85" y1="200" x2="88" y2="140" stroke="#bbccee" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+    <text x="68" y="168" fill="#bbccee" font-size="9" opacity="0.8">pos</text>
+
+    <!-- foot Y annotation -->
+    <line x1="20" y1="142" x2="108" y2="142" stroke="#ffcc00" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.6"/>
+    <text x="22" y="139" fill="#ffcc00" font-size="9">foot_y</text>
+
+    <!-- landing pad -->
+    <line x1="105" y1="170" x2="140" y2="170" stroke="#44ff88" stroke-width="3"/>
+    <text x="108" y="165" fill="#44ff88" font-size="9">1X pad</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- MIDDLE: Pipeline arrows -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <g transform="translate(285,130)">
+    <!-- three stacked boxes for WORLD, DEVICE, REFLECT_Y -->
+    <!-- WORLD box -->
+    <rect x="0" y="0" width="110" height="44" rx="5" fill="#0a1525" stroke="#5577aa" stroke-width="1.2"/>
+    <text x="55" y="16" text-anchor="middle" fill="#5577aa" font-size="10" letter-spacing="1">WORLD</text>
+    <text x="55" y="30" text-anchor="middle" fill="#bbccee" font-size="9">world → [0,1]²</text>
+    <text x="55" y="40" text-anchor="middle" fill="#bbccee" font-size="8" opacity="0.7">scale + translate</text>
+
+    <!-- arrow -->
+    <line x1="55" y1="44" x2="55" y2="58" stroke="#bbccee" stroke-width="1.2"/>
+    <polygon points="55,62 51,55 59,55" fill="#bbccee"/>
+
+    <!-- DEVICE box -->
+    <rect x="0" y="62" width="110" height="44" rx="5" fill="#0a1525" stroke="#5577aa" stroke-width="1.2"/>
+    <text x="55" y="78" text-anchor="middle" fill="#5577aa" font-size="10" letter-spacing="1">DEVICE</text>
+    <text x="55" y="92" text-anchor="middle" fill="#bbccee" font-size="9">[0,1]² → pixels</text>
+    <text x="55" y="102" text-anchor="middle" fill="#bbccee" font-size="8" opacity="0.7">scale(W, H)</text>
+
+    <!-- arrow -->
+    <line x1="55" y1="106" x2="55" y2="120" stroke="#bbccee" stroke-width="1.2"/>
+    <polygon points="55,124 51,117 59,117" fill="#bbccee"/>
+
+    <!-- REFLECT_Y box -->
+    <rect x="0" y="124" width="110" height="44" rx="5" fill="#0a1525" stroke="#ff9933" stroke-width="1.4"/>
+    <text x="55" y="140" text-anchor="middle" fill="#ff9933" font-size="10" letter-spacing="1">REFLECT_Y</text>
+    <text x="55" y="154" text-anchor="middle" fill="#bbccee" font-size="9">flip Y axis</text>
+    <text x="55" y="164" text-anchor="middle" fill="#bbccee" font-size="8" opacity="0.7">y ↦ H − y</text>
+
+    <!-- arrow to result -->
+    <line x1="55" y1="168" x2="55" y2="182" stroke="#bbccee" stroke-width="1.2"/>
+    <polygon points="55,186 51,179 59,179" fill="#bbccee"/>
+
+    <!-- COMPOSITE result -->
+    <rect x="-5" y="186" width="120" height="36" rx="5" fill="#0d1e35" stroke="#00eeff" stroke-width="1.6"/>
+    <text x="55" y="201" text-anchor="middle" fill="#00eeff" font-size="10" letter-spacing="1">COMPOSITE</text>
+    <text x="55" y="214" text-anchor="middle" fill="#bbccee" font-size="9">= REFLECT_Y · DEVICE · WORLD</text>
+
+    <!-- brace label on left -->
+    <text x="-8" y="116" fill="#bbccee" font-size="22" opacity="0.3" transform="rotate(-90,-8,116)">⎫</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- RIGHT PANEL: Device / canvas space (Y-down) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <g transform="translate(440,60)">
+    <text x="100" y="-10" text-anchor="middle" fill="#5577aa" font-size="11" letter-spacing="1">CANVAS SPACE  (Y-down)</text>
+
+    <!-- axes (Y goes DOWN) -->
+    <line x1="20" y1="20"  x2="20"  y2="260" stroke="#5577aa" stroke-width="1.2"/>
+    <line x1="20" y1="20"  x2="200" y2="20"  stroke="#5577aa" stroke-width="1.2"/>
+    <polygon points="20,266 15,254 25,254" fill="#5577aa"/>
+    <polygon points="206,20 194,15 194,25" fill="#5577aa"/>
+    <text x="26" y="268" fill="#5577aa" font-size="11">+Y ↓</text>
+    <text x="198" y="16" fill="#5577aa" font-size="11">+X</text>
+    <text x="24"  y="18" fill="#5577aa" font-size="10">O</text>
+
+    <!-- terrain polyline (Y-down = Y-up flipped) -->
+    <polyline points="20,20 40,32 55,25 70,55 88,65 105,50 120,62 138,40 155,48 175,25 195,20"
+              fill="none" stroke="#5577aa" stroke-width="2" stroke-linejoin="round"/>
+
+    <!-- lander in canvas space (nose still up visually because REFLECT_Y) -->
+    <g transform="translate(88,78)">
+      <polygon points="0,-18 10,-5 12,8 0,14 -12,8 -10,-5"
+               fill="none" stroke="#00eeff" stroke-width="1.8"/>
+      <line x1="-12" y1="8" x2="-20" y2="22" stroke="#00eeff" stroke-width="1.4"/>
+      <line x1="12"  y1="8" x2="20"  y2="22" stroke="#00eeff" stroke-width="1.4"/>
+    </g>
+
+    <!-- pad -->
+    <line x1="105" y1="50" x2="140" y2="50" stroke="#44ff88" stroke-width="3"/>
+    <text x="108" y="46" fill="#44ff88" font-size="9">1X pad</text>
+
+    <!-- sk.applyMatrix code annotation -->
+    <rect x="15" y="270" width="185" height="50" rx="4" fill="#0a1525" stroke="#5577aa" stroke-width="0.8"/>
+    <text x="22" y="284" fill="#bbccee" font-size="9">sk.resetMatrix();</text>
+    <text x="22" y="296" fill="#bbccee" font-size="9">sk.applyMatrix(</text>
+    <text x="22" y="308" fill="#00eeff" font-size="9">  ...M2D.toArgs(COMPOSITE)</text>
+    <text x="22" y="318" fill="#bbccee" font-size="9">);</text>
+  </g>
+
+  <!-- Bottom formula bar -->
+  <rect x="40" y="380" width="640" height="30" rx="5" fill="#0a1525" stroke="#5577aa" stroke-width="0.8"/>
+  <text x="360" y="399" text-anchor="middle" fill="#bbccee" font-size="11" letter-spacing="1">
+    COMPOSITE = REFLECT_Y · DEVICE · WORLD     →     sk.applyMatrix(...M2D.toArgs(COMPOSITE))
+  </text>
+</svg>

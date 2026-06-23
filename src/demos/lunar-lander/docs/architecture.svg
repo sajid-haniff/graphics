@@ -1,0 +1,129 @@
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" style="background:#040810;font-family:monospace">
+
+  <text x="360" y="24" text-anchor="middle" fill="#bbccee" font-size="13" letter-spacing="2">MODULE ARCHITECTURE   ·   DATA FLOW</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- PURE MODULES (left column) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="96" y="50" text-anchor="middle" fill="#5577aa" font-size="10" letter-spacing="1">PURE  (no p5)</text>
+
+  <!-- lander-dynamics.js -->
+  <rect x="10" y="58" width="172" height="72" rx="6" fill="#040d1a" stroke="#00eeff" stroke-width="1.4"/>
+  <text x="96" y="74" text-anchor="middle" fill="#00eeff" font-size="10" letter-spacing="1">lander-dynamics.js</text>
+  <text x="18" y="88"  fill="#bbccee" font-size="8.5">step(state, input, dt) → state</text>
+  <text x="18" y="100" fill="#bbccee" font-size="8.5">classifyTouchdown(state, pad)</text>
+  <text x="18" y="112" fill="#bbccee" font-size="8.5" opacity="0.6">exports: G_MOON, ENGINE_ACCEL,</text>
+  <text x="18" y="122" fill="#bbccee" font-size="8.5" opacity="0.6">  FUEL_START, V_SAFE_*, THETA_SAFE</text>
+
+  <!-- terrain.js -->
+  <rect x="10" y="145" width="172" height="72" rx="6" fill="#040d1a" stroke="#00eeff" stroke-width="1.4"/>
+  <text x="96" y="161" text-anchor="middle" fill="#00eeff" font-size="10" letter-spacing="1">terrain.js</text>
+  <text x="18" y="175" fill="#bbccee" font-size="8.5">generateTerrain(seed, win)</text>
+  <text x="18" y="187" fill="#bbccee" font-size="8.5">getVisibleTerrain(terrain, win)</text>
+  <text x="18" y="199" fill="#bbccee" font-size="8.5">heightAt(terrain, x)</text>
+  <text x="18" y="211" fill="#bbccee" font-size="8.5">findPadUnder(terrain, x)</text>
+
+  <!-- lander-explosion.js -->
+  <rect x="10" y="232" width="172" height="55" rx="6" fill="#040d1a" stroke="#00eeff" stroke-width="1.4"/>
+  <text x="96" y="248" text-anchor="middle" fill="#00eeff" font-size="10" letter-spacing="1">lander-explosion.js</text>
+  <text x="18" y="262" fill="#bbccee" font-size="8.5">createLanderExplosion(seed, state,</text>
+  <text x="18" y="274" fill="#bbccee" font-size="8.5">  geometry) → { update, display }</text>
+  <text x="18" y="282" fill="#bbccee" font-size="8.5" opacity="0.6">LCG particles · gravity · alpha fade</text>
+
+  <!-- starfield.js -->
+  <rect x="10" y="302" width="172" height="55" rx="6" fill="#040d1a" stroke="#00eeff" stroke-width="1.4"/>
+  <text x="96" y="318" text-anchor="middle" fill="#00eeff" font-size="10" letter-spacing="1">starfield.js</text>
+  <text x="18" y="332" fill="#bbccee" font-size="8.5">createLunarStarfield(seed, count)</text>
+  <text x="18" y="344" fill="#bbccee" font-size="8.5">  → { update(dt), display(sk,…) }</text>
+  <text x="18" y="356" fill="#bbccee" font-size="8.5" opacity="0.6">3-layer parallax · twinkle · LCG</text>
+
+  <!-- sfx-map.js -->
+  <rect x="10" y="372" width="172" height="38" rx="6" fill="#040d1a" stroke="#5577aa" stroke-width="1"/>
+  <text x="96" y="387" text-anchor="middle" fill="#5577aa" font-size="10" letter-spacing="1">sfx-map.js</text>
+  <text x="18" y="401" fill="#bbccee" font-size="8.5" opacity="0.7">LUNAR_SFX_FILES  (key → src config)</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- ORCHESTRATOR (centre) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="360" y="50" text-anchor="middle" fill="#ffcc00" font-size="10" letter-spacing="1">ORCHESTRATOR</text>
+
+  <rect x="202" y="58" width="316" height="352" rx="8" fill="#040d1a" stroke="#ffcc00" stroke-width="1.6"/>
+  <text x="360" y="78" text-anchor="middle" fill="#ffcc00" font-size="11" letter-spacing="1">lunar-lander-demo.js</text>
+  <text x="360" y="92" text-anchor="middle" fill="#bbccee" font-size="9" opacity="0.7">createLunarLanderArcadeDemo(sk, W, H)</text>
+
+  <!-- internal sections -->
+  <line x1="212" y1="100" x2="508" y2="100" stroke="#ffcc00" stroke-width="0.6" opacity="0.3"/>
+
+  <text x="215" y="114" fill="#ffcc00" font-size="9" letter-spacing="0.5">SETUP</text>
+  <text x="215" y="126" fill="#bbccee" font-size="8.5">canvas · SFX.loadMap · startRound()</text>
+
+  <line x1="212" y1="134" x2="508" y2="134" stroke="#ffcc00" stroke-width="0.5" opacity="0.25"/>
+
+  <text x="215" y="148" fill="#ffcc00" font-size="9" letter-spacing="0.5">CAMERA</text>
+  <text x="215" y="160" fill="#bbccee" font-size="8.5">updateCamera(camera, state, dt)</text>
+  <text x="215" y="172" fill="#bbccee" font-size="8.5">  altitude → targetHalfH → COMPOSITE</text>
+  <text x="215" y="184" fill="#bbccee" font-size="8.5">makeComposite(visibleWin)</text>
+
+  <line x1="212" y1="192" x2="508" y2="192" stroke="#ffcc00" stroke-width="0.5" opacity="0.25"/>
+
+  <text x="215" y="206" fill="#ffcc00" font-size="9" letter-spacing="0.5">UPDATE LOOP  (per-frame)</text>
+  <text x="215" y="218" fill="#bbccee" font-size="8.5">readInput() → step(state, input, dt)</text>
+  <text x="215" y="230" fill="#bbccee" font-size="8.5">footWorldY ≤ heightAt → classifyTouchdown</text>
+  <text x="215" y="242" fill="#bbccee" font-size="8.5">verdict → calcScore / explosion / lives</text>
+
+  <line x1="212" y1="250" x2="508" y2="250" stroke="#ffcc00" stroke-width="0.5" opacity="0.25"/>
+
+  <text x="215" y="264" fill="#ffcc00" font-size="9" letter-spacing="0.5">RENDER LOOP  (per-frame)</text>
+  <text x="215" y="276" fill="#bbccee" font-size="8.5">starfield.display  (device space)</text>
+  <text x="215" y="288" fill="#bbccee" font-size="8.5">sk.applyMatrix(COMPOSITE)  ← world on</text>
+  <text x="215" y="300" fill="#bbccee" font-size="8.5">  drawTerrain · drawLander · explosion</text>
+  <text x="215" y="312" fill="#bbccee" font-size="8.5">sk.resetMatrix()  ← world off</text>
+  <text x="215" y="324" fill="#bbccee" font-size="8.5">  drawPadLabels · drawHUD  (device)</text>
+
+  <line x1="212" y1="332" x2="508" y2="332" stroke="#ffcc00" stroke-width="0.5" opacity="0.25"/>
+
+  <text x="215" y="346" fill="#ffcc00" font-size="9" letter-spacing="0.5">GAME STATE</text>
+  <text x="215" y="358" fill="#bbccee" font-size="8.5">phase: playing | landed | crashed | gameover</text>
+  <text x="215" y="370" fill="#bbccee" font-size="8.5">lives · score · hiScore · resetTimer</text>
+  <text x="215" y="382" fill="#bbccee" font-size="8.5">terrain (lazy chunks) · camera · starfield</text>
+  <text x="215" y="394" fill="#bbccee" font-size="8.5">explosion | null</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- LIBRARY (right column) -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <text x="620" y="50" text-anchor="middle" fill="#5577aa" font-size="10" letter-spacing="1">LIBRARY</text>
+
+  <rect x="528" y="58"  width="182" height="55" rx="6" fill="#040d1a" stroke="#5577aa" stroke-width="1"/>
+  <text x="619" y="74" text-anchor="middle" fill="#5577aa" font-size="10">M2D.js</text>
+  <text x="536" y="88"  fill="#bbccee" font-size="8.5">makePixelToWorld, multiply,</text>
+  <text x="536" y="100" fill="#bbccee" font-size="8.5">fromValues, toArgs, transformPoint</text>
+
+  <rect x="528" y="124" width="182" height="40" rx="6" fill="#040d1a" stroke="#5577aa" stroke-width="1"/>
+  <text x="619" y="140" text-anchor="middle" fill="#5577aa" font-size="10">neon.js</text>
+  <text x="536" y="156" fill="#bbccee" font-size="8.5">neonPoly, neonLine, neonDot</text>
+
+  <rect x="528" y="174" width="182" height="40" rx="6" fill="#040d1a" stroke="#5577aa" stroke-width="1"/>
+  <text x="619" y="190" text-anchor="middle" fill="#5577aa" font-size="10">camera-shake.js</text>
+  <text x="536" y="206" fill="#bbccee" font-size="8.5">createCameraShake · kick(amp, dur)</text>
+
+  <rect x="528" y="224" width="182" height="40" rx="6" fill="#040d1a" stroke="#5577aa" stroke-width="1"/>
+  <text x="619" y="240" text-anchor="middle" fill="#5577aa" font-size="10">sfx-howler.js</text>
+  <text x="536" y="256" fill="#bbccee" font-size="8.5">createHowlerSFX · play · loop · stop</text>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- Arrows from pure modules → orchestrator -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- dynamics -->
+  <line x1="182" y1="94"  x2="202" y2="210" stroke="#00eeff" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+  <!-- terrain -->
+  <line x1="182" y1="181" x2="202" y2="225" stroke="#00eeff" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+  <!-- explosion -->
+  <line x1="182" y1="259" x2="202" y2="295" stroke="#00eeff" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+  <!-- starfield -->
+  <line x1="182" y1="329" x2="202" y2="280" stroke="#00eeff" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+
+  <!-- Arrows from library → orchestrator -->
+  <line x1="528" y1="85"  x2="518" y2="175" stroke="#5577aa" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+  <line x1="528" y1="144" x2="518" y2="280" stroke="#5577aa" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+  <line x1="528" y1="194" x2="518" y2="290" stroke="#5577aa" stroke-width="1" opacity="0.5" stroke-dasharray="4,3"/>
+</svg>
