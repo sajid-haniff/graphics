@@ -28,6 +28,7 @@ import {
 import { generateTerrain, getVisibleTerrain, heightAt, findPadUnder } from './terrain';
 import { createLunarStarfield } from './starfield';
 import { createLanderExplosion } from './lander-explosion';
+import { createLunarParticles } from './lunar-particles';
 
 // ---------- Lander geometry — Y-up local coords, theta=0 = nose up (+Y) ----------
 // Scale factor: 1 world unit ≈ 1 m at the chosen win, so the lander is ~2 m tall.
@@ -102,6 +103,8 @@ const C = {
     terrain:  '#5577aa',
     padEasy:  '#44ff88',   // wide pad
     padHard:  '#ffcc00',   // narrow high-value pad
+    padMed:   '#66bbff',
+    padExpert:'#ff66cc',
     lander:   '#00eeff',
     flame:    '#ff9933',
     flameCore:'#ffdd66',
@@ -218,6 +221,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     let state       = null;   // lander dynamics state (see lander-dynamics.js)
     let camera      = null;
     let explosion   = null;
+    let particles   = null;
     let phase       = 'playing';   // 'playing' | 'landed' | 'crashed' | 'gameover'
     let score       = 0;
     let hiScore     = 0;
@@ -228,6 +232,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     let lastThrottle = 0;         // actual effective throttle used for audio/HUD/flame
     let boosterCooldown = 0;      // seconds until next booster-sfx chirp is allowed
     let profileIdx = 1;           // NORMAL by default
+    let eventCounter = 0;
 
     // Score constants
     const BASE_SCORE        = 1000;
@@ -312,12 +317,14 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         } else {
             roundNumber += 1;
         }
+        particles = createLunarParticles(roundSeed ^ Math.imul(roundNumber + 1, 0x4d3a9f17));
         state       = spawnState();
         phase       = 'playing';
         resetTimer  = 0;
         flameLen    = 0;
         lastThrottle = 0;
         explosion   = null;
+        eventCounter = 0;
         boosterCooldown = 0;
         camera      = createCamera(state);
     };
@@ -377,11 +384,56 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         return (BASE_SCORE + fuelBonus + precBonus + softBonus) * pad.multiplier;
     };
 
+    const nozzleWorld = (s, renderScale = 1) => {
+        const nozzle = rotPt(scalePt({ x: 0, y: FOOT_Y * 0.54 }, renderScale), s.theta);
+        return { x: s.pos[0] + nozzle.x, y: s.pos[1] + nozzle.y };
+    };
+
+    const padColor = (pad) => {
+        if (!pad) return C.padEasy;
+        if (pad.multiplier >= 5) return C.padExpert;
+        if (pad.multiplier >= 3) return C.padHard;
+        if (pad.multiplier >= 2) return C.padMed;
+        return C.padEasy;
+    };
+
+    const nearestPad = (pads, s = state) => {
+        if (!s || !pads || pads.length === 0) return null;
+        let best = null;
+        let bestD = Infinity;
+        for (const pad of pads) {
+            const cx = (pad.x1 + pad.x2) * 0.5;
+            const dx = Math.max(Math.abs(s.pos[0] - cx) - (pad.x2 - pad.x1) * 0.5, 0);
+            const dy = Math.max(s.pos[1] - pad.y, 0) * 0.20;
+            const d = dx + dy;
+            if (d < bestD) {
+                bestD = d;
+                best = pad;
+            }
+        }
+        return best;
+    };
+
+    const padApproachStrength = (pad, s = state) => {
+        if (!pad || !s) return 0;
+        const padCenter = (pad.x1 + pad.x2) * 0.5;
+        const padHalfW = (pad.x2 - pad.x1) * 0.5;
+        const xProximity = clamp(1 - Math.abs(s.pos[0] - padCenter) / (padHalfW + 14), 0, 1);
+        const altitude = Math.max(0, s.pos[1] - pad.y + FOOT_Y);
+        const yProximity = clamp(1 - altitude / 42, 0, 1);
+        const speedOk = clamp(1 - Math.max(0, Math.abs(s.vel[1]) - V_SAFE_Y) / 5, 0, 1);
+        const driftOk = clamp(1 - Math.max(0, Math.abs(s.vel[0]) - V_SAFE_X) / 4, 0, 1);
+        const leanOk = clamp(1 - Math.max(0, Math.abs(s.theta) - THETA_SAFE) / 0.65, 0, 1);
+        const descending = s.vel[1] < 0 ? 1 : 0.55;
+        return xProximity * yProximity * (0.35 + 0.65 * speedOk * driftOk * leanOk) * descending;
+    };
+
     // ---------- Update ----------
     const update = (dt) => {
         if (phase !== 'playing') {
             lastThrottle = 0;
             explosion?.update(dt);
+            particles?.update(dt);
             if (explosion?.done()) explosion = null;
             resetTimer -= dt;
             if (resetTimer <= 0) {
@@ -413,9 +465,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         // Integrate ODE
         state = step(state, input, dt);
 
-        // Smooth flame length (eases visually, never tied to a fixed rate)
-        const targetFlame = actualThrottle;
-        flameLen += (targetFlame - flameLen) * Math.min(1, dt * 12);
+        // Flame rendering uses the actual throttle. It shuts off immediately
+        // when fuel is empty or the key is released; particles may only fade out.
+        flameLen = actualThrottle > 0
+            ? flameLen + (actualThrottle - flameLen) * Math.min(1, dt * 18)
+            : 0;
+
+        const nose = { x: Math.sin(state.theta), y: Math.cos(state.theta) };
+        const exhaustDir = { x: -nose.x, y: -nose.y };
+        const nozzle = nozzleWorld(state);
+        if (actualThrottle > 0) particles?.emitPlume(nozzle, exhaustDir, actualThrottle, dt);
 
         // ---------- Ground contact ----------
         // Contact point: foot tips in world space (rotate FOOT_Y by theta then offset by pos)
@@ -423,6 +482,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const footRot   = rotPt(footLocal, state.theta);
         const footWorldY = state.pos[1] + footRot.y;
         const groundY    = heightAt(terrain, state.pos[0]);
+        const footAltitude = footWorldY - groundY;
+
+        if (actualThrottle > 0 && footAltitude < 13) {
+            const dustStrength = clamp(1 - Math.max(0, footAltitude) / 13, 0, 1);
+            particles?.emitDust({ x: state.pos[0], y: groundY + 0.12 }, exhaustDir, dustStrength, dt);
+        }
+
+        const localPad = findPadUnder(terrain, state.pos[0]);
+        particles?.emitPadPulse(localPad, padApproachStrength(localPad), dt);
+        particles?.update(dt);
 
         if (footWorldY <= groundY) {
             const impactState = state;
@@ -459,12 +528,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
                 // TODO(Decision F): baby.mp3 — trigger condition TBD; wire up once confirmed.
 
+                particles?.emitLandingDust({ x: state.pos[0], y: groundY + 0.12 }, pad.x2 - pad.x1);
                 shake?.kick(4, 0.18);
             } else {
                 lives -= 1;
                 phase  = 'crashed';
                 SFX?.playRandom(['crash1', 'crash2']);
-                const boomSeed = ((state.pos[0] * 1000) | 0) ^ ((state.pos[1] * 1000) | 0) ^ ((Date.now() & 0xffff) << 8);
+                const boomSeed = (roundSeed ^ Math.imul(roundNumber + 1, 0x9e3779b9) ^
+                    Math.imul(++eventCounter, 0x85ebca6b) ^
+                    ((state.pos[0] * 1000) | 0) ^
+                    ((state.pos[1] * 1000) | 0)) >>> 0;
                 explosion = createLanderExplosion(boomSeed >>> 0, {
                     ...impactState,
                     pos: state.pos,
@@ -473,6 +546,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
                     legL: LEG_L,
                     legR: LEG_R,
                 });
+                particles?.flash(1);
                 shake?.kick(28, 0.75);
             }
 
@@ -483,6 +557,25 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     };
 
     // ---------- Rendering ----------
+
+    const drawPadGlow = (visibleTerrain) => {
+        if (!state) return;
+        sk.push();
+        sk.noStroke();
+        for (const pad of visibleTerrain.pads) {
+            const strength = padApproachStrength(pad);
+            if (strength <= 0.02) continue;
+            const col = sk.color(padColor(pad));
+            const w = pad.x2 - pad.x1;
+            const bloomH = 1.0 + strength * 5.2;
+            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 20 + 56 * strength);
+            sk.rect(pad.x1 - w * 0.16 * strength, pad.y - bloomH * 0.28,
+                    w * (1 + 0.32 * strength), bloomH);
+            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 42 + 80 * strength);
+            sk.rect(pad.x1, pad.y - pixelToWorld(4.5), w, pixelToWorld(9.0));
+        }
+        sk.pop();
+    };
 
     const drawTerrain = (visibleTerrain) => {
         const { vertices, pads } = visibleTerrain;
@@ -496,12 +589,26 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
         // Landing pads
         for (const pad of pads) {
-            const col = pad.multiplier > 1 ? C.padHard : C.padEasy;
+            const col = padColor(pad);
             neonLine(sk, { x: pad.x1, y: pad.y }, { x: pad.x2, y: pad.y },
                      col, pixelToWorld, 2.5);
             neonDot(sk, { x: pad.x1, y: pad.y }, col, pixelToWorld, 4);
             neonDot(sk, { x: pad.x2, y: pad.y }, col, pixelToWorld, 4);
         }
+    };
+
+    const drawEngineLight = () => {
+        if (!state || lastThrottle <= 0) return;
+        const n = nozzleWorld(state);
+        const flicker = 0.78 + 0.22 * Math.sin((sk.millis?.() || 0) * 0.034 + roundSeed * 0.001);
+        const r = pixelToWorld(48 + 16 * flicker);
+        sk.push();
+        sk.noStroke();
+        sk.fill(255, 138, 48, 34 * flicker);
+        sk.ellipse(n.x, n.y, r, r);
+        sk.fill(255, 228, 112, 42 * flicker);
+        sk.ellipse(n.x, n.y, r * 0.42, r * 0.42);
+        sk.pop();
     };
 
     const drawLander = (renderScale = 1) => {
@@ -521,8 +628,8 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         neonLine(sk, lR0, lR1, C.lander, pixelToWorld, 1.2);
 
         // Flame jet (when thrusting)
-        if (flameLen > 0.02) {
-            const jitter   = (Math.random() - 0.5) * 0.10 * S * renderScale;
+        if (lastThrottle > 0 && flameLen > 0.02) {
+            const jitter   = Math.sin((sk.millis?.() || 0) * 0.045 + roundNumber) * 0.05 * S * renderScale;
             const jetDepth = flameLen * 1.6 * S * renderScale;
             const tipLocal = { x: jitter, y: FOOT_Y * 0.5 * renderScale - jetDepth };
 
@@ -541,6 +648,15 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         }
     };
 
+    const drawWorldFlash = () => {
+        const a = Math.max(particles?.flashAlpha?.() || 0, explosion?.flashAlpha?.() || 0);
+        if (a <= 0) return;
+        sk.resetMatrix();
+        sk.noStroke();
+        sk.fill(255, 210, 140, 55 * a);
+        sk.rect(0, 0, W, H);
+    };
+
     const drawPadLabels = (COMPOSITE, visibleTerrain) => {
         sk.resetMatrix();
         sk.noStroke();
@@ -555,7 +671,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         sk.textAlign(sk.LEFT, sk.BASELINE);
     };
 
-    const drawHUD = () => {
+    const drawHUD = (visibleTerrain) => {
         sk.resetMatrix();
         sk.noStroke();
         sk.textFont('monospace');
@@ -569,13 +685,27 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const ang  = state ? (state.theta * 180 / Math.PI).toFixed(1) : '—';
         const throt = lastThrottle > 0 ? '100%' : '  0%';
         const profileName = SPAWN_PROFILES[profileIdx].name;
+        const targetPad = nearestPad(visibleTerrain?.pads || []);
+        const padText = targetPad
+            ? `${targetPad.label} ${targetPad.difficulty}`
+            : 'NONE';
+        const warning = (() => {
+            if (!state) return 'NO SIGNAL';
+            if (state.fuel <= 0) return 'OUT OF FUEL';
+            if (Math.abs(state.vel[1]) > V_SAFE_Y) return 'DESCENT RATE';
+            if (Math.abs(state.vel[0]) > V_SAFE_X) return 'LATERAL DRIFT';
+            if (Math.abs(state.theta) > THETA_SAFE) return 'LEAN';
+            if (!findPadUnder(terrain, state.pos[0]) && Number(altAboveGround) < 16) return 'NO PAD';
+            return 'NOMINAL';
+        })();
 
         sk.textSize(13);
         sk.fill(C.hud);
         sk.text(`SCORE ${score}   HI ${hiScore}   LIVES ${'♦'.repeat(Math.max(0, lives))}`, 10, 20);
         sk.text(`ALT ${altAboveGround}m   VY ${vy}m/s   VX ${vx}m/s`, 10, 38);
         sk.text(`FUEL ${fuel}%   THROTTLE ${throt}   TILT ${ang}°`, 10, 56);
-        sk.text(`PROFILE ${profileName}   ↑ Thrust   ← → Rotate   [R] Reset   [D] Difficulty`, 10, 74);
+        sk.text(`PROFILE ${profileName}   PAD ${padText}   WARN ${warning}`, 10, 74);
+        sk.text(`↑ Thrust   ← → Rotate   [R] Reset   [D] Difficulty`, 10, 92);
 
         // Fuel bar — right side
         const barW = 120, barH = 9, bx = W - barW - 12, by = 12;
@@ -660,13 +790,17 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         sk.translate(dx, dy);
         sk.applyMatrix(...M2D.toArgs(COMPOSITE));
 
+        drawPadGlow(visibleTerrain);
+        particles?.display(sk, pixelToWorld);
         drawTerrain(visibleTerrain);
+        drawEngineLight();
         if (explosion) explosion.display(sk, pixelToWorld);
         if (state && phase !== 'crashed') drawLander(landerRenderScale(visibleWin));
         drawPadLabels(COMPOSITE, visibleTerrain);
+        drawWorldFlash();
 
         // HUD is always in device space
-        drawHUD();
+        drawHUD(visibleTerrain);
     };
 
     // ---------- Key events ----------

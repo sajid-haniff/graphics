@@ -13,11 +13,13 @@
 5. [Terrain Generation](#5-terrain-generation)
 6. [Camera System](#6-camera-system)
 7. [Explosion System](#7-explosion-system)
-8. [Starfield](#8-starfield)
-9. [Game Loop & State Machine](#9-game-loop--state-machine)
-10. [Score Model](#10-score-model)
-11. [Engineering Decisions](#11-engineering-decisions)
-12. [Complexity](#12-complexity)
+8. [Cinematic Particle Systems](#8-cinematic-particle-systems)
+9. [Starfield](#9-starfield)
+10. [Game Loop & State Machine](#10-game-loop--state-machine)
+11. [Score Model](#11-score-model)
+12. [Engineering Decisions](#12-engineering-decisions)
+13. [Manual Verification](#13-manual-verification)
+14. [Complexity](#14-complexity)
 
 ---
 
@@ -47,6 +49,7 @@ The codebase is split into **pure modules** (no p5, no side effects) and a singl
 lander-dynamics.js   ─┐
 terrain.js           ─┤
 lander-explosion.js  ─┼──►  lunar-lander-demo.js  ──►  p5 canvas
+lunar-particles.js   ─┤
 starfield.js         ─┤
 sfx-map.js           ─┘
 ```
@@ -358,7 +361,7 @@ The `COMPOSITE` transform is rebuilt every frame from `cameraWin(camera)`, so th
 
 ## 7. Explosion System
 
-`lander-explosion.js` is a **vector particle system**. It decomposes the lander geometry (body polygon + two leg segments) into fragments and emits 34 spark points.
+`lander-explosion.js` is a **vector particle system**. It decomposes the lander geometry (body polygon + two leg segments) into fragments, emits 34 spark points, and creates a short shock ring plus flash.
 
 Each fragment:
 - Inherits a fraction of the lander's velocity at impact (`× 0.45`)
@@ -374,11 +377,101 @@ Each spark:
 
 Both are integrated with gravity (`g_moon = 1.62 m/s²`) each frame. Alpha fades linearly as `life / maxLife`. Fragment segments are drawn twice — a wide orange outer glow, then a narrow bright yellow core — producing the neon line effect consistent with the rest of the renderer.
 
-The LCG seeded from impact position and timestamp ensures the same crash looks different each time while remaining deterministic within a run.
+The LCG seed is mixed from the round seed, round number, event counter, and impact position. The explosion is deterministic for a replayable start, but separate crashes still get distinct scatter.
+
+Explosion effects are render/state-machine side effects only. They do not mutate `pos`, `vel`, `theta`, `omega`, `fuel`, or any collision state after the crash verdict has been decided.
 
 ---
 
-## 8. Starfield
+## 8. Cinematic Particle Systems
+
+`lunar-particles.js` contains a small deterministic particle factory:
+
+```js
+createLunarParticles(seed) → {
+  emitPlume,
+  emitDust,
+  emitLandingDust,
+  emitPadPulse,
+  flash,
+  update,
+  display,
+  flashAlpha
+}
+```
+
+The module owns plume particles, dust puffs, landing dust, pad glow pulses, and transient screen flash. It has no p5 dependency until `display(sk, pixelToWorld)`, keeping update logic reusable and deterministic.
+
+### 8.1 Single Throttle Source
+
+All engine-driven systems read the same value:
+
+```js
+actualThrottle = effectiveThrottle(state, input)
+```
+
+That value drives:
+- physics thrust and fuel burn in `lander-dynamics.js`
+- engine loop audio
+- HUD throttle
+- main engine plume
+- near-ground dust emission
+- render-only engine light
+
+When fuel reaches zero, `effectiveThrottle` returns `0`; thrust acceleration, flame, plume emission, engine audio, and HUD throttle all stop from the same source.
+
+### 8.2 Engine Plume
+
+The engine plume emits from the lander nozzle in the opposite direction of thrust:
+
+```
+nose       = [sin(theta), cos(theta)]
+exhaustDir = -nose
+```
+
+Particles use explicit `dt` and exponential damping. Size is converted through `pixelToWorld` at draw time so the plume remains readable across camera zoom levels without affecting physics or collision.
+
+### 8.3 Dust Interaction
+
+Dust emits only when:
+- `actualThrottle > 0`
+- the rotated foot point is close to terrain
+
+The dust origin is near `heightAt(terrain, state.pos[0])`, and horizontal velocity responds to the exhaust direction. This makes the exhaust visibly interact with the surface while avoiding dust trails in open sky.
+
+Safe landing emits a softer one-shot dust settling effect at pad height. This is decorative and does not alter touchdown classification.
+
+### 8.4 Landing Pad Glow
+
+Pad glow is based on a local approach score:
+
+```
+proximity_to_pad × proximity_to_ground × speed_quality × drift_quality × lean_quality
+```
+
+The glow color follows pad difficulty:
+
+| Pad | Color role |
+|---|---|
+| 1X EASY | green |
+| 2X MEDIUM | blue |
+| 3X HARD | amber |
+| 5X EXPERT | magenta |
+
+The pad gets brighter when the lander is close, descending, centered, slow, and upright. The pad itself remains a flat terrain segment; glow is a render-only bloom pass using the existing neon visual language.
+
+### 8.5 Dynamic Lighting
+
+Lighting is intentionally stylized rather than physically correct:
+- engine light flickers around the nozzle while `actualThrottle > 0`
+- crash flash combines the explosion flash and particle flash into a device-space overlay
+- pad glow blooms in world space before the terrain/pad core line is drawn
+
+These passes are reset-scoped and do not leak draw state into the HUD.
+
+---
+
+## 9. Starfield
 
 `starfield.js` implements a **three-layer parallax starfield** with twinkle animation.
 
@@ -396,7 +489,7 @@ Twinkle is a per-star sinusoidal modulation `0.72 + 0.28 · sin(t · tw + phase)
 
 ---
 
-## 9. Game Loop & State Machine
+## 10. Game Loop & State Machine
 
 The game phase is a simple enum:
 
@@ -424,7 +517,7 @@ When contact is detected, the lander is snapped so feet rest exactly on the surf
 
 ---
 
-## 10. Score Model
+## 11. Score Model
 
 ```
 score = (BASE + fuel_bonus + precision_bonus + softness_bonus) × pad.multiplier
@@ -443,7 +536,7 @@ The `softness_bonus` is a product of two linear factors — vertical speed quali
 
 ---
 
-## 11. Engineering Decisions
+## 12. Engineering Decisions
 
 ### Separation of physics from rendering
 
@@ -475,7 +568,27 @@ After the world rendering pass, `sk.resetMatrix()` is called and the HUD is draw
 
 ---
 
-## 12. Complexity
+## 13. Manual Verification
+
+Acceptance checklist for the cinematic vector flight layer:
+
+1. Hold thrust until fuel reaches zero: fuel decreases visibly, then plume, flame, engine sound, thrust acceleration, and HUD throttle stop together.
+2. Fire thrust near terrain: dust appears only close to the surface and responds to the exhaust direction.
+3. Approach pads slowly: 1X/2X/3X/5X pads glow with difficulty color and brighten when the approach is safe.
+4. Crash once: camera shake, fragments, sparks, shock ring, and flash occur once; the normal lander is hidden during the crash phase.
+5. Land safely: pad glow and settling dust are softer than the crash explosion.
+6. Confirm invariants: `theta = 0` points nose +Y, LEFT decreases `theta`, RIGHT increases `theta`, thrust follows `[sin(theta), cos(theta)]`, and HUD is device-space only.
+
+Deferred work:
+
+1. Replace binary throttle with analog throttle if input hardware warrants it.
+2. Add audio envelopes for dust/impact ambience once the SFX set includes those assets.
+3. Consider pooling particle objects if future effects push counts much higher.
+4. Add a deterministic replay harness around `(seed, profile, input, dt)` for visual regression capture.
+
+---
+
+## 14. Complexity
 
 | Operation | Complexity | Note |
 |---|---|---|
@@ -487,11 +600,12 @@ After the world rendering pass, `sk.resetMatrix()` is called and the HUD is draw
 | `getVisibleTerrain()` | O(C·V) | Small constant number of chunks visible |
 | `createLanderExplosion()` | O(S + F) | Fixed segments + 34 sparks |
 | `Explosion.update()` | O(S + F) | One pass per particle |
+| Particle update | O(P) | P = active plume/dust/pad pulses, capped |
 | Starfield render | O(N) | N = 180 stars, constant |
 
 where `V` = vertices per chunk (~140), `C` = visible chunks (~3), `S` = 34 sparks, `F` = ~8 fragments.
 
-All per-frame paths are O(1) or O(small constant). No dynamic allocation occurs in the hot update/render path after initial construction.
+All per-frame paths are O(1) or O(small capped constant). Particle effects allocate short-lived plain objects, but the arrays are capped to keep cost bounded.
 
 ---
 

@@ -32,6 +32,9 @@ export const createLanderExplosion = (seed, state, geometry) => {
     const baseVel = { x: state.vel[0], y: state.vel[1] };
     const fragments = [];
     const sparks = [];
+    let shockLife = 0.72;
+    let shockRadius = 0.3;
+    let flashLife = 0.24;
 
     for (const seg of bodySegments(geometry.bodyPts, geometry.legL, geometry.legR)) {
         const a = add(origin, rot(seg[0], state.theta));
@@ -69,6 +72,9 @@ export const createLanderExplosion = (seed, state, geometry) => {
     }
 
     const update = (dt) => {
+        shockRadius += 42 * dt;
+        shockLife -= dt;
+        flashLife -= dt;
         for (const f of fragments) {
             f.vel.y -= 1.62 * dt;
             f.pos.x += f.vel.x * dt;
@@ -86,6 +92,22 @@ export const createLanderExplosion = (seed, state, geometry) => {
 
     const display = (sk, pixelToWorld) => {
         sk.push();
+        if (shockLife > 0) {
+            const a = Math.max(0, shockLife / 0.72);
+            sk.noFill();
+            sk.stroke(255, 120, 45, 150 * a);
+            sk.strokeWeight(pixelToWorld(4.4 * a + 0.6));
+            sk.circle(origin.x, origin.y, shockRadius * 2);
+            sk.stroke(255, 230, 150, 95 * a);
+            sk.strokeWeight(pixelToWorld(1.4));
+            sk.circle(origin.x, origin.y, shockRadius * 1.35);
+        }
+        if (flashLife > 0) {
+            const a = Math.max(0, flashLife / 0.24);
+            sk.noStroke();
+            sk.fill(255, 215, 140, 62 * a);
+            sk.ellipse(origin.x, origin.y, shockRadius * 1.25, shockRadius * 1.25);
+        }
         for (const f of fragments) {
             if (f.life <= 0) continue;
             const a = Math.max(0, f.life / f.maxLife);
@@ -110,7 +132,10 @@ export const createLanderExplosion = (seed, state, geometry) => {
     };
 
     const done = () =>
+        shockLife <= 0 && flashLife <= 0 &&
         fragments.every(f => f.life <= 0) && sparks.every(s => s.life <= 0);
 
-    return { update, display, done };
+    const flashAlpha = () => Math.max(0, flashLife / 0.24);
+
+    return { update, display, done, flashAlpha };
 };
