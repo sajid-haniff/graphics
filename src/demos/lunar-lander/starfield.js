@@ -35,7 +35,9 @@ export const createLunarStarfield = (seed, count = 180) => {
         t += dt;
     };
 
-    const display = (sk, camera, W, H) => {
+    const display = (sk, camera, W, H, colors) => {
+        const starColor = colors.world.stars;
+        const glowColor = colors.world.starGlow;
         sk.resetMatrix();
         sk.noStroke();
         for (const star of stars) {
@@ -47,10 +49,10 @@ export const createLunarStarfield = (seed, count = 180) => {
             const a = star.layer.alpha * twinkle * (star.bright ? 1.25 : 1);
             const d = star.layer.size * (star.bright ? 1.65 : 1);
 
-            sk.fill(190, 220, 255, Math.min(235, a));
+            sk.fill(starColor[0], starColor[1], starColor[2], Math.min(235, a));
             sk.ellipse(x, y, d, d);
             if (star.bright) {
-                sk.fill(140, 190, 255, 40 * twinkle);
+                sk.fill(glowColor[0], glowColor[1], glowColor[2], 40 * twinkle);
                 sk.ellipse(x, y, d * 3.4, d * 3.4);
             }
         }

@@ -15,11 +15,13 @@
 7. [Explosion System](#7-explosion-system)
 8. [Cinematic Particle Systems](#8-cinematic-particle-systems)
 9. [Starfield](#9-starfield)
-10. [Game Loop & State Machine](#10-game-loop--state-machine)
-11. [Score Model](#11-score-model)
-12. [Engineering Decisions](#12-engineering-decisions)
-13. [Manual Verification](#13-manual-verification)
-14. [Complexity](#14-complexity)
+10. [Color Profiles](#10-color-profiles)
+11. [Planet Profiles](#11-planet-profiles)
+12. [Game Loop & State Machine](#12-game-loop--state-machine)
+13. [Score Model](#13-score-model)
+14. [Engineering Decisions](#14-engineering-decisions)
+15. [Manual Verification](#15-manual-verification)
+16. [Complexity](#16-complexity)
 
 ---
 
@@ -51,6 +53,9 @@ terrain.js           ─┤
 lander-explosion.js  ─┼──►  lunar-lander-demo.js  ──►  p5 canvas
 lunar-particles.js   ─┤
 starfield.js         ─┤
+color-profiles.js    ─┤
+planet-profiles.js   ─┤
+environment-effects.js ┤
 sfx-map.js           ─┘
 ```
 
@@ -149,15 +154,23 @@ The lander is modelled as a rigid body under two forces: gravity and thrust.
 
 ```
 ax = τ · T · sin θ
-ay = −g_moon + τ · T · cos θ
+ay = −g_planet + τ · T · cos θ
 ```
 
 Where:
 - `τ ∈ {0, 1}` — binary throttle (v1; variable mass is a v2 extension)
 - `T = ENGINE_ACCEL = 5.0 m/s²` — peak thrust acceleration
-- `g_moon = 1.62 m/s²` — Moon surface gravity (~1/6 Earth's)
+- `g_planet` — read explicitly from the active planet profile
 
-The gravity term is always present. Thrust opposes it only along the lander's axis.
+The gravity term is always present. Thrust opposes it only along the lander's axis. Moon remains the default profile (`1.62 m/s²`), so omitting planet options preserves the original dynamics.
+
+Atmospheric drag is also explicit profile data:
+
+```
+a_drag = -drag · (vel - wind)
+```
+
+Collision, scoring, terrain geometry, fuel rules, and landing predicates do not read planet visual state.
 
 ### 4.3 Semi-Implicit Euler Integration
 
@@ -489,7 +502,84 @@ Twinkle is a per-star sinusoidal modulation `0.72 + 0.28 · sin(t · tw + phase)
 
 ---
 
-## 10. Game Loop & State Machine
+## 10. Color Profiles
+
+`color-profiles.js` is the palette boundary. Renderer code asks for semantic colors:
+
+```
+ship.outline
+pads.highRisk
+hud.warning
+particles.engineCore
+effects.explosion
+terrain.line
+world.background
+```
+
+Hardcoded render colors belong only in color profiles. This keeps gameplay meaning separate from presentation: a 5X pad is `pads.expert`, not "magenta"; fuel low is `hud.fuelLow`, not a literal red.
+
+Two immutable profiles exist initially:
+
+| Profile | Purpose |
+|---|---|
+| `vectorLunar` | The restrained cinematic look: near-black sky, muted blue terrain, cyan ship, amber engine, pale HUD. |
+| `gyrussNeon` | A brighter arcade look: purple-black void, electric cyan/cobalt terrain, cyan-white ship, white/yellow/orange/magenta engine, stronger controlled bloom. |
+
+The profile helpers are:
+
+```
+createColorProfile(profile)
+getColorProfile(id)
+getNextColorProfile(id)
+resolvePadTier(pad)
+getPulse({ time, frequency, phase })
+```
+
+Profiles are frozen at module load and reused by reference. The active profile changes only on user input or planet switch; no profile objects, arrays, gradients, or buffers are allocated per frame.
+
+Controls:
+
+| Key | Effect |
+|---|---|
+| `C` | Cycle visual color profile during active flight. |
+| `P` | Cycle planet profile during active flight. |
+
+The HUD shows both current planet and current visual profile.
+
+---
+
+## 11. Planet Profiles
+
+`planet-profiles.js` defines first-class environment profiles:
+
+```
+{ id, name, gravity, atmosphereDensity, drag, wind,
+  terrainMaterial, hazards, visualProfileId, environmentFx }
+```
+
+Current profiles:
+
+| Planet | Physics hook | Visual/environment hook |
+|---|---|---|
+| Moon | `gravity=1.62`, no drag, no wind | sparse dust, cratered lunar tone |
+| Mars | stronger gravity, light drag, light wind | dust haze, orange/red material semantics |
+| Titan | low gravity, dense atmosphere, stronger drag | heavy haze, slow descent feel |
+| Io | low drag, volcanic semantics | volcanic glow pulses, blazing meteors |
+| Europa | low drag, icy semantics | ice rain and aurora bands |
+
+Only explicit physics fields affect dynamics:
+
+```
+step(state, input, dt, planetProfile)
+```
+
+`gravity`, `drag`, and `wind` influence acceleration. Visual fields drive `environment-effects.js`, which is deterministic, bounded, and render-only. Meteors, ice rain, aurora bands, haze, and volcanic glow are visual hazards today; they do not affect collision, score, terrain, or landing predicates.
+
+Planet switching intentionally does not restart the round. It updates gravity/drag/wind and visual environment hooks for the current flight so the profile layer can be exercised without corrupting game state.
+
+---
+
+## 12. Game Loop & State Machine
 
 The game phase is a simple enum:
 
@@ -517,7 +607,7 @@ When contact is detected, the lander is snapped so feet rest exactly on the surf
 
 ---
 
-## 11. Score Model
+## 13. Score Model
 
 ```
 score = (BASE + fuel_bonus + precision_bonus + softness_bonus) × pad.multiplier
@@ -536,7 +626,7 @@ The `softness_bonus` is a product of two linear factors — vertical speed quali
 
 ---
 
-## 12. Engineering Decisions
+## 14. Engineering Decisions
 
 ### Separation of physics from rendering
 
@@ -568,7 +658,7 @@ After the world rendering pass, `sk.resetMatrix()` is called and the HUD is draw
 
 ---
 
-## 13. Manual Verification
+## 15. Manual Verification
 
 Acceptance checklist for the cinematic vector flight layer:
 
@@ -578,6 +668,12 @@ Acceptance checklist for the cinematic vector flight layer:
 4. Crash once: camera shake, fragments, sparks, shock ring, and flash occur once; the normal lander is hidden during the crash phase.
 5. Land safely: pad glow and settling dust are softer than the crash explosion.
 6. Confirm invariants: `theta = 0` points nose +Y, LEFT decreases `theta`, RIGHT increases `theta`, thrust follows `[sin(theta), cos(theta)]`, and HUD is device-space only.
+7. Start with `vectorLunar`: it should remain close to the restrained cinematic mainline look.
+8. Press `C`: `gyrussNeon` should be bright but readable, with ship, pads, HUD, particles, terrain, and explosion all using active semantic colors.
+9. Press `P`: Moon, Mars, Titan, Io, and Europa should update gravity/drag/environment visuals during flight without restarting.
+10. Verify pad tiers remain distinct: EASY/1X standard, MEDIUM/2X bonus, HARD/3X high-risk, EXPERT/5X expert.
+11. Verify terrain collision geometry is unchanged: `heightAt`, `findPadUnder`, touchdown classification, and scoring behavior do not read visual profiles.
+12. Verify deterministic bounded environment visuals: meteors, ice rain, aurora, haze, and volcanic glow remain decoration unless a future gameplay hazard layer is added.
 
 Deferred work:
 
@@ -585,10 +681,11 @@ Deferred work:
 2. Add audio envelopes for dust/impact ambience once the SFX set includes those assets.
 3. Consider pooling particle objects if future effects push counts much higher.
 4. Add a deterministic replay harness around `(seed, profile, input, dt)` for visual regression capture.
+5. Promote visual hazards into real gameplay hazards only after adding collision semantics, UI warnings, and fairness rules.
 
 ---
 
-## 14. Complexity
+## 16. Complexity
 
 | Operation | Complexity | Note |
 |---|---|---|
@@ -602,6 +699,7 @@ Deferred work:
 | `Explosion.update()` | O(S + F) | One pass per particle |
 | Particle update | O(P) | P = active plume/dust/pad pulses, capped |
 | Starfield render | O(N) | N = 180 stars, constant |
+| Environment effects | O(E) | E = active meteors/ice streaks, capped |
 
 where `V` = vertices per chunk (~140), `C` = visible chunks (~3), `S` = 34 sparks, `F` = ~8 fragments.
 

@@ -90,22 +90,27 @@ export const createLanderExplosion = (seed, state, geometry) => {
         }
     };
 
-    const display = (sk, pixelToWorld) => {
+    const display = (sk, pixelToWorld, colors) => {
+        const fx = colors.effects;
+        const spark = colors.particles.spark;
         sk.push();
         if (shockLife > 0) {
             const a = Math.max(0, shockLife / 0.72);
+            const shock = fx.shock;
+            const shockCore = fx.shockCore;
             sk.noFill();
-            sk.stroke(255, 120, 45, 150 * a);
+            sk.stroke(shock[0], shock[1], shock[2], 150 * a);
             sk.strokeWeight(pixelToWorld(4.4 * a + 0.6));
             sk.circle(origin.x, origin.y, shockRadius * 2);
-            sk.stroke(255, 230, 150, 95 * a);
+            sk.stroke(shockCore[0], shockCore[1], shockCore[2], 95 * a);
             sk.strokeWeight(pixelToWorld(1.4));
             sk.circle(origin.x, origin.y, shockRadius * 1.35);
         }
         if (flashLife > 0) {
             const a = Math.max(0, flashLife / 0.24);
+            const flash = fx.flash;
             sk.noStroke();
-            sk.fill(255, 215, 140, 62 * a);
+            sk.fill(flash[0], flash[1], flash[2], 62 * a);
             sk.ellipse(origin.x, origin.y, shockRadius * 1.25, shockRadius * 1.25);
         }
         for (const f of fragments) {
@@ -113,10 +118,10 @@ export const createLanderExplosion = (seed, state, geometry) => {
             const a = Math.max(0, f.life / f.maxLife);
             const p1 = add(f.pos, rot(f.a, f.angle));
             const p2 = add(f.pos, rot(f.b, f.angle));
-            sk.stroke(255, 145, 60, 190 * a);
+            sk.stroke(fx.explosion[0], fx.explosion[1], fx.explosion[2], 190 * a);
             sk.strokeWeight(pixelToWorld(4.0 * a + 0.8));
             sk.line(p1.x, p1.y, p2.x, p2.y);
-            sk.stroke(255, 230, 125, 240 * a);
+            sk.stroke(fx.explosionCore[0], fx.explosionCore[1], fx.explosionCore[2], 240 * a);
             sk.strokeWeight(pixelToWorld(1.2));
             sk.line(p1.x, p1.y, p2.x, p2.y);
         }
@@ -125,7 +130,7 @@ export const createLanderExplosion = (seed, state, geometry) => {
             if (s.life <= 0) continue;
             const a = Math.max(0, s.life / s.maxLife);
             const d = pixelToWorld(3.5 * a + 1);
-            sk.fill(255, 190, 80, 210 * a);
+            sk.fill(spark[0], spark[1], spark[2], 210 * a);
             sk.ellipse(s.pos.x, s.pos.y, d, d);
         }
         sk.pop();

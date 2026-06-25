@@ -52,16 +52,23 @@ export const effectiveThrottle = (state, input) =>
 
 // step: single semi-implicit Euler step.
 // Returns a new state; the input state is never mutated.
-export const step = (state, input, dt) => {
+// env is explicit profile data: gravity, drag, and wind. Omitting it preserves
+// the original Moon behavior exactly.
+export const step = (state, input, dt, env = {}) => {
     const { pos, vel, theta, omega, fuel } = state;
+    const gravity = env.gravity ?? G_MOON;
+    const drag = env.drag ?? 0;
+    const wind = env.wind || [0, 0];
 
     // Throttle: binary for v1.  Variable mass is a v2 extension (see docs/).
     const tau = effectiveThrottle(state, input);
     const td  = thrustDir(theta);
 
     // Linear acceleration:  a = [T·sin θ,  −g_moon + T·cos θ]
-    const ax = tau * ENGINE_ACCEL * td[0];
-    const ay = -G_MOON + tau * ENGINE_ACCEL * td[1];
+    const relVx = vel[0] - wind[0];
+    const relVy = vel[1] - wind[1];
+    const ax = tau * ENGINE_ACCEL * td[0] - drag * relVx;
+    const ay = -gravity + tau * ENGINE_ACCEL * td[1] - drag * relVy;
 
     // Semi-implicit Euler for translation
     const vx1 = vel[0] + ax * dt;
