@@ -563,6 +563,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     const drawPadGlow = (visibleTerrain) => {
         if (!state) return;
         const now = (sk.millis?.() || 0) / 1000;
+        const bloom = colorProfile.bloom || 1;
         sk.push();
         sk.noStroke();
         for (const pad of visibleTerrain.pads) {
@@ -579,7 +580,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             const danger = strength > 0.15 && state &&
                 (Math.abs(state.vel[1]) > V_SAFE_Y || Math.abs(state.vel[0]) > V_SAFE_X || Math.abs(state.theta) > THETA_SAFE);
             const haloCol = sk.color(danger ? colorProfile.pads.warningHalo : colorProfile.pads[tier]);
-            sk.fill(sk.red(haloCol), sk.green(haloCol), sk.blue(haloCol), 20 + 56 * glow);
+            sk.fill(sk.red(haloCol), sk.green(haloCol), sk.blue(haloCol), (20 + 56 * glow) * bloom);
             sk.rect(pad.x1 - w * 0.16 * glow, pad.y - bloomH * 0.28,
                     w * (1 + 0.32 * glow), bloomH);
             sk.fill(sk.red(col), sk.green(col), sk.blue(col), 38 + 82 * glow);
@@ -611,13 +612,14 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     const drawEngineLight = () => {
         if (!state || lastThrottle <= 0) return;
         const n = nozzleWorld(state);
+        const bloom = colorProfile.bloom || 1;
         const flicker = 0.78 + 0.22 * Math.sin((sk.millis?.() || 0) * 0.034 + roundSeed * 0.001);
-        const r = pixelToWorld(48 + 16 * flicker);
+        const r = pixelToWorld((48 + 16 * flicker) * Math.min(1.4, bloom));
         const light = colorProfile.effects.engineLight;
         const core = colorProfile.effects.engineLightCore;
         sk.push();
         sk.noStroke();
-        sk.fill(light[0], light[1], light[2], 34 * flicker);
+        sk.fill(light[0], light[1], light[2], 34 * flicker * bloom);
         sk.ellipse(n.x, n.y, r, r);
         sk.fill(core[0], core[1], core[2], 42 * flicker);
         sk.ellipse(n.x, n.y, r * 0.42, r * 0.42);
@@ -667,7 +669,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         sk.resetMatrix();
         sk.noStroke();
         const flash = colorProfile.effects.flash;
-        sk.fill(flash[0], flash[1], flash[2], 55 * a);
+        sk.fill(flash[0], flash[1], flash[2], 55 * a * (colorProfile.bloom || 1));
         sk.rect(0, 0, W, H);
     };
 

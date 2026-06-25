@@ -141,6 +141,7 @@ export const createLunarParticles = (seed) => {
     };
 
     const display = (sk, pixelToWorld, colors) => {
+        const bloom = colors.bloom || 1;
         sk.push();
         sk.noStroke();
 
@@ -148,7 +149,7 @@ export const createLunarParticles = (seed) => {
             const a = clamp(p.life / p.maxLife, 0, 1);
             const col = sk.color(colors.pads[p.tier] || colors.pads.standard);
             const grow = (1 - a) * p.height;
-            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 22 * a);
+            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 22 * a * bloom);
             sk.rect(p.x1 - grow, p.y - pixelToWorld(5), (p.x2 - p.x1) + grow * 2, pixelToWorld(10) + grow * 0.38);
             sk.fill(sk.red(col), sk.green(col), sk.blue(col), 65 * a);
             sk.rect(p.x1, p.y - pixelToWorld(2.2), p.x2 - p.x1, pixelToWorld(4.4));
@@ -170,7 +171,7 @@ export const createLunarParticles = (seed) => {
             if (p.heat > 0.58) {
                 sk.fill(core[0], core[1], core[2], 185 * a);
             } else {
-                sk.fill(glow[0], glow[1], glow[2], 115 * a);
+                sk.fill(glow[0], glow[1], glow[2], 115 * a * bloom);
             }
             sk.ellipse(p.pos.x, p.pos.y, d, d);
         }

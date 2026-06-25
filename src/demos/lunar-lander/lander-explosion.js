@@ -93,14 +93,15 @@ export const createLanderExplosion = (seed, state, geometry) => {
     const display = (sk, pixelToWorld, colors) => {
         const fx = colors.effects;
         const spark = colors.particles.spark;
+        const bloom = colors.bloom || 1;
         sk.push();
         if (shockLife > 0) {
             const a = Math.max(0, shockLife / 0.72);
             const shock = fx.shock;
             const shockCore = fx.shockCore;
             sk.noFill();
-            sk.stroke(shock[0], shock[1], shock[2], 150 * a);
-            sk.strokeWeight(pixelToWorld(4.4 * a + 0.6));
+            sk.stroke(shock[0], shock[1], shock[2], 150 * a * bloom);
+            sk.strokeWeight(pixelToWorld((4.4 * a + 0.6) * Math.min(1.35, bloom)));
             sk.circle(origin.x, origin.y, shockRadius * 2);
             sk.stroke(shockCore[0], shockCore[1], shockCore[2], 95 * a);
             sk.strokeWeight(pixelToWorld(1.4));
@@ -110,7 +111,7 @@ export const createLanderExplosion = (seed, state, geometry) => {
             const a = Math.max(0, flashLife / 0.24);
             const flash = fx.flash;
             sk.noStroke();
-            sk.fill(flash[0], flash[1], flash[2], 62 * a);
+            sk.fill(flash[0], flash[1], flash[2], 62 * a * bloom);
             sk.ellipse(origin.x, origin.y, shockRadius * 1.25, shockRadius * 1.25);
         }
         for (const f of fragments) {
@@ -118,8 +119,8 @@ export const createLanderExplosion = (seed, state, geometry) => {
             const a = Math.max(0, f.life / f.maxLife);
             const p1 = add(f.pos, rot(f.a, f.angle));
             const p2 = add(f.pos, rot(f.b, f.angle));
-            sk.stroke(fx.explosion[0], fx.explosion[1], fx.explosion[2], 190 * a);
-            sk.strokeWeight(pixelToWorld(4.0 * a + 0.8));
+            sk.stroke(fx.explosion[0], fx.explosion[1], fx.explosion[2], 190 * a * bloom);
+            sk.strokeWeight(pixelToWorld((4.0 * a + 0.8) * Math.min(1.25, bloom)));
             sk.line(p1.x, p1.y, p2.x, p2.y);
             sk.stroke(fx.explosionCore[0], fx.explosionCore[1], fx.explosionCore[2], 240 * a);
             sk.strokeWeight(pixelToWorld(1.2));
