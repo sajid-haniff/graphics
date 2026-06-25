@@ -31,7 +31,7 @@ const planets = [
         environmentFx: {
             dust: 'sparse',
             haze: 0.00,
-            meteors: 0.00,
+            meteors: 0.015,
             iceRain: 0.00,
             aurora: 0.00,
             volcanic: 0.00,
@@ -50,7 +50,7 @@ const planets = [
         environmentFx: {
             dust: 'hazy',
             haze: 0.28,
-            meteors: 0.02,
+            meteors: 0.10,
             iceRain: 0.00,
             aurora: 0.00,
             volcanic: 0.00,
@@ -69,7 +69,7 @@ const planets = [
         environmentFx: {
             dust: 'thick',
             haze: 0.46,
-            meteors: 0.00,
+            meteors: 0.025,
             iceRain: 0.025,
             aurora: 0.10,
             volcanic: 0.00,
@@ -88,7 +88,7 @@ const planets = [
         environmentFx: {
             dust: 'ash',
             haze: 0.10,
-            meteors: 0.055,
+            meteors: 0.34,
             iceRain: 0.00,
             aurora: 0.00,
             volcanic: 0.85,
@@ -107,7 +107,7 @@ const planets = [
         environmentFx: {
             dust: 'ice',
             haze: 0.08,
-            meteors: 0.00,
+            meteors: 0.025,
             iceRain: 0.070,
             aurora: 0.55,
             volcanic: 0.00,
@@ -126,4 +126,3 @@ export const getNextPlanetProfile = (id = 'moon') => {
 };
 
 export const PLANET_PROFILE_IDS = planets.map(p => p.id);
-

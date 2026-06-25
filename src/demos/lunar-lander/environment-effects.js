@@ -34,13 +34,14 @@ export const createEnvironmentEffects = (seed) => {
     const spawnMeteor = (win) => {
         const x = win.left + (win.right - win.left) * (0.08 + rand() * 0.84);
         const y = win.top + 8 + rand() * 18;
+        const life = 1.55 + rand() * 0.95;
         addBounded(meteors, {
             pos: { x, y },
-            vel: { x: -15 - rand() * 20, y: -19 - rand() * 20 },
-            life: 1.4 + rand() * 0.9,
-            maxLife: 1.4 + rand() * 0.9,
-            size: 2.5 + rand() * 2.5,
-        }, 18);
+            vel: { x: -19 - rand() * 24, y: -22 - rand() * 24 },
+            life,
+            maxLife: life,
+            size: 3.2 + rand() * 2.8,
+        }, 28);
     };
 
     const spawnIce = (win) => {
@@ -128,13 +129,20 @@ export const createEnvironmentEffects = (seed) => {
             const a = clamp(m.life / m.maxLife, 0, 1);
             const [r, g, b] = colorProfile.effects.meteor;
             const core = colorProfile.effects.shockCore;
-            const tail = { x: m.pos.x - m.vel.x * 0.13, y: m.pos.y - m.vel.y * 0.13 };
-            sk.stroke(r, g, b, 110 * a);
-            sk.strokeWeight(pixelToWorld(5.0 * a + 0.8));
-            sk.line(m.pos.x, m.pos.y, tail.x, tail.y);
+            const tailX = m.pos.x - m.vel.x * 0.22;
+            const tailY = m.pos.y - m.vel.y * 0.22;
+            const midX = m.pos.x - m.vel.x * 0.11;
+            const midY = m.pos.y - m.vel.y * 0.11;
+
+            sk.stroke(r, g, b, 52 * a);
+            sk.strokeWeight(pixelToWorld(10.0 * a + 1.8));
+            sk.line(m.pos.x, m.pos.y, tailX, tailY);
+            sk.stroke(r, g, b, 128 * a);
+            sk.strokeWeight(pixelToWorld(4.8 * a + 0.9));
+            sk.line(m.pos.x, m.pos.y, tailX, tailY);
             sk.stroke(core[0], core[1], core[2], 210 * a);
             sk.strokeWeight(pixelToWorld(1.4));
-            sk.line(m.pos.x, m.pos.y, tail.x, tail.y);
+            sk.line(m.pos.x, m.pos.y, midX, midY);
         }
 
         for (const rDrop of iceRain) {
