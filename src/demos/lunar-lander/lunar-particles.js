@@ -16,14 +16,6 @@ const addParticle = (list, p, limit) => {
     if (list.length > limit) list.splice(0, list.length - limit);
 };
 
-const colorForPad = (pad) => {
-    if (!pad) return [90, 210, 255];
-    if (pad.multiplier >= 5) return [255, 90, 210];
-    if (pad.multiplier >= 3) return [255, 205, 55];
-    if (pad.multiplier >= 2) return [100, 190, 255];
-    return [80, 255, 140];
-};
-
 export const createLunarParticles = (seed) => {
     const rand = lcg(seed);
     const plume = [];
@@ -101,16 +93,15 @@ export const createLunarParticles = (seed) => {
         }
     };
 
-    const emitPadPulse = (pad, strength, dt) => {
+    const emitPadPulse = (pad, tier, strength, dt) => {
         if (!pad || strength <= 0) return;
         if (rand() > clamp(strength * dt * 9, 0, 0.75)) return;
-        const col = colorForPad(pad);
         const life = 0.55 + rand() * 0.35;
         addParticle(padPulses, {
             x1: pad.x1,
             x2: pad.x2,
             y: pad.y,
-            col,
+            tier,
             life,
             maxLife: life,
             height: 0.6 + strength * 2.4,
@@ -149,34 +140,38 @@ export const createLunarParticles = (seed) => {
         lightFlash = Math.max(0, lightFlash - dt * 3.8);
     };
 
-    const display = (sk, pixelToWorld) => {
+    const display = (sk, pixelToWorld, colors) => {
+        const bloom = colors.bloom || 1;
         sk.push();
         sk.noStroke();
 
         for (const p of padPulses) {
             const a = clamp(p.life / p.maxLife, 0, 1);
-            const [r, g, b] = p.col;
+            const col = sk.color(colors.pads[p.tier] || colors.pads.standard);
             const grow = (1 - a) * p.height;
-            sk.fill(r, g, b, 22 * a);
+            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 22 * a * bloom);
             sk.rect(p.x1 - grow, p.y - pixelToWorld(5), (p.x2 - p.x1) + grow * 2, pixelToWorld(10) + grow * 0.38);
-            sk.fill(r, g, b, 65 * a);
+            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 65 * a);
             sk.rect(p.x1, p.y - pixelToWorld(2.2), p.x2 - p.x1, pixelToWorld(4.4));
         }
 
+        const dustColor = colors.particles.dust;
         for (const p of dust) {
             const a = clamp(p.life / p.maxLife, 0, 1);
             const d = pixelToWorld(p.size) * (1.1 + (1 - a) * 1.2);
-            sk.fill(150, 175, 190, 58 * a);
+            sk.fill(dustColor[0], dustColor[1], dustColor[2], 58 * a);
             sk.ellipse(p.pos.x, p.pos.y, d * 1.5, d * 0.82);
         }
 
+        const core = colors.particles.engineCore;
+        const glow = colors.particles.engineGlow;
         for (const p of plume) {
             const a = clamp(p.life / p.maxLife, 0, 1);
             const d = pixelToWorld(p.size) * (0.65 + (1 - a) * 1.4);
             if (p.heat > 0.58) {
-                sk.fill(255, 220, 105, 185 * a);
+                sk.fill(core[0], core[1], core[2], 185 * a);
             } else {
-                sk.fill(255, 120, 50, 115 * a);
+                sk.fill(glow[0], glow[1], glow[2], 115 * a * bloom);
             }
             sk.ellipse(p.pos.x, p.pos.y, d, d);
         }

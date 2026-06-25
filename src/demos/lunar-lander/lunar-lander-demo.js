@@ -29,6 +29,14 @@ import { generateTerrain, getVisibleTerrain, heightAt, findPadUnder } from './te
 import { createLunarStarfield } from './starfield';
 import { createLanderExplosion } from './lander-explosion';
 import { createLunarParticles } from './lunar-particles';
+import {
+    getColorProfile,
+    getNextColorProfile,
+    resolvePadTier,
+    getPulse,
+} from './color-profiles';
+import { getPlanetProfile, getNextPlanetProfile } from './planet-profiles';
+import { createEnvironmentEffects } from './environment-effects';
 
 // ---------- Lander geometry — Y-up local coords, theta=0 = nose up (+Y) ----------
 // Scale factor: 1 world unit ≈ 1 m at the chosen win, so the lander is ~2 m tall.
@@ -96,23 +104,6 @@ const SPAWN_PROFILES = [
     { name: 'HARD',      vy: -5.0, vxRange: 1.0, fuel: 85,  altitude: 110 },
     { name: 'CHALLENGE', vy: -7.0, vxRange: 2.0, fuel: 75,  altitude: 125 },
 ];
-
-// ---------- Visual palette ----------
-const C = {
-    bg:       '#040810',
-    terrain:  '#5577aa',
-    padEasy:  '#44ff88',   // wide pad
-    padHard:  '#ffcc00',   // narrow high-value pad
-    padMed:   '#66bbff',
-    padExpert:'#ff66cc',
-    lander:   '#00eeff',
-    flame:    '#ff9933',
-    flameCore:'#ffdd66',
-    hud:      '#bbccee',
-    safe:     '#44ff88',
-    crash:    '#ff4444',
-    exhaustA: 80,   // alpha for outer glow
-};
 
 // ---------- Factory ----------
 export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
@@ -206,6 +197,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         return Math.min(MAX_RENDER_SCALE, MIN_SHIP_PIXELS / shipPixels);
     };
 
+    const setColorProfile = (profile) => {
+        colorProfile = profile;
+    };
+
+    const setPlanetProfile = (profile) => {
+        planetProfile = profile;
+        setColorProfile(getColorProfile(profile.visualProfileId));
+        environmentEffects?.resetTransient();
+    };
+
     // pixelToWorld(px) → world units — used for strokeWeight parity with neon helpers
     let pixelToWorld = M2D.makePixelToWorld(makeComposite(win));
 
@@ -213,8 +214,11 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     let SFX   = null;
     let shake = null;
     let starfield = null;
+    let environmentEffects = null;
     let roundSeed = 0;
     let roundNumber = 0;
+    let colorProfile = getColorProfile('vectorLunar');
+    let planetProfile = getPlanetProfile('moon');
 
     // ---------- Game state ----------
     let terrain     = null;
@@ -314,6 +318,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             roundNumber = 0;
             terrain = generateTerrain(seed, win);
             starfield = createLunarStarfield(seed ^ 0x7a17c9d3, 220);
+            environmentEffects = createEnvironmentEffects(seed ^ 0x6d2b79f5);
         } else {
             roundNumber += 1;
         }
@@ -390,11 +395,8 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     };
 
     const padColor = (pad) => {
-        if (!pad) return C.padEasy;
-        if (pad.multiplier >= 5) return C.padExpert;
-        if (pad.multiplier >= 3) return C.padHard;
-        if (pad.multiplier >= 2) return C.padMed;
-        return C.padEasy;
+        const tier = resolvePadTier(pad);
+        return colorProfile.pads[tier] || colorProfile.pads.standard;
     };
 
     const nearestPad = (pads, s = state) => {
@@ -463,7 +465,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         boosterCooldown = Math.max(0, boosterCooldown - dt);
 
         // Integrate ODE
-        state = step(state, input, dt);
+        state = step(state, input, dt, planetProfile);
 
         // Flame rendering uses the actual throttle. It shuts off immediately
         // when fuel is empty or the key is released; particles may only fade out.
@@ -490,7 +492,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         }
 
         const localPad = findPadUnder(terrain, state.pos[0]);
-        particles?.emitPadPulse(localPad, padApproachStrength(localPad), dt);
+        particles?.emitPadPulse(localPad, resolvePadTier(localPad), padApproachStrength(localPad), dt);
         particles?.update(dt);
 
         if (footWorldY <= groundY) {
@@ -560,18 +562,28 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
 
     const drawPadGlow = (visibleTerrain) => {
         if (!state) return;
+        const now = (sk.millis?.() || 0) / 1000;
+        const bloom = colorProfile.bloom || 1;
         sk.push();
         sk.noStroke();
         for (const pad of visibleTerrain.pads) {
             const strength = padApproachStrength(pad);
-            if (strength <= 0.02) continue;
+            const tier = resolvePadTier(pad);
+            const valuePulse = pad.multiplier > 1
+                ? 0.25 * getPulse({ time: now, frequency: 0.75, phase: pad.multiplier })
+                : 0;
+            const glow = Math.max(strength, valuePulse);
+            if (glow <= 0.02) continue;
             const col = sk.color(padColor(pad));
             const w = pad.x2 - pad.x1;
-            const bloomH = 1.0 + strength * 5.2;
-            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 20 + 56 * strength);
-            sk.rect(pad.x1 - w * 0.16 * strength, pad.y - bloomH * 0.28,
-                    w * (1 + 0.32 * strength), bloomH);
-            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 42 + 80 * strength);
+            const bloomH = 1.0 + glow * 5.2;
+            const danger = strength > 0.15 && state &&
+                (Math.abs(state.vel[1]) > V_SAFE_Y || Math.abs(state.vel[0]) > V_SAFE_X || Math.abs(state.theta) > THETA_SAFE);
+            const haloCol = sk.color(danger ? colorProfile.pads.warningHalo : colorProfile.pads[tier]);
+            sk.fill(sk.red(haloCol), sk.green(haloCol), sk.blue(haloCol), (20 + 56 * glow) * bloom);
+            sk.rect(pad.x1 - w * 0.16 * glow, pad.y - bloomH * 0.28,
+                    w * (1 + 0.32 * glow), bloomH);
+            sk.fill(sk.red(col), sk.green(col), sk.blue(col), 38 + 82 * glow);
             sk.rect(pad.x1, pad.y - pixelToWorld(4.5), w, pixelToWorld(9.0));
         }
         sk.pop();
@@ -581,7 +593,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const { vertices, pads } = visibleTerrain;
         // Craggy terrain polyline
         sk.noFill();
-        sk.stroke(C.terrain);
+        sk.stroke(colorProfile.terrain.line);
         sk.strokeWeight(pixelToWorld(1.8));
         sk.beginShape();
         for (const v of vertices) sk.vertex(v.x, v.y);
@@ -600,13 +612,16 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
     const drawEngineLight = () => {
         if (!state || lastThrottle <= 0) return;
         const n = nozzleWorld(state);
+        const bloom = colorProfile.bloom || 1;
         const flicker = 0.78 + 0.22 * Math.sin((sk.millis?.() || 0) * 0.034 + roundSeed * 0.001);
-        const r = pixelToWorld(48 + 16 * flicker);
+        const r = pixelToWorld((48 + 16 * flicker) * Math.min(1.4, bloom));
+        const light = colorProfile.effects.engineLight;
+        const core = colorProfile.effects.engineLightCore;
         sk.push();
         sk.noStroke();
-        sk.fill(255, 138, 48, 34 * flicker);
+        sk.fill(light[0], light[1], light[2], 34 * flicker * bloom);
         sk.ellipse(n.x, n.y, r, r);
-        sk.fill(255, 228, 112, 42 * flicker);
+        sk.fill(core[0], core[1], core[2], 42 * flicker);
         sk.ellipse(n.x, n.y, r * 0.42, r * 0.42);
         sk.pop();
     };
@@ -619,13 +634,13 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const legR = LEG_R.map(p => scalePt(p, renderScale));
 
         // Body hull
-        neonPoly(sk, toWorld(bodyPts, cx, cy, theta), C.lander, pixelToWorld, 1.5, true);
+        neonPoly(sk, toWorld(bodyPts, cx, cy, theta), colorProfile.ship.outline, pixelToWorld, 1.5, true);
 
         // Landing legs
         const [lL0, lL1] = toWorld(legL, cx, cy, theta);
         const [lR0, lR1] = toWorld(legR, cx, cy, theta);
-        neonLine(sk, lL0, lL1, C.lander, pixelToWorld, 1.2);
-        neonLine(sk, lR0, lR1, C.lander, pixelToWorld, 1.2);
+        neonLine(sk, lL0, lL1, colorProfile.ship.outline, pixelToWorld, 1.2);
+        neonLine(sk, lR0, lR1, colorProfile.ship.outline, pixelToWorld, 1.2);
 
         // Flame jet (when thrusting)
         if (lastThrottle > 0 && flameLen > 0.02) {
@@ -642,9 +657,9 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             const wTip = { x: tip.x + cx, y: tip.y + cy };
 
             // Outer glow pass
-            neonPoly(sk, [wNL, wTip, wNR], C.flame,     pixelToWorld, 3.0, false);
+            neonPoly(sk, [wNL, wTip, wNR], colorProfile.effects.flame,     pixelToWorld, 3.0, false);
             // Bright core
-            neonPoly(sk, [wNL, wTip, wNR], C.flameCore, pixelToWorld, 1.2, false);
+            neonPoly(sk, [wNL, wTip, wNR], colorProfile.effects.flameCore, pixelToWorld, 1.2, false);
         }
     };
 
@@ -653,7 +668,8 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         if (a <= 0) return;
         sk.resetMatrix();
         sk.noStroke();
-        sk.fill(255, 210, 140, 55 * a);
+        const flash = colorProfile.effects.flash;
+        sk.fill(flash[0], flash[1], flash[2], 55 * a * (colorProfile.bloom || 1));
         sk.rect(0, 0, W, H);
     };
 
@@ -665,7 +681,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         sk.textSize(11);
         for (const pad of visibleTerrain.pads) {
             const p = M2D.transformPoint(COMPOSITE, [(pad.x1 + pad.x2) * 0.5, pad.y + 1.8]);
-            sk.fill(pad.multiplier > 1 ? C.padHard : C.padEasy);
+            sk.fill(padColor(pad));
             sk.text(pad.label, p[0], p[1]);
         }
         sk.textAlign(sk.LEFT, sk.BASELINE);
@@ -700,52 +716,53 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         })();
 
         sk.textSize(13);
-        sk.fill(C.hud);
+        sk.fill(colorProfile.hud.text);
         sk.text(`SCORE ${score}   HI ${hiScore}   LIVES ${'♦'.repeat(Math.max(0, lives))}`, 10, 20);
         sk.text(`ALT ${altAboveGround}m   VY ${vy}m/s   VX ${vx}m/s`, 10, 38);
         sk.text(`FUEL ${fuel}%   THROTTLE ${throt}   TILT ${ang}°`, 10, 56);
         sk.text(`PROFILE ${profileName}   PAD ${padText}   WARN ${warning}`, 10, 74);
-        sk.text(`↑ Thrust   ← → Rotate   [R] Reset   [D] Difficulty`, 10, 92);
+        sk.text(`PLANET ${planetProfile.name}   VISUAL ${colorProfile.name}`, 10, 92);
+        sk.text(`↑ Thrust   ← → Rotate   [R] Reset   [D] Difficulty   [C] Color   [P] Planet`, 10, 110);
 
         // Fuel bar — right side
         const barW = 120, barH = 9, bx = W - barW - 12, by = 12;
-        sk.fill(30, 40, 60);
+        sk.fill(...colorProfile.hud.panel);
         sk.rect(bx, by, barW, barH, 2);
-        const barFill = fuel > 25 ? '#44ff88' : '#ff4444';
+        const barFill = fuel > 25 ? colorProfile.hud.fuel : colorProfile.hud.fuelLow;
         sk.fill(barFill);
         sk.rect(bx, by, barW * fuel / 100, barH, 2);
-        sk.fill(C.hud);
+        sk.fill(colorProfile.hud.text);
         sk.textSize(11);
         sk.text('FUEL', bx - 34, by + barH - 1);
 
         // Phase overlay
         if (phase === 'landed') {
             sk.textSize(38);
-            sk.fill(C.safe);
+            sk.fill(colorProfile.hud.ok);
             sk.textAlign(sk.CENTER, sk.CENTER);
             sk.text('SAFE LANDING', W / 2, H / 2 - 24);
             sk.textSize(18);
-            sk.fill(C.hud);
+            sk.fill(colorProfile.hud.text);
             sk.text(`+${score} pts`, W / 2, H / 2 + 18);
             sk.textAlign(sk.LEFT, sk.BASELINE);
         } else if (phase === 'crashed') {
             sk.textSize(42);
-            sk.fill(C.crash);
+            sk.fill(colorProfile.hud.danger);
             sk.textAlign(sk.CENTER, sk.CENTER);
             sk.text('CRASHED', W / 2, H / 2 - 10);
             if (lives > 0) {
                 sk.textSize(16);
-                sk.fill(C.hud);
+                sk.fill(colorProfile.hud.text);
                 sk.text(`${lives} lives remaining`, W / 2, H / 2 + 30);
             }
             sk.textAlign(sk.LEFT, sk.BASELINE);
         } else if (phase === 'gameover') {
             sk.textSize(42);
-            sk.fill(C.crash);
+            sk.fill(colorProfile.hud.danger);
             sk.textAlign(sk.CENTER, sk.CENTER);
             sk.text('GAME OVER', W / 2, H / 2 - 10);
             sk.textSize(16);
-            sk.fill(C.hud);
+            sk.fill(colorProfile.hud.text);
             sk.text(`Final score: ${score}   Hi: ${hiScore}   [R] to restart`, W / 2, H / 2 + 30);
             sk.textAlign(sk.LEFT, sk.BASELINE);
         }
@@ -758,7 +775,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const vxOk   = vxNum  <= V_SAFE_X;
         const angOk  = angNum <= THETA_SAFE;
         const dot = (ok, x, y) => {
-            sk.fill(ok ? C.safe : C.crash);
+            sk.fill(ok ? colorProfile.hud.ok : colorProfile.hud.danger);
             sk.ellipse(x, y, 7, 7);
         };
         dot(vyOk,  W - 12, 38);
@@ -781,9 +798,11 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const COMPOSITE = makeComposite(visibleWin);
         pixelToWorld = M2D.makePixelToWorld(COMPOSITE);
         const visibleTerrain = getVisibleTerrain(terrain, visibleWin);
+        environmentEffects?.update(dt, planetProfile, visibleWin);
 
-        sk.background(C.bg);
-        starfield?.display(sk, camera, W, H);
+        sk.background(colorProfile.world.background);
+        starfield?.display(sk, camera, W, H, colorProfile);
+        environmentEffects?.displayDevice(sk, planetProfile, colorProfile, W, H);
 
         const [dx, dy] = shake ? shake.offset() : [0, 0];
         sk.resetMatrix();
@@ -791,10 +810,11 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         sk.applyMatrix(...M2D.toArgs(COMPOSITE));
 
         drawPadGlow(visibleTerrain);
-        particles?.display(sk, pixelToWorld);
+        particles?.display(sk, pixelToWorld, colorProfile);
         drawTerrain(visibleTerrain);
+        environmentEffects?.displayWorld(sk, planetProfile, colorProfile, pixelToWorld);
         drawEngineLight();
-        if (explosion) explosion.display(sk, pixelToWorld);
+        if (explosion) explosion.display(sk, pixelToWorld, colorProfile);
         if (state && phase !== 'crashed') drawLander(landerRenderScale(visibleWin));
         drawPadLabels(COMPOSITE, visibleTerrain);
         drawWorldFlash();
@@ -819,6 +839,10 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
             score  = 0;
             phase  = 'playing';
             startRound(false);
+        } else if (k === 'c') {
+            setColorProfile(getNextColorProfile(colorProfile.id));
+        } else if (k === 'p') {
+            setPlanetProfile(getNextPlanetProfile(planetProfile.id));
         }
     };
 
