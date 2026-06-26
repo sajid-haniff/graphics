@@ -1,172 +1,150 @@
-// Deterministic, bounded visual environment effects for planet profiles.
-// Device-space passes draw haze/aurora; world-space passes draw meteors/ice.
+// Planet-facing orchestration for vector CRT debris and atmospheric hazards.
 
-const lcg = (seed) => {
-    let s = seed >>> 0;
-    return () => {
-        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
-        return s / 0x100000000;
-    };
-};
+import {
+    DEBRIS_TYPES,
+    createNeonDebrisSystem,
+    drawNeonLine,
+    drawNeonPolyline,
+} from './neon-debris';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-const addBounded = (list, item, max) => {
-    list.push(item);
-    if (list.length > max) list.splice(0, list.length - max);
+const defaultEnvironment = (planet) => {
+    const fx = planet.environmentFx || {};
+    return {
+        debrisDensity: 0.12,
+        minActive: 0,
+        meteorRate: fx.meteors || 0,
+        asteroidRate: 0,
+        crystalRate: 0,
+        fireballRate: 0,
+        iceShardRate: (fx.iceRain || 0) * 35,
+        volcanicCinderRate: (fx.volcanic || 0) * 18,
+        haze: fx.haze || 0,
+        aurora: fx.aurora || 0,
+        volcanic: fx.volcanic || 0,
+        debrisDrag: 0.04,
+        shardDrag: 3.4,
+        maxDebris: 18,
+        maxShards: 160,
+        activityTypes: [DEBRIS_TYPES.SMALL_METEOR],
+        palette: {},
+    };
+};
+
+const envFor = (planet) => {
+    const base = defaultEnvironment(planet);
+    const env = planet.environment || {};
+    return {
+        ...base,
+        ...env,
+        palette: { ...base.palette, ...(env.palette || {}) },
+    };
+};
+
+const paletteColor = (env, key, fallback) => env.palette[key] || fallback;
+
+const deviceLine = (sk, a, b, color, intensity = 1) => {
+    const px = (v) => v;
+    drawNeonLine(sk, a, b, color, px, intensity);
 };
 
 export const createEnvironmentEffects = (seed) => {
-    const rand = lcg(seed);
-    const meteors = [];
-    const iceRain = [];
+    const debris = createNeonDebrisSystem(seed ^ 0x57a31d2b);
     let t = 0;
-    let meteorCarry = 0;
-    let iceCarry = 0;
+    let lastPlanetId = null;
 
     const resetTransient = () => {
-        meteors.length = 0;
-        iceRain.length = 0;
-        meteorCarry = 0;
-        iceCarry = 0;
+        debris.reset();
+        lastPlanetId = null;
     };
 
-    const spawnMeteor = (win) => {
-        const x = win.left + (win.right - win.left) * (0.08 + rand() * 0.84);
-        const y = win.top + 8 + rand() * 18;
-        const life = 1.55 + rand() * 0.95;
-        addBounded(meteors, {
-            pos: { x, y },
-            vel: { x: -19 - rand() * 24, y: -22 - rand() * 24 },
-            life,
-            maxLife: life,
-            size: 3.2 + rand() * 2.8,
-        }, 28);
-    };
-
-    const spawnIce = (win) => {
-        const x = win.left + (win.right - win.left) * rand();
-        const y = win.top + 3 + rand() * 7;
-        addBounded(iceRain, {
-            pos: { x, y },
-            vel: { x: -1.5 + rand() * 3, y: -22 - rand() * 12 },
-            life: 1.1 + rand() * 0.5,
-            maxLife: 1.1 + rand() * 0.5,
-            len: 1.2 + rand() * 2.6,
-        }, 90);
-    };
-
-    const update = (dt, planet, visibleWin) => {
+    const update = (dt, planet, visibleWin, state, colorProfile) => {
         t += dt;
-        const fx = planet.environmentFx || {};
-
-        meteorCarry += dt * (fx.meteors || 0);
-        while (meteorCarry >= 1) {
-            spawnMeteor(visibleWin);
-            meteorCarry -= 1;
+        const env = envFor(planet);
+        if (lastPlanetId !== planet.id) {
+            lastPlanetId = planet.id;
+            debris.reset();
+            debris.log('HAZARD FIELD ACTIVE', colorProfile.effects.meteor, 2.5);
+            if (env.debrisDrag > 0.8) debris.log('ATMOSPHERE: DENSE', colorProfile.world.haze, 2.8);
+            if (env.iceShardRate > 0.5) debris.log('ICE_RAIN', paletteColor(env, 'ice', colorProfile.effects.ice), 2.4);
+            if (env.volcanic > 0.5) debris.log('VOLCANIC_CINDER', paletteColor(env, 'cinder', colorProfile.effects.volcanic), 2.4);
         }
-
-        iceCarry += dt * 90 * (fx.iceRain || 0);
-        while (iceCarry >= 1) {
-            spawnIce(visibleWin);
-            iceCarry -= 1;
-        }
-
-        for (let i = meteors.length - 1; i >= 0; i--) {
-            const m = meteors[i];
-            m.pos.x += m.vel.x * dt;
-            m.pos.y += m.vel.y * dt;
-            m.life -= dt;
-            if (m.life <= 0) meteors.splice(i, 1);
-        }
-        for (let i = iceRain.length - 1; i >= 0; i--) {
-            const r = iceRain[i];
-            r.pos.x += r.vel.x * dt;
-            r.pos.y += r.vel.y * dt;
-            r.life -= dt;
-            if (r.life <= 0) iceRain.splice(i, 1);
-        }
+        debris.update(dt, visibleWin, env, state, colorProfile);
     };
 
     const displayDevice = (sk, planet, colorProfile, W, H) => {
-        const fx = planet.environmentFx || {};
-        const haze = clamp(fx.haze || 0, 0, 1);
-        const aurora = clamp(fx.aurora || 0, 0, 1);
+        const env = envFor(planet);
+        const bloom = colorProfile.bloom || 1;
+        const haze = clamp(env.haze, 0, 1);
+        const aurora = clamp(env.aurora, 0, 1);
 
         sk.resetMatrix();
-        sk.noStroke();
+        sk.noFill();
         if (haze > 0) {
-            const [r, g, b] = colorProfile.world.haze;
-            sk.fill(r, g, b, 28 * haze);
-            sk.rect(0, 0, W, H);
+            const col = colorProfile.world.haze;
+            for (let i = 0; i < 18; i++) {
+                const y = H * i / 17;
+                const sway = Math.sin(t * 0.7 + i * 0.9) * 18 * haze;
+                deviceLine(sk, { x: -30, y: y + sway }, { x: W + 30, y: y - sway * 0.35 }, col, haze * 0.20 * bloom);
+            }
         }
 
         if (aurora > 0) {
-            const [r, g, b] = colorProfile.effects.aurora;
-            for (let i = 0; i < 3; i++) {
-                const y = H * (0.12 + i * 0.075) +
-                    Math.sin(t * (0.35 + i * 0.11) + i * 2.3) * H * 0.025;
-                sk.fill(r, g, b, (18 + i * 9) * aurora);
-                sk.beginShape();
-                sk.vertex(0, y);
-                for (let x = 0; x <= W; x += W / 8) {
-                    const yy = y + Math.sin(t * 0.8 + x * 0.018 + i) * H * 0.035;
-                    sk.vertex(x, yy);
+            const cols = [
+                paletteColor(env, 'auroraA', colorProfile.effects.aurora),
+                paletteColor(env, 'auroraB', paletteColor(env, 'crystal', colorProfile.effects.ice)),
+                paletteColor(env, 'auroraC', paletteColor(env, 'meteor', colorProfile.effects.meteor)),
+            ];
+            for (let band = 0; band < 5; band++) {
+                const verts = [];
+                const baseY = H * (0.10 + band * 0.070);
+                const amp = H * (0.030 + band * 0.006);
+                for (let x = -30; x <= W + 30; x += W / 22) {
+                    const phase = t * (0.55 + band * 0.11) + x * 0.014 + band * 1.7;
+                    verts.push({
+                        x,
+                        y: baseY + Math.sin(phase) * amp + Math.sin(phase * 0.43) * amp * 0.55,
+                    });
                 }
-                sk.vertex(W, y + H * 0.16);
-                sk.vertex(0, y + H * 0.14);
-                sk.endShape(sk.CLOSE);
+                drawNeonPolyline(sk, verts, false, cols[band % cols.length], v => v, aurora * bloom * 0.55);
             }
         }
+
+        if (env.volcanic > 0) {
+            const lava = paletteColor(env, 'lava', colorProfile.effects.volcanic);
+            const flicker = (0.45 + 0.55 * Math.sin(t * 5.7) ** 2) * env.volcanic * bloom;
+            for (let i = 0; i < 7; i++) {
+                const y = H - 14 - i * 9;
+                const x0 = -20 + Math.sin(t * 3.2 + i) * 28;
+                const x1 = W + 20 + Math.cos(t * 2.8 + i) * 24;
+                deviceLine(sk, { x: x0, y }, { x: x1, y: y - Math.sin(t + i) * 8 }, lava, flicker * (0.35 + i * 0.05));
+            }
+        }
+
+        debris.displayLog(sk, W, colorProfile, bloom);
     };
 
     const displayWorld = (sk, planet, colorProfile, pixelToWorld) => {
-        const fx = planet.environmentFx || {};
-        sk.push();
-        sk.noFill();
+        const env = envFor(planet);
+        const bloom = colorProfile.bloom || 1;
+        debris.displayWorld(sk, pixelToWorld, bloom);
 
-        for (const m of meteors) {
-            const a = clamp(m.life / m.maxLife, 0, 1);
-            const [r, g, b] = colorProfile.effects.meteor;
-            const core = colorProfile.effects.shockCore;
-            const tailX = m.pos.x - m.vel.x * 0.22;
-            const tailY = m.pos.y - m.vel.y * 0.22;
-            const midX = m.pos.x - m.vel.x * 0.11;
-            const midY = m.pos.y - m.vel.y * 0.11;
-
-            sk.stroke(r, g, b, 52 * a);
-            sk.strokeWeight(pixelToWorld(10.0 * a + 1.8));
-            sk.line(m.pos.x, m.pos.y, tailX, tailY);
-            sk.stroke(r, g, b, 128 * a);
-            sk.strokeWeight(pixelToWorld(4.8 * a + 0.9));
-            sk.line(m.pos.x, m.pos.y, tailX, tailY);
-            sk.stroke(core[0], core[1], core[2], 210 * a);
-            sk.strokeWeight(pixelToWorld(1.4));
-            sk.line(m.pos.x, m.pos.y, midX, midY);
+        if (env.volcanic > 0) {
+            const lava = paletteColor(env, 'lava', colorProfile.effects.volcanic);
+            const a = (0.42 + 0.58 * Math.sin(t * 2.2) ** 2) * env.volcanic * bloom;
+            for (let i = 0; i < 8; i++) {
+                const y = -67 + i * 1.6;
+                drawNeonLine(
+                    sk,
+                    { x: -10000, y },
+                    { x: 10000, y: y + Math.sin(t * 1.7 + i) * 0.7 },
+                    lava,
+                    pixelToWorld,
+                    a * 0.25
+                );
+            }
         }
-
-        for (const rDrop of iceRain) {
-            const a = clamp(rDrop.life / rDrop.maxLife, 0, 1);
-            const [r, g, b] = colorProfile.effects.ice;
-            sk.stroke(r, g, b, 95 * a);
-            sk.strokeWeight(pixelToWorld(1.1));
-            sk.line(
-                rDrop.pos.x,
-                rDrop.pos.y,
-                rDrop.pos.x - rDrop.vel.x * 0.04,
-                rDrop.pos.y - rDrop.len
-            );
-        }
-
-        if ((fx.volcanic || 0) > 0) {
-            const a = (0.35 + 0.65 * Math.sin(t * 1.7) ** 2) * fx.volcanic;
-            const [r, g, b] = colorProfile.effects.volcanic;
-            sk.noStroke();
-            sk.fill(r, g, b, 20 * a);
-            sk.rect(-10000, -1000, 20000, 1000);
-        }
-
-        sk.pop();
     };
 
     return { resetTransient, update, displayDevice, displayWorld };

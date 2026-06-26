@@ -56,6 +56,7 @@ starfield.js         ─┤
 color-profiles.js    ─┤
 planet-profiles.js   ─┤
 environment-effects.js ┤
+neon-debris.js      ───┤
 sfx-map.js           ─┘
 ```
 
@@ -554,18 +555,18 @@ The HUD shows both current planet and current visual profile.
 
 ```
 { id, name, gravity, atmosphereDensity, drag, wind,
-  terrainMaterial, hazards, visualProfileId, environmentFx }
+  terrainMaterial, hazards, visualProfileId, environmentFx, environment }
 ```
 
 Current profiles:
 
 | Planet | Physics hook | Visual/environment hook |
 |---|---|---|
-| Moon | `gravity=1.62`, no drag, no wind | sparse dust, cratered lunar tone |
-| Mars | stronger gravity, light drag, light wind | dust haze, orange/red material semantics |
-| Titan | low gravity, dense atmosphere, stronger drag | heavy haze, slow descent feel |
-| Io | low drag, volcanic semantics | volcanic glow pulses, blazing meteors |
-| Europa | low drag, icy semantics | ice rain and aurora bands |
+| Moon | `gravity=1.62`, no drag, no wind | crisp sparse cyan/white debris, occasional amber asteroid |
+| Mars | stronger gravity, light drag, light wind | red/orange meteor energy and fireball tails |
+| Titan | low gravity, dense atmosphere, stronger drag | amber/violet haze, slower debris, heavy glow |
+| Io | low drag, volcanic semantics | aggressive cinders, fireballs, lava flicker |
+| Europa | low drag, icy semantics | cyan crystal fragments, ice shard rain, aurora ribbons |
 
 Only explicit physics fields affect dynamics:
 
@@ -573,9 +574,112 @@ Only explicit physics fields affect dynamics:
 step(state, input, dt, planetProfile)
 ```
 
-`gravity`, `drag`, and `wind` influence acceleration. Visual fields drive `environment-effects.js`, which is deterministic, bounded, and render-only. Meteors, ice rain, aurora bands, haze, and volcanic glow are visual hazards today; they do not affect collision, score, terrain, or landing predicates.
+`gravity`, `drag`, and `wind` influence acceleration. Visual fields drive `environment-effects.js`, which is deterministic, bounded, and render-only. Meteors, ice rain, aurora bands, haze, volcanic glow, labels, and debris warning logs are visual hazards today; they do not affect collision, score, terrain, or landing predicates.
 
 Planet switching intentionally does not restart the round. It updates gravity/drag/wind and visual environment hooks for the current flight so the profile layer can be exercised without corrupting game state.
+
+### 11.1 Vector CRT Debris Pass
+
+The current environment pass targets a bright 1980s vector CRT / XY-monitor look inspired by arcade cabinets, *Tempest*, *Gyruss*, *Asteroids Deluxe*, and *Tron*. It intentionally rejects realistic NASA ambience. Empty sky is treated as a visual failure on active planets.
+
+Every major debris/hazard object follows a 3-pass neon rule:
+
+1. outer blur: thick colored stroke, low alpha
+2. mid glow: medium colored stroke, medium alpha
+3. white core filament: thin pure white stroke
+
+This rule is implemented in `neon-debris.js`:
+
+```
+drawNeonPolyline(sk, vertices, closeShape, baseColor, pixelToWorld, intensity)
+drawNeonLine(sk, a, b, baseColor, pixelToWorld, intensity)
+drawNeonPoint(sk, p, baseColor, pixelToWorld, sizePx, intensity)
+drawNeonLabel(sk, text, x, y, baseColor, alpha, align, size)
+```
+
+The module also provides deterministic factories:
+
+```
+createNeonDebrisSystem(seed)
+createNeonShardSystem(seed)
+```
+
+No ES6 classes, `this`, `p5.Vector`, scenegraph dependency, or global p5 calls are used. Motion uses explicit `dt`; damping is continuous:
+
+```
+speedFactor = exp(-dragRate * dt)
+```
+
+### 11.2 Debris Types
+
+`createNeonDebrisSystem` manages bounded debris objects:
+
+```
+{
+  type, pos, vel, angle, omega, radius, vertices,
+  trail, pulse, life, ttl, label, color, glowColor,
+  motionMode, hazard
+}
+```
+
+Types:
+
+| Type | Visual role |
+|---|---|
+| `LARGE_ASTEROID` | Slow tumbling amber jagged loop, labeled, heavy glow. |
+| `SMALL_METEOR` | Fast red/pink streak with trailing speed lines. |
+| `CRYSTAL_FRAGMENT` | Cyan six-sided vector crystal with internal facet lines. |
+| `FIREBALL` | Very fast amber/yellow/red object with long segmented burning tail. |
+| `ICE_SHARD` | Europa cyan/white falling shard rain with brittle bursts. |
+| `VOLCANIC_CINDER` | Io red/orange ember debris rising or arcing from below. |
+
+Motion modes:
+
+| Mode | Use |
+|---|---|
+| `linear` | Straight meteor drift. |
+| `grazingMeteor` | Fast shallow arc with slight vertical wobble. |
+| `fallingRain` | Ice shards dropping diagonally. |
+| `slowTumble` | Large asteroid drift and rotation. |
+| `swirl` | Crystal fragments visibly curve/spiral around a deterministic center. |
+| `eruptionArc` | Volcanic cinders rise then fall under an arc. |
+
+Shard particles render as short glowing vector line segments using the same 3-pass style. They are used for meteor breakups, ice exits, volcanic bursts, and near-miss sparks.
+
+### 11.3 Environment Tuning
+
+Planet profiles expose `environment` knobs:
+
+```
+{
+  debrisDensity,
+  minActive,
+  meteorRate,
+  asteroidRate,
+  crystalRate,
+  fireballRate,
+  iceShardRate,
+  volcanicCinderRate,
+  haze,
+  aurora,
+  volcanic,
+  debrisDrag,
+  shardDrag,
+  maxDebris,
+  maxShards,
+  activityTypes,
+  palette
+}
+```
+
+`minActive` keeps active planets from becoming empty. Moon stays sparse; Mars, Io, and Europa keep multiple moving vector hazards visible. Caps prevent unbounded particle growth.
+
+The previous aurora/volcanic treatment was too subtle, so it has been strengthened:
+- aurora is now large cyan/green/magenta sine-wave vector ribbons with white cores
+- volcanic rendering is red/orange/purple vector-plasma flicker and cinder bursts
+- device-space log text reports hazard activity without covering the flight HUD
+
+Known non-goal: these hazards are not gameplay collisions. Near misses generate `WARNING: METEOR SHEAR` and shard bursts, but they do not kill or damage the lander.
 
 ---
 
@@ -674,6 +778,14 @@ Acceptance checklist for the cinematic vector flight layer:
 10. Verify pad tiers remain distinct: EASY/1X standard, MEDIUM/2X bonus, HARD/3X high-risk, EXPERT/5X expert.
 11. Verify terrain collision geometry is unchanged: `heightAt`, `findPadUnder`, touchdown classification, and scoring behavior do not read visual profiles.
 12. Verify deterministic bounded environment visuals: meteors, ice rain, aurora, haze, and volcanic glow remain decoration unless a future gameplay hazard layer is added.
+13. Moon should be crisp and sparse, with occasional cyan/white debris and amber asteroids.
+14. Mars should have red/orange meteor energy and magenta/red fireball trails.
+15. Titan should feel hazy and heavy, with slower debris and thick glow.
+16. Io should feel violently volcanic: cinders, fireballs, lava flicker, eruption arcs.
+17. Europa should show cyan ice/crystal energy, shard rain, and visible aurora ribbons.
+18. Debris should have white-hot vector cores, readable trails, and labels/logs that fade.
+19. Confirm hazards do not kill the player; near misses only log warnings and emit shard bursts.
+20. Confirm no classes, no `p5.Vector`, all p5 calls through `sk`, and explicit `dt` in the debris systems.
 
 Deferred work:
 
@@ -682,6 +794,7 @@ Deferred work:
 3. Consider pooling particle objects if future effects push counts much higher.
 4. Add a deterministic replay harness around `(seed, profile, input, dt)` for visual regression capture.
 5. Promote visual hazards into real gameplay hazards only after adding collision semantics, UI warnings, and fairness rules.
+6. Add authored terrain hazard regions such as geysers, lava vents, and ice fissures after terrain annotations exist.
 
 ---
 
@@ -699,7 +812,7 @@ Deferred work:
 | `Explosion.update()` | O(S + F) | One pass per particle |
 | Particle update | O(P) | P = active plume/dust/pad pulses, capped |
 | Starfield render | O(N) | N = 180 stars, constant |
-| Environment effects | O(E) | E = active meteors/ice streaks, capped |
+| Environment effects | O(E + S + L) | E = active debris, S = shard particles, L = log rows; all capped |
 
 where `V` = vertices per chunk (~140), `C` = visible chunks (~3), `S` = 34 sparks, `F` = ~8 fragments.
 
