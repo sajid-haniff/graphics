@@ -576,7 +576,7 @@ Only explicit physics fields affect dynamics:
 step(state, input, dt, planetProfile)
 ```
 
-`gravity`, `drag`, and `wind` influence acceleration. Visual fields drive `environment-effects.js`, which is deterministic, bounded, and render-only. Meteors, ice rain, aurora bands, haze, volcanic glow, labels, and debris warning logs are visual hazards today; they do not affect collision, score, terrain, or landing predicates.
+`gravity`, `drag`, and `wind` influence acceleration. Visual fields drive `environment-effects.js`, which is deterministic, bounded, and render-only. Meteors, ice rain, aurora ribbons, haze, volcanic glow, labels, and debris warning logs are visual hazards today; they do not affect collision, score, terrain, or landing predicates.
 
 Planet switching intentionally does not restart the round. It updates gravity/drag/wind and visual environment hooks for the current flight so the profile layer can be exercised without corrupting game state.
 
@@ -677,7 +677,7 @@ Planet profiles expose `environment` knobs:
 `minActive` keeps active planets from becoming empty. Moon stays sparse; Mars, Io, and Europa keep multiple moving vector hazards visible. Caps prevent unbounded particle growth.
 
 The previous aurora/volcanic treatment was too subtle, so it has been strengthened:
-- aurora is now large cyan/green/magenta sine-wave vector ribbons with white cores
+- aurora is now sparse curved cyan/green/magenta vector ribbons with white cores, never straight viewport bands
 - volcanic rendering is red/orange/purple vector-plasma flicker and cinder bursts
 - device-space log text reports hazard activity without covering the flight HUD
 
@@ -704,7 +704,7 @@ Spawn and update rules:
 - terrain intersection despawns debris and emits a small shard burst
 - debris never continues below mountains after terrain contact
 
-Horizontal scanline bands are disabled by default. Aurora may use a few curved ribbon arcs; volcanic glow stays near terrain/lava zones. Long parallel full-screen horizontal lines are considered debug-only and should not ship.
+Horizontal scanline, horizon, haze, and atmosphere bands are removed. Aurora may only use sparse curved ribbon arcs on planets that opt into aurora, and volcanic glow must stay localized to terrain, lava zones, cinders, or debris. Terrain contours and landing pads are the only intentional long world-space lines.
 
 ---
 
@@ -815,7 +815,7 @@ Acceptance checklist for the cinematic vector flight layer:
 22. No debris should spawn below mountains or continue through terrain after impact.
 23. Meteors/fireballs should enter from upper sky and move diagonally downward across large portions of the view in a few seconds.
 24. Debris should be small enough to read as sky hazards, not screen-covering UI.
-25. Horizontal screen lines should not dominate; aurora uses only a few curved ribbons and volcanic glow stays near terrain.
+25. Moon and Mars should show no straight horizontal aurora, atmosphere, haze, or scanline bands; aurora planets use only sparse curved ribbons behind gameplay.
 26. Hazard logs should be rate-limited to a small fading stack.
 
 Deferred work:
