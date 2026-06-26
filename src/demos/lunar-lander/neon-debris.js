@@ -125,20 +125,27 @@ export const createNeonShardSystem = (seed) => {
     const rand = lcg(seed);
     const shards = [];
 
-    const burst = (pos, color, count = 10, power = 12, max = 240) => {
+    const burst = (pos, color, count = 10, power = 12, max = 240, options = {}) => {
+        const colors = Array.isArray(color?.[0]) ? color : [color];
+        const speedMin = options.speedMin ?? power * 0.35;
+        const speedMax = options.speedMax ?? power * 1.35;
+        const ttlMin = options.ttlMin ?? 0.45;
+        const ttlMax = options.ttlMax ?? 1.40;
+        const lengthPxMin = options.lengthPxMin ?? 6;
+        const lengthPxMax = options.lengthPxMax ?? 18;
         for (let i = 0; i < count; i++) {
             const a = rand() * Math.PI * 2;
-            const speed = power * (0.35 + rand());
-            const ttl = 0.45 + rand() * 0.95;
+            const speed = speedMin + rand() * Math.max(0, speedMax - speedMin);
+            const ttl = ttlMin + rand() * Math.max(0, ttlMax - ttlMin);
             addBounded(shards, {
                 pos: { x: pos.x, y: pos.y },
                 vel: { x: Math.cos(a) * speed, y: Math.sin(a) * speed },
                 angle: a,
                 omega: (rand() - 0.5) * 12,
-                length: 0.7 + rand() * 3.2,
+                lengthPx: lengthPxMin + rand() * Math.max(0, lengthPxMax - lengthPxMin),
                 life: ttl,
                 ttl,
-                color,
+                color: choose(rand, colors),
             }, max);
         }
     };
@@ -160,8 +167,9 @@ export const createNeonShardSystem = (seed) => {
     const display = (sk, pixelToWorld, bloom = 1) => {
         for (const s of shards) {
             const a = clamp(s.life / s.ttl, 0, 1);
-            const dx = Math.cos(s.angle) * s.length;
-            const dy = Math.sin(s.angle) * s.length;
+            const len = pixelToWorld(s.lengthPx || 10);
+            const dx = Math.cos(s.angle) * len;
+            const dy = Math.sin(s.angle) * len;
             drawNeonLine(
                 sk,
                 { x: s.pos.x - dx, y: s.pos.y - dy },
@@ -244,6 +252,45 @@ export const createNeonDebrisSystem = (seed) => {
         if (type === DEBRIS_TYPES.VOLCANIC_CINDER) return [p.cinder || [255, 34, 68], p.lava || [255, 153, 0]];
         if (type === DEBRIS_TYPES.FIREBALL) return [p.fireball || [255, 153, 0], [255, 255, 68]];
         return [p.meteor || colorProfile.effects.meteor, p.fireball || [255, 0, 255]];
+    };
+
+    const impactColorsFor = (d, env, colorProfile) => {
+        const p = env.palette || {};
+        if (d.type === DEBRIS_TYPES.VOLCANIC_CINDER || d.type === DEBRIS_TYPES.FIREBALL) {
+            return [
+                p.cinder || [255, 34, 68],
+                p.fireball || [255, 153, 0],
+                p.lava || [255, 255, 68],
+                p.meteor || [255, 0, 255],
+            ];
+        }
+        if (d.type === DEBRIS_TYPES.ICE_SHARD || d.type === DEBRIS_TYPES.CRYSTAL_FRAGMENT) {
+            return [
+                p.ice || colorProfile.effects.ice,
+                p.crystal || [0, 255, 255],
+                [255, 255, 255],
+            ];
+        }
+        return [d.color, d.glowColor];
+    };
+
+    const emitImpactBurst = (d, pos, env, colorProfile) => {
+        const big = d.type === DEBRIS_TYPES.LARGE_ASTEROID || d.type === DEBRIS_TYPES.FIREBALL;
+        shards.burst(
+            pos,
+            impactColorsFor(d, env, colorProfile),
+            big ? 44 : 30,
+            18,
+            env.maxShards || 160,
+            {
+                speedMin: big ? 12 : 8,
+                speedMax: big ? 24 : 20,
+                ttlMin: 0.35,
+                ttlMax: big ? 0.90 : 0.72,
+                lengthPxMin: 6,
+                lengthPxMax: big ? 18 : 14,
+            }
+        );
     };
 
     const makeDebris = (type, win, env, colorProfile) => {
@@ -433,7 +480,12 @@ export const createNeonDebrisSystem = (seed) => {
                 if (dist < d.radius + 14) {
                     d.warned = true;
                     pushLog('WARNING: METEOR SHEAR', d.color, 1.6);
-                    shards.burst(d.pos, d.color, 5, 9, env.maxShards || 120);
+                    shards.burst(d.pos, d.color, 5, 9, env.maxShards || 120, {
+                        ttlMin: 0.25,
+                        ttlMax: 0.45,
+                        lengthPxMin: 4,
+                        lengthPxMax: 9,
+                    });
                 }
             }
 
@@ -443,14 +495,20 @@ export const createNeonDebrisSystem = (seed) => {
             const out = d.pos.x < win.left - 65 || d.pos.x > win.right + 65 ||
                 d.pos.y < win.bottom - 18 || d.pos.y > win.top + 55 || d.life <= 0;
             if (out || hitTerrain) {
-                if (hitTerrain || d.hazard || d.type === DEBRIS_TYPES.ICE_SHARD || d.type === DEBRIS_TYPES.CRYSTAL_FRAGMENT) {
-                    shards.burst(
-                        { x: d.pos.x, y: Math.max(d.pos.y, terrainClearanceAt(env, d.pos.x, 0.35)) },
-                        d.color,
-                        d.type === DEBRIS_TYPES.LARGE_ASTEROID ? 9 : 5,
-                        Math.max(4, d.radius * 4.0),
-                        env.maxShards || 120
+                if (hitTerrain) {
+                    emitImpactBurst(
+                        d,
+                        { x: d.pos.x, y: terrainClearanceAt(env, d.pos.x, 0.35) },
+                        env,
+                        colorProfile
                     );
+                } else if (d.hazard || d.type === DEBRIS_TYPES.ICE_SHARD || d.type === DEBRIS_TYPES.CRYSTAL_FRAGMENT) {
+                    shards.burst(d.pos, d.color, 5, 9, env.maxShards || 120, {
+                        ttlMin: 0.25,
+                        ttlMax: 0.50,
+                        lengthPxMin: 4,
+                        lengthPxMax: 9,
+                    });
                 }
                 debris.splice(i, 1);
             }
