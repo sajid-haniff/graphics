@@ -798,7 +798,7 @@ export const createLunarLanderArcadeDemo = (sk, W = 1024, H = 768) => {
         const COMPOSITE = makeComposite(visibleWin);
         pixelToWorld = M2D.makePixelToWorld(COMPOSITE);
         const visibleTerrain = getVisibleTerrain(terrain, visibleWin);
-        environmentEffects?.update(dt, planetProfile, visibleWin, state, colorProfile);
+        environmentEffects?.update(dt, planetProfile, visibleWin, state, colorProfile, x => heightAt(terrain, x));
 
         sk.background(colorProfile.world.background);
         starfield?.display(sk, camera, W, H, colorProfile);

@@ -68,6 +68,8 @@ sfx-map.js           ─┘
 
 ![Coordinate system and COMPOSITE pipeline](svg/coordinate-system.svg)
 
+`docs/lunar-lander-design.md` is the authoritative source for coordinate, attitude, control, thrust, and transform invariants. This document summarizes those invariants for implementation context, but future convention disputes should be resolved against the design brief.
+
 ### 3.1 The Problem
 
 p5.js (and the HTML Canvas beneath it) uses **Y-down** device space: pixel (0, 0) is top-left and Y increases downward. Physics, however, is most naturally expressed in **Y-up** space where gravity points in the −Y direction and angles follow the standard mathematical convention.
@@ -681,6 +683,29 @@ The previous aurora/volcanic treatment was too subtle, so it has been strengthen
 
 Known non-goal: these hazards are not gameplay collisions. Near misses generate `WARNING: METEOR SHEAR` and shard bursts, but they do not kill or damage the lander.
 
+### 11.4 Debris Scale And Terrain Rules
+
+The vector debris pass is intentionally bright, but debris must read as sky hazards rather than foreground UI. Target radii are:
+
+| Type | Radius |
+|---|---|
+| `SMALL_METEOR` | `0.45–0.9` world units |
+| `CRYSTAL_FRAGMENT` | `0.65–1.1` |
+| `LARGE_ASTEROID` | `1.2–2.2` |
+| `FIREBALL` | `0.7–1.4` |
+| `ICE_SHARD` | `0.35–0.8` |
+| `VOLCANIC_CINDER` | `0.25–0.65` |
+
+Spawn and update rules:
+- debris spawns relative to the current camera world window
+- meteors and fireballs enter from upper sky and travel diagonally downward
+- cinders are the only bottom-up debris type and are Io-specific
+- spawn Y is clamped above `heightAt(x) + clearance`
+- terrain intersection despawns debris and emits a small shard burst
+- debris never continues below mountains after terrain contact
+
+Horizontal scanline bands are disabled by default. Aurora may use a few curved ribbon arcs; volcanic glow stays near terrain/lava zones. Long parallel full-screen horizontal lines are considered debug-only and should not ship.
+
 ---
 
 ## 12. Game Loop & State Machine
@@ -786,6 +811,12 @@ Acceptance checklist for the cinematic vector flight layer:
 18. Debris should have white-hot vector cores, readable trails, and labels/logs that fade.
 19. Confirm hazards do not kill the player; near misses only log warnings and emit shard bursts.
 20. Confirm no classes, no `p5.Vector`, all p5 calls through `sk`, and explicit `dt` in the debris systems.
+21. LEFT rotates visually left, RIGHT rotates visually right, and `theta = 0` thrusts upward.
+22. No debris should spawn below mountains or continue through terrain after impact.
+23. Meteors/fireballs should enter from upper sky and move diagonally downward across large portions of the view in a few seconds.
+24. Debris should be small enough to read as sky hazards, not screen-covering UI.
+25. Horizontal screen lines should not dominate; aurora uses only a few curved ribbons and volcanic glow stays near terrain.
+26. Hazard logs should be rate-limited to a small fading stack.
 
 Deferred work:
 

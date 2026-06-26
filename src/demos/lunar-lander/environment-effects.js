@@ -53,15 +53,22 @@ export const createEnvironmentEffects = (seed) => {
     const debris = createNeonDebrisSystem(seed ^ 0x57a31d2b);
     let t = 0;
     let lastPlanetId = null;
+    let lastWin = null;
+    let lastTerrainHeightAt = null;
 
     const resetTransient = () => {
         debris.reset();
         lastPlanetId = null;
     };
 
-    const update = (dt, planet, visibleWin, state, colorProfile) => {
+    const update = (dt, planet, visibleWin, state, colorProfile, terrainHeightAt) => {
         t += dt;
-        const env = envFor(planet);
+        lastWin = visibleWin;
+        lastTerrainHeightAt = terrainHeightAt;
+        const env = {
+            ...envFor(planet),
+            terrainHeightAt,
+        };
         if (lastPlanetId !== planet.id) {
             lastPlanetId = planet.id;
             debris.reset();
@@ -83,10 +90,11 @@ export const createEnvironmentEffects = (seed) => {
         sk.noFill();
         if (haze > 0) {
             const col = colorProfile.world.haze;
-            for (let i = 0; i < 18; i++) {
-                const y = H * i / 17;
-                const sway = Math.sin(t * 0.7 + i * 0.9) * 18 * haze;
-                deviceLine(sk, { x: -30, y: y + sway }, { x: W + 30, y: y - sway * 0.35 }, col, haze * 0.20 * bloom);
+            for (let i = 0; i < 4; i++) {
+                const y = H * (0.22 + i * 0.14);
+                const sway = Math.sin(t * 0.7 + i * 0.9) * 14 * haze;
+                deviceLine(sk, { x: W * 0.06, y: y + sway }, { x: W * 0.42, y: y - sway * 0.35 }, col, haze * 0.12 * bloom);
+                deviceLine(sk, { x: W * 0.58, y: y - sway }, { x: W * 0.94, y: y + sway * 0.25 }, col, haze * 0.10 * bloom);
             }
         }
 
@@ -96,7 +104,7 @@ export const createEnvironmentEffects = (seed) => {
                 paletteColor(env, 'auroraB', paletteColor(env, 'crystal', colorProfile.effects.ice)),
                 paletteColor(env, 'auroraC', paletteColor(env, 'meteor', colorProfile.effects.meteor)),
             ];
-            for (let band = 0; band < 5; band++) {
+            for (let band = 0; band < 3; band++) {
                 const verts = [];
                 const baseY = H * (0.10 + band * 0.070);
                 const amp = H * (0.030 + band * 0.006);
@@ -107,18 +115,18 @@ export const createEnvironmentEffects = (seed) => {
                         y: baseY + Math.sin(phase) * amp + Math.sin(phase * 0.43) * amp * 0.55,
                     });
                 }
-                drawNeonPolyline(sk, verts, false, cols[band % cols.length], v => v, aurora * bloom * 0.55);
+                drawNeonPolyline(sk, verts, false, cols[band % cols.length], v => v, aurora * bloom * 0.42);
             }
         }
 
         if (env.volcanic > 0) {
             const lava = paletteColor(env, 'lava', colorProfile.effects.volcanic);
             const flicker = (0.45 + 0.55 * Math.sin(t * 5.7) ** 2) * env.volcanic * bloom;
-            for (let i = 0; i < 7; i++) {
+            for (let i = 0; i < 3; i++) {
                 const y = H - 14 - i * 9;
-                const x0 = -20 + Math.sin(t * 3.2 + i) * 28;
-                const x1 = W + 20 + Math.cos(t * 2.8 + i) * 24;
-                deviceLine(sk, { x: x0, y }, { x: x1, y: y - Math.sin(t + i) * 8 }, lava, flicker * (0.35 + i * 0.05));
+                const x0 = W * (0.18 + i * 0.20) + Math.sin(t * 3.2 + i) * 14;
+                const x1 = x0 + W * 0.16;
+                deviceLine(sk, { x: x0, y }, { x: x1, y: y - Math.sin(t + i) * 8 }, lava, flicker * (0.25 + i * 0.04));
             }
         }
 
@@ -126,22 +134,26 @@ export const createEnvironmentEffects = (seed) => {
     };
 
     const displayWorld = (sk, planet, colorProfile, pixelToWorld) => {
-        const env = envFor(planet);
+        const env = {
+            ...envFor(planet),
+            terrainHeightAt: lastTerrainHeightAt,
+        };
         const bloom = colorProfile.bloom || 1;
         debris.displayWorld(sk, pixelToWorld, bloom);
 
-        if (env.volcanic > 0) {
+        if (env.volcanic > 0 && lastWin && typeof env.terrainHeightAt === 'function') {
             const lava = paletteColor(env, 'lava', colorProfile.effects.volcanic);
             const a = (0.42 + 0.58 * Math.sin(t * 2.2) ** 2) * env.volcanic * bloom;
-            for (let i = 0; i < 8; i++) {
-                const y = -67 + i * 1.6;
+            for (let i = 0; i < 4; i++) {
+                const x0 = lastWin.left + (lastWin.right - lastWin.left) * (0.12 + i * 0.22) + Math.sin(t + i) * 4;
+                const y = env.terrainHeightAt(x0) + 0.6 + i * 0.15;
                 drawNeonLine(
                     sk,
-                    { x: -10000, y },
-                    { x: 10000, y: y + Math.sin(t * 1.7 + i) * 0.7 },
+                    { x: x0, y },
+                    { x: x0 + 18, y: y + Math.sin(t * 1.7 + i) * 0.7 },
                     lava,
                     pixelToWorld,
-                    a * 0.25
+                    a * 0.18
                 );
             }
         }
