@@ -184,6 +184,82 @@ export const createNeonShardSystem = (seed) => {
     return { burst, update, display, count: () => shards.length };
 };
 
+export const createRadialShardExplosion = (seed) => {
+    const rand = lcg(seed);
+    const particles = [];
+
+    const burst = (pos, colors, count = 44, max = 180, options = {}) => {
+        const palette = Array.isArray(colors?.[0]) ? colors : [colors];
+        const speedMin = options.speedMin ?? 10;
+        const speedMax = options.speedMax ?? 30;
+        const ttlMin = options.ttlMin ?? 0.25;
+        const ttlMax = options.ttlMax ?? 0.75;
+        const lengthMin = options.lengthMin ?? 4;
+        const lengthMax = options.lengthMax ?? 12;
+        const spin = options.spin ?? 3.4;
+        for (let i = 0; i < count; i++) {
+            const a = rand() * Math.PI * 2;
+            const speed = speedMin + rand() * (speedMax - speedMin);
+            const ttl = ttlMin + rand() * (ttlMax - ttlMin);
+            addBounded(particles, {
+                pos: { x: pos.x, y: pos.y },
+                vel: { x: Math.cos(a) * speed, y: Math.sin(a) * speed },
+                angle: a,
+                omega: (rand() - 0.5) * spin,
+                length: lengthMin + rand() * (lengthMax - lengthMin),
+                ttl,
+                age: 0,
+                color: choose(rand, palette),
+            }, max);
+        }
+    };
+
+    const update = (dt, dragRate = 2.4) => {
+        const speedFactor = Math.exp(-dragRate * dt);
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.pos.x += p.vel.x * dt;
+            p.pos.y += p.vel.y * dt;
+            p.vel.x *= speedFactor;
+            p.vel.y *= speedFactor;
+            p.angle += p.omega * dt;
+            p.age += dt;
+            if (p.age >= p.ttl) particles.splice(i, 1);
+        }
+    };
+
+    const display = (sk, pixelToWorld, bloom = 1) => {
+        for (const p of particles) {
+            const alpha = clamp(1 - p.age / p.ttl, 0, 1);
+            const half = pixelToWorld(p.length) * 0.5;
+            const dx = Math.cos(p.angle) * half;
+            const dy = Math.sin(p.angle) * half;
+            const a = { x: p.pos.x - dx, y: p.pos.y - dy };
+            const b = { x: p.pos.x + dx, y: p.pos.y + dy };
+            const glow = clamp(bloom, 0.2, 1.8);
+
+            sk.push();
+            sk.noFill();
+            sk.stroke(p.color[0], p.color[1], p.color[2], 46 * alpha * glow);
+            sk.strokeWeight(pixelToWorld(5));
+            sk.line(a.x, a.y, b.x, b.y);
+            sk.stroke(p.color[0], p.color[1], p.color[2], 128 * alpha * glow);
+            sk.strokeWeight(pixelToWorld(3));
+            sk.line(a.x, a.y, b.x, b.y);
+            sk.stroke(WHITE[0], WHITE[1], WHITE[2], 235 * alpha);
+            sk.strokeWeight(pixelToWorld(1));
+            sk.line(a.x, a.y, b.x, b.y);
+            sk.pop();
+        }
+    };
+
+    const reset = () => {
+        particles.length = 0;
+    };
+
+    return { burst, update, display, reset, count: () => particles.length };
+};
+
 export const createNeonDebrisSystem = (seed) => {
     const rand = lcg(seed);
     const debris = [];
@@ -191,6 +267,7 @@ export const createNeonDebrisSystem = (seed) => {
     const carries = {};
     const logCooldowns = {};
     const shards = createNeonShardSystem(seed ^ 0x9e3779b9);
+    const impacts = createRadialShardExplosion(seed ^ 0x3c6ef372);
     let t = 0;
 
     const pushLog = (text, color, ttl = 2.2) => {
@@ -202,6 +279,7 @@ export const createNeonDebrisSystem = (seed) => {
     const reset = () => {
         debris.length = 0;
         logs.length = 0;
+        impacts.reset();
         for (const k of Object.keys(carries)) carries[k] = 0;
         for (const k of Object.keys(logCooldowns)) delete logCooldowns[k];
     };
@@ -276,19 +354,19 @@ export const createNeonDebrisSystem = (seed) => {
 
     const emitImpactBurst = (d, pos, env, colorProfile) => {
         const big = d.type === DEBRIS_TYPES.LARGE_ASTEROID || d.type === DEBRIS_TYPES.FIREBALL;
-        shards.burst(
+        impacts.burst(
             pos,
             impactColorsFor(d, env, colorProfile),
-            big ? 44 : 30,
-            18,
-            env.maxShards || 160,
+            big ? 56 : 40,
+            env.maxShards || 180,
             {
-                speedMin: big ? 12 : 8,
-                speedMax: big ? 24 : 20,
+                speedMin: big ? 14 : 10,
+                speedMax: big ? 30 : 24,
                 ttlMin: 0.35,
-                ttlMax: big ? 0.90 : 0.72,
-                lengthPxMin: 6,
-                lengthPxMax: big ? 18 : 14,
+                ttlMax: big ? 0.75 : 0.62,
+                lengthMin: 4,
+                lengthMax: big ? 12 : 10,
+                spin: 3.0,
             }
         );
     };
@@ -514,6 +592,7 @@ export const createNeonDebrisSystem = (seed) => {
             }
         }
         shards.update(dt, env.shardDrag || 3.4);
+        impacts.update(dt, clamp(env.shardDrag || 2.4, 1.5, 3.5));
 
         for (let i = logs.length - 1; i >= 0; i--) {
             logs[i].life -= dt;
@@ -539,6 +618,7 @@ export const createNeonDebrisSystem = (seed) => {
             }
         }
         shards.display(sk, pixelToWorld, bloom);
+        impacts.display(sk, pixelToWorld, bloom);
     };
 
     const displayLog = (sk, W, colorProfile, bloom = 1) => {
