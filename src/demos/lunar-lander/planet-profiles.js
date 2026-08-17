@@ -162,7 +162,7 @@ const planets = [
         environmentFx: {
             dust: 'ash',
             haze: 0.10,
-            meteors: 0.34,
+            meteors: 0.74,
             iceRain: 0.00,
             aurora: 0.00,
             volcanic: 0.85,

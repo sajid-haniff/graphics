@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="ui-monospace, monospace">
+  <defs>
+    <marker id="arT2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88aacc"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="720" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">TERRAIN PIPELINE — FIVE STAGES, ONE HEIGHT ARRAY</text>
+  <text x="600" y="58" text-anchor="middle" font-size="11" fill="#6b8aa8">x → height(x) is built up additively, then smoothed, then engraved with pads</text>
+
+  <!-- Five stage strips -->
+  <g font-size="11">
+    <!-- 1: fBm -->
+    <g transform="translate(80 110)">
+      <rect width="1040" height="100" rx="8" fill="#0a1828" stroke="#00eeff" stroke-width="1.4"/>
+      <text x="20" y="24" font-size="13" fill="#00eeff" font-weight="600">1 · fBm BASE</text>
+      <text x="20" y="42" font-size="10" fill="#88c8e0">∑ aᵢ · noise(x · fᵢ)     ·     octaves with persistence and lacunarity</text>
+      <g transform="translate(160 50)">
+        <path d="M 0 30 L 50 22 L 100 28 L 150 18 L 200 26 L 250 14 L 300 22 L 350 12 L 400 24 L 450 16 L 500 22 L 550 12 L 600 26 L 650 18 L 700 24 L 750 14 L 800 22"
+              fill="none" stroke="#00eeff" stroke-width="1.4" opacity="0.9"/>
+      </g>
+    </g>
+
+    <!-- 2: Gaussian landforms -->
+    <g transform="translate(80 230)">
+      <rect width="1040" height="100" rx="8" fill="#1a0820" stroke="#ff66cc" stroke-width="1.4"/>
+      <text x="20" y="24" font-size="13" fill="#ff66cc" font-weight="600">2 · GAUSSIAN LANDFORMS</text>
+      <text x="20" y="42" font-size="10" fill="#e0a0d8">+ ∑ Aⱼ · exp(−(x − μⱼ)² / 2σⱼ²)     ·     adds mountains, ridges, valleys</text>
+      <g transform="translate(160 80)">
+        <path d="M 0 0
+                 C 80 -10, 160 -42, 240 -22
+                 C 320 -8, 400 -52, 480 -36
+                 C 560 -20, 640 -8, 720 -22
+                 C 760 -28, 800 -10, 800 -2"
+              fill="none" stroke="#ff66cc" stroke-width="1.6"/>
+      </g>
+    </g>
+
+    <!-- 3: Vector detail -->
+    <g transform="translate(80 350)">
+      <rect width="1040" height="100" rx="8" fill="#28140a" stroke="#ff8844" stroke-width="1.4"/>
+      <text x="20" y="24" font-size="13" fill="#ff8844" font-weight="600">3 · VECTOR DETAIL · SUM</text>
+      <text x="20" y="42" font-size="10" fill="#e0a070">y(x) = fBm(x) + landforms(x)     ·     plus high-frequency angular trim</text>
+      <g transform="translate(160 80)">
+        <polyline points="0,0 30,-6 60,-14 90,-22 120,-34 150,-30 180,-24 210,-28 240,-44 270,-32 300,-26 330,-30 360,-46 390,-52 420,-44 450,-32 480,-38 510,-28 540,-20 570,-26 600,-20 630,-12 660,-14 690,-22 720,-26 750,-20 780,-12 800,-6"
+                  fill="none" stroke="#ff8844" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- 4: Slope limiter -->
+    <g transform="translate(80 470)">
+      <rect width="1040" height="100" rx="8" fill="#102818" stroke="#44ff88" stroke-width="1.4"/>
+      <text x="20" y="24" font-size="13" fill="#44ff88" font-weight="600">4 · SLOPE LIMITING (two-sweep)</text>
+      <text x="20" y="42" font-size="10" fill="#80e0a0">| h[i+1] − h[i] | ≤ slopeMax · dx     ·     forward + reverse passes ⇒ Lipschitz</text>
+      <g transform="translate(160 80)">
+        <polyline points="0,0 30,-4 60,-10 90,-18 120,-26 150,-26 180,-24 210,-26 240,-32 270,-28 300,-24 330,-26 360,-34 390,-38 420,-34 450,-28 480,-30 510,-26 540,-20 570,-22 600,-18 630,-14 660,-14 690,-18 720,-22 750,-20 780,-14 800,-10"
+                  fill="none" stroke="#44ff88" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <!-- 5: Pad carving -->
+    <g transform="translate(80 590)">
+      <rect width="1040" height="100" rx="8" fill="#202008" stroke="#ffcc00" stroke-width="1.4"/>
+      <text x="20" y="24" font-size="13" fill="#ffcc00" font-weight="600">5 · PAD CARVING (top-k flat spots + ramps)</text>
+      <text x="20" y="42" font-size="10" fill="#e8c870">find k flattest windows · assign difficulty mult · blend edges via smoothstep</text>
+      <g transform="translate(160 80)">
+        <polyline points="0,0 30,-4 60,-10 90,-18 120,-26 150,-26 180,-24 210,-26 230,-32 250,-32 350,-32 360,-32 370,-30 400,-24 450,-28 500,-26 540,-20 570,-22 600,-18 630,-14 640,-14 720,-14 750,-12 780,-10 800,-10"
+                  fill="none" stroke="#ffcc00" stroke-width="1.6"/>
+        <line x1="250" y1="-32" x2="350" y2="-32" stroke="#44ff88" stroke-width="3"/>
+        <line x1="640" y1="-14" x2="720" y2="-14" stroke="#ff66cc" stroke-width="3"/>
+        <text x="300" y="-40" text-anchor="middle" font-size="9" fill="#44ff88">2X</text>
+        <text x="680" y="-22" text-anchor="middle" font-size="9" fill="#ff66cc">5X</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Arrows down the side -->
+  <g stroke="#88aacc" stroke-width="1.4" fill="none" marker-end="url(#arT2)" opacity="0.7">
+    <line x1="60" y1="210" x2="60" y2="232"/>
+    <line x1="60" y1="330" x2="60" y2="352"/>
+    <line x1="60" y1="450" x2="60" y2="472"/>
+    <line x1="60" y1="570" x2="60" y2="592"/>
+  </g>
+</svg>

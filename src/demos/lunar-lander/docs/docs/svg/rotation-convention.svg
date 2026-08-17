@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" font-family="ui-monospace, monospace">
+  <defs>
+    <marker id="arRot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88ddff"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="620" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">ROTATION CONVENTION — POSITIVE θ ROTATES NOSE RIGHT</text>
+  <text x="600" y="58" text-anchor="middle" font-size="11" fill="#6b8aa8">This game uses R_game(θ) = R_textbook(−θ) = R_textbook(θ)ᵀ in Y-up space</text>
+
+  <!-- Left: textbook CCW -->
+  <g transform="translate(280 320)">
+    <rect x="-220" y="-200" width="440" height="400" rx="10" fill="#06121e" stroke="#5e7da0" stroke-width="1.2"/>
+    <text x="0" y="-176" text-anchor="middle" font-size="14" fill="#a0c0e0" font-weight="600">TEXTBOOK · CCW POSITIVE</text>
+    <text x="0" y="-158" text-anchor="middle" font-size="10" fill="#6080a0">R(θ) = [[cos θ, −sin θ], [sin θ, cos θ]]</text>
+
+    <!-- axes -->
+    <line x1="-150" y1="0" x2="150" y2="0" stroke="#446080" stroke-width="0.8"/>
+    <line x1="0" y1="150" x2="0" y2="-150" stroke="#446080" stroke-width="0.8"/>
+    <text x="155" y="-4" font-size="10" fill="#88aacc">+x</text>
+    <text x="6" y="-150" font-size="10" fill="#88aacc">+y</text>
+
+    <!-- Initial pointer (θ=0, along +y) -->
+    <line x1="0" y1="0" x2="0" y2="-100" stroke="#5e7da0" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="10" y="-90" font-size="10" fill="#7090b0">θ=0</text>
+
+    <!-- Rotated CCW by ~40° -->
+    <line x1="0" y1="0" x2="-64.3" y2="-76.6" stroke="#00eeff" stroke-width="2.5" marker-end="url(#arRot)"/>
+    <text x="-78" y="-86" font-size="11" fill="#00eeff" font-weight="600">θ &gt; 0</text>
+
+    <!-- CCW arrow -->
+    <path d="M 0 -50 A 50 50 0 0 0 -50 0" stroke="#00eeff" stroke-width="1.8" fill="none"/>
+    <polygon points="-50,0 -44,-6 -44,6" fill="#00eeff"/>
+    <text x="-58" y="-32" font-size="10" fill="#88c8e0">CCW</text>
+  </g>
+
+  <!-- Right: game CW -->
+  <g transform="translate(920 320)">
+    <rect x="-220" y="-200" width="440" height="400" rx="10" fill="#06121e" stroke="#bb88ff" stroke-width="1.4"/>
+    <text x="0" y="-176" text-anchor="middle" font-size="14" fill="#bb88ff" font-weight="600">GAME · POSITIVE θ ⇒ NOSE TO +x</text>
+    <text x="0" y="-158" text-anchor="middle" font-size="10" fill="#a080c0">R(θ) = [[cos θ, sin θ], [−sin θ, cos θ]]</text>
+
+    <line x1="-150" y1="0" x2="150" y2="0" stroke="#604080" stroke-width="0.8"/>
+    <line x1="0" y1="150" x2="0" y2="-150" stroke="#604080" stroke-width="0.8"/>
+    <text x="155" y="-4" font-size="10" fill="#bb88ff">+x</text>
+    <text x="6" y="-150" font-size="10" fill="#bb88ff">+y</text>
+
+    <line x1="0" y1="0" x2="0" y2="-100" stroke="#604080" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="-30" y="-90" font-size="10" fill="#9070a0">θ=0</text>
+
+    <!-- Rotated CW by ~40° → nose right -->
+    <line x1="0" y1="0" x2="64.3" y2="-76.6" stroke="#ff66cc" stroke-width="2.5" marker-end="url(#arRot)"/>
+    <text x="70" y="-86" font-size="11" fill="#ff66cc" font-weight="600">θ &gt; 0</text>
+
+    <!-- CW arrow -->
+    <path d="M 0 -50 A 50 50 0 0 1 50 0" stroke="#ff66cc" stroke-width="1.8" fill="none"/>
+    <polygon points="50,0 44,-6 44,6" fill="#ff66cc"/>
+    <text x="34" y="-32" font-size="10" fill="#e0a0d8">CW</text>
+
+    <!-- Body sketch -->
+    <g transform="translate(64.3 -76.6) rotate(40)">
+      <polygon points="-10,12 10,12 8,-12 -8,-12" fill="none" stroke="#ff66cc" stroke-width="1.2"/>
+    </g>
+  </g>
+
+  <!-- Bottom rationale -->
+  <g transform="translate(80 540)">
+    <rect width="1040" height="60" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="20" y="22" font-size="12" fill="#a0c0e0" font-weight="600">WHY THE FLIPPED SIGN?</text>
+    <text x="20" y="42" font-size="10" fill="#7090b0">Pressing the RIGHT arrow key should turn the lander to the right. With the textbook CCW convention that would require negating θ in input handling.</text>
+    <text x="20" y="56" font-size="10" fill="#7090b0">Flipping the rotation matrix once at the source keeps input → physics → render aligned with player intuition. R_game = R_textbookᵀ — clean, single, documented.</text>
+  </g>
+</svg>

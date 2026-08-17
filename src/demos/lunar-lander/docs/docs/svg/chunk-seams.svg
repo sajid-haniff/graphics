@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" font-family="ui-monospace, monospace">
+  <rect width="1200" height="580" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">CHUNKED INFINITE TERRAIN — DETERMINISTIC SEAMS</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">chunks are generated independently · seeded by (worldSeed, chunkIndex) · seams match because endpoints sample shared lattice</text>
+
+  <!-- Chunk strip -->
+  <g transform="translate(60 100)">
+    <!-- Chunk N-1 -->
+    <g>
+      <rect x="0" y="0" width="300" height="280" fill="#0a1828" stroke="#7090b8" stroke-width="1" opacity="0.7"/>
+      <text x="150" y="20" text-anchor="middle" font-size="11" fill="#a0c0e0" font-weight="600">CHUNK N-1</text>
+      <text x="150" y="38" text-anchor="middle" font-size="9" fill="#7090b0">seed = hash(worldSeed, N-1)</text>
+      <path d="M 0 220 L 30 200 L 60 215 L 90 180 L 120 200 L 150 170 L 180 190 L 210 160 L 240 180 L 270 200 L 300 190"
+            fill="none" stroke="#88aacc" stroke-width="1.4"/>
+    </g>
+    <!-- Chunk N -->
+    <g>
+      <rect x="300" y="0" width="300" height="280" fill="#1a0820" stroke="#ff66cc" stroke-width="1.4"/>
+      <text x="450" y="20" text-anchor="middle" font-size="11" fill="#ff66cc" font-weight="600">CHUNK N · player here</text>
+      <text x="450" y="38" text-anchor="middle" font-size="9" fill="#e0a0d8">seed = hash(worldSeed, N)</text>
+      <path d="M 300 190 L 330 200 L 360 175 L 390 195 L 420 165 L 450 185 L 480 170 L 510 195 L 540 175 L 570 200 L 600 180"
+            fill="none" stroke="#ff66cc" stroke-width="1.8"/>
+      <!-- pad -->
+      <line x1="440" y1="185" x2="480" y2="170" stroke="#44ff88" stroke-width="3"/>
+      <!-- lander -->
+      <g transform="translate(420 140)">
+        <polygon points="-7,8 7,8 5,-8 -5,-8" fill="none" stroke="#00eeff" stroke-width="1.6"/>
+      </g>
+    </g>
+    <!-- Chunk N+1 -->
+    <g>
+      <rect x="600" y="0" width="300" height="280" fill="#0a1828" stroke="#7090b8" stroke-width="1" opacity="0.7"/>
+      <text x="750" y="20" text-anchor="middle" font-size="11" fill="#a0c0e0" font-weight="600">CHUNK N+1</text>
+      <text x="750" y="38" text-anchor="middle" font-size="9" fill="#7090b0">seed = hash(worldSeed, N+1)</text>
+      <path d="M 600 180 L 630 195 L 660 175 L 690 200 L 720 170 L 750 195 L 780 180 L 810 200 L 840 175 L 870 195 L 900 180"
+            fill="none" stroke="#88aacc" stroke-width="1.4"/>
+    </g>
+    <!-- Chunk N+2 (faded) -->
+    <g opacity="0.5">
+      <rect x="900" y="0" width="180" height="280" fill="#0a1828" stroke="#5e7da0" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="990" y="20" text-anchor="middle" font-size="11" fill="#7090b0" font-weight="600">N+2 (lazy)</text>
+      <path d="M 900 180 L 930 190 L 960 175 L 990 200 L 1020 180 L 1050 195 L 1080 180"
+            fill="none" stroke="#5e7da0" stroke-width="1.4" stroke-dasharray="3 3"/>
+    </g>
+
+    <!-- Seam markers -->
+    <g>
+      <circle cx="300" cy="190" r="5" fill="none" stroke="#ffcc00" stroke-width="2"/>
+      <circle cx="600" cy="180" r="5" fill="none" stroke="#ffcc00" stroke-width="2"/>
+      <circle cx="900" cy="180" r="5" fill="none" stroke="#ffcc00" stroke-width="2"/>
+      <text x="300" y="64" text-anchor="middle" font-size="9" fill="#ffcc00">SEAM</text>
+      <text x="600" y="64" text-anchor="middle" font-size="9" fill="#ffcc00">SEAM</text>
+      <text x="900" y="64" text-anchor="middle" font-size="9" fill="#ffcc00">SEAM</text>
+    </g>
+  </g>
+
+  <!-- Seam math -->
+  <g transform="translate(60 420)">
+    <rect width="1080" height="140" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="20" y="22" font-size="12" fill="#a0c0e0" font-weight="600">WHY CHUNKS MATCH AT SEAMS</text>
+    <text x="20" y="48" font-size="11" fill="#88aacc">Both adjacent chunks evaluate noise(x) at the shared boundary x_seam = N · chunkWidth.</text>
+    <text x="20" y="66" font-size="11" fill="#88aacc">Since value noise's lattice hash is purely a function of x (not of "which chunk asked"), both chunks read the same lattice value at the seam.</text>
+    <text x="20" y="84" font-size="11" fill="#88aacc">Identical inputs → identical heights. No glue, no overlap, no extra blend region needed.</text>
+    <text x="20" y="112" font-size="10" fill="#7090b0">Caveats: pad placement is chunk-local — pads cannot straddle a seam. Gaussian landforms with σ &gt; chunkWidth would be truncated, so σ is bounded.</text>
+    <text x="20" y="128" font-size="10" fill="#7090b0">Chunks beyond the visible window are pruned each frame — O(1) memory overhead regardless of how far the player has flown.</text>
+  </g>
+</svg>

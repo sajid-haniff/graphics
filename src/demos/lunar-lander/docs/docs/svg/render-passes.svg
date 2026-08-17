@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" font-family="ui-monospace, monospace">
+  <defs>
+    <marker id="arP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88ddff"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="560" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="5">RENDERING — THREE PASSES PER FRAME</text>
+
+  <!-- Pass A: starfield -->
+  <g transform="translate(80 100)">
+    <rect width="320" height="300" rx="10" fill="#02060c" stroke="#7090b8" stroke-width="1.6"/>
+    <text x="160" y="28" text-anchor="middle" font-size="14" fill="#a0c0e0" font-weight="600">PASS A · STARFIELD</text>
+    <text x="160" y="46" text-anchor="middle" font-size="10" fill="#6080a0">screen-space · parallax</text>
+
+    <!-- Stars -->
+    <g fill="#aaccee">
+      <circle cx="40" cy="80" r="1"/><circle cx="100" cy="120" r="0.8"/><circle cx="180" cy="90" r="1.2"/>
+      <circle cx="240" cy="140" r="0.9"/><circle cx="280" cy="80" r="1"/><circle cx="60" cy="170" r="0.8"/>
+      <circle cx="140" cy="220" r="1.4"/><circle cx="220" cy="200" r="0.9"/><circle cx="290" cy="240" r="1.1"/>
+      <circle cx="80" cy="260" r="0.7"/><circle cx="200" cy="270" r="0.8"/><circle cx="50" cy="220" r="1"/>
+    </g>
+    <text x="160" y="290" text-anchor="middle" font-size="10" fill="#7090b0">drawn first — everything covers it</text>
+  </g>
+  <text x="240" y="430" text-anchor="middle" font-size="10" fill="#6080a0">no world transform · pure pixel positions</text>
+
+  <!-- Pass B: world -->
+  <g transform="translate(430 100)">
+    <rect width="340" height="300" rx="10" fill="#060e1a" stroke="#00eeff" stroke-width="1.8"/>
+    <text x="170" y="28" text-anchor="middle" font-size="14" fill="#00eeff" font-weight="600">PASS B · WORLD</text>
+    <text x="170" y="46" text-anchor="middle" font-size="10" fill="#88c8e0">COMPOSITE = REFLECT_Y · DEVICE · WORLD</text>
+
+    <!-- Mock world scene -->
+    <g transform="translate(170 180)">
+      <!-- Aurora ribbon background -->
+      <path d="M -150 -60 Q -50 -80 50 -60 T 150 -50" stroke="#5588ff" stroke-width="3" fill="none" opacity="0.35"/>
+      <path d="M -150 -50 Q -50 -70 50 -50 T 150 -40" stroke="#aa66cc" stroke-width="3" fill="none" opacity="0.4"/>
+      <!-- Debris -->
+      <circle cx="-100" cy="-30" r="2" fill="#ff66cc"/>
+      <circle cx="80" cy="-10" r="2" fill="#ffcc44"/>
+      <!-- Terrain -->
+      <path d="M -160 60 L -120 30 L -90 50 L -60 20 L -30 40 L 0 25 L 30 25 L 60 35 L 100 15 L 140 50 L 160 40 L 160 80 L -160 80 Z" fill="#103060" stroke="#5588cc" stroke-width="1.4"/>
+      <!-- Pad marker -->
+      <line x1="0" y1="25" x2="30" y2="25" stroke="#44ff88" stroke-width="2.5"/>
+      <!-- Particles -->
+      <g fill="#ffcc44">
+        <circle cx="-20" cy="-10" r="1.2"/><circle cx="-22" cy="-2" r="1"/>
+        <circle cx="-18" cy="5" r="0.8"/>
+      </g>
+      <!-- Lander -->
+      <g transform="translate(-20 -22)">
+        <polygon points="-7,8 7,8 5,-10 -5,-10" fill="none" stroke="#00eeff" stroke-width="1.5"/>
+      </g>
+    </g>
+
+    <text x="170" y="290" text-anchor="middle" font-size="10" fill="#6da4c0">aurora · debris · terrain · particles · lander · explosion</text>
+  </g>
+  <text x="600" y="430" text-anchor="middle" font-size="10" fill="#6da4c0">far → near · push/pop transforms</text>
+
+  <!-- Pass C: HUD -->
+  <g transform="translate(800 100)">
+    <rect width="320" height="300" rx="10" fill="#0c0a04" stroke="#ffcc00" stroke-width="1.6"/>
+    <text x="160" y="28" text-anchor="middle" font-size="14" fill="#ffcc00" font-weight="600">PASS C · HUD</text>
+    <text x="160" y="46" text-anchor="middle" font-size="10" fill="#e8c870">device-space overlay · resetMatrix</text>
+
+    <!-- Mock HUD -->
+    <g font-size="10" fill="#e8c870">
+      <text x="20" y="80">ALT     142 m</text>
+      <text x="20" y="100">VY     -1.4 m/s</text>
+      <text x="20" y="120">VX      0.6 m/s</text>
+      <text x="20" y="140">FUEL    62 %</text>
+      <text x="20" y="160">SCORE   01480</text>
+      <text x="20" y="180">LIVES   ▲ ▲ ▲</text>
+    </g>
+    <!-- Velocity warning -->
+    <g transform="translate(220 90)">
+      <rect width="80" height="24" fill="none" stroke="#ff4466" stroke-width="1.4"/>
+      <text x="40" y="16" text-anchor="middle" font-size="10" fill="#ff7788">FAST!</text>
+    </g>
+    <!-- Fuel bar -->
+    <g transform="translate(20 200)">
+      <rect width="280" height="8" fill="none" stroke="#e8c870" stroke-width="1"/>
+      <rect width="170" height="8" fill="#e8c870" opacity="0.7"/>
+    </g>
+    <text x="160" y="260" text-anchor="middle" font-size="10" fill="#a87050">flash messages: LANDED · CRASHED</text>
+  </g>
+  <text x="960" y="430" text-anchor="middle" font-size="10" fill="#a87050">drawn last — always visible</text>
+
+  <!-- Order arrows -->
+  <g fill="none" stroke="#88ddff" stroke-width="2" marker-end="url(#arP)">
+    <line x1="402" y1="240" x2="428" y2="240"/>
+    <line x1="772" y1="240" x2="798" y2="240"/>
+  </g>
+
+  <!-- Bottom notes -->
+  <g transform="translate(60 470)">
+    <text x="0" y="0" font-size="12" fill="#a0c0e0" font-weight="600">DISCIPLINE</text>
+    <text x="0" y="20" font-size="10" fill="#7090b0">• each pass starts with sk.resetMatrix() — no leaked transforms between passes</text>
+    <text x="0" y="36" font-size="10" fill="#7090b0">• pass B uses sk.applyMatrix(...M2D.toArgs(COMPOSITE)) once, then push/pop per object</text>
+    <text x="0" y="52" font-size="10" fill="#7090b0">• pass C draws in screen pixels — HUD is positioned in canvas coordinates directly</text>
+    <text x="0" y="72" font-size="10" fill="#5e7da0">→ rendering reads physics state; never mutates it</text>
+  </g>
+</svg>

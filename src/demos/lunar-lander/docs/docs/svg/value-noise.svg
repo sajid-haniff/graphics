@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 580" font-family="ui-monospace, monospace">
+  <rect width="1200" height="580" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">VALUE NOISE — INTEGER LATTICE + SMOOTHSTEP</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">deterministic hash assigns a value to each integer x ; smoothstep blends between</text>
+
+  <!-- Top: integer lattice -->
+  <g transform="translate(80 140)">
+    <text x="0" y="-18" font-size="12" fill="#88c8e0" font-weight="600">STEP 1 · INTEGER LATTICE VALUES  h(i) = hash(i + seed)</text>
+    <line x1="0" y1="160" x2="1040" y2="160" stroke="#446080" stroke-width="0.8"/>
+    <!-- Tick marks + values -->
+    <g font-size="9" fill="#7090b0">
+      <g transform="translate(40 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="120" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">i=0</text><text y="110" text-anchor="middle" fill="#aaddff">0.62</text></g>
+      <g transform="translate(170 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="60" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">1</text><text y="50" text-anchor="middle" fill="#aaddff">0.18</text></g>
+      <g transform="translate(300 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="100" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">2</text><text y="90" text-anchor="middle" fill="#aaddff">0.48</text></g>
+      <g transform="translate(430 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="40" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">3</text><text y="30" text-anchor="middle" fill="#aaddff">0.05</text></g>
+      <g transform="translate(560 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="80" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">4</text><text y="70" text-anchor="middle" fill="#aaddff">0.31</text></g>
+      <g transform="translate(690 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="20" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">5</text><text y="10" text-anchor="middle" fill="#aaddff">-0.05</text></g>
+      <g transform="translate(820 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="70" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">6</text><text y="60" text-anchor="middle" fill="#aaddff">0.24</text></g>
+      <g transform="translate(950 0)"><line y1="155" y2="165" stroke="#88aacc"/><circle cy="50" r="4" fill="#00eeff"/><text y="180" text-anchor="middle">7</text><text y="40" text-anchor="middle" fill="#aaddff">0.12</text></g>
+    </g>
+  </g>
+
+  <!-- Bottom: interpolated curve -->
+  <g transform="translate(80 380)">
+    <text x="0" y="-18" font-size="12" fill="#ff8844" font-weight="600">STEP 2 · SMOOTHSTEP INTERPOLATION  noise(x) = lerp(h(⌊x⌋), h(⌈x⌉), s(frac(x)))</text>
+    <line x1="0" y1="120" x2="1040" y2="120" stroke="#446080" stroke-width="0.8"/>
+    <!-- smoothstep curve through points -->
+    <path d="M 40 80
+             C 90 80, 130 30, 170 30
+             S 250 60, 300 65
+             C 350 70, 400 10, 430 10
+             S 510 50, 560 50
+             C 600 50, 660 -10, 690 -10
+             S 780 40, 820 40
+             C 870 40, 920 20, 950 20"
+          fill="none" stroke="#ff8844" stroke-width="2"/>
+
+    <!-- node dots -->
+    <g fill="#ff8844">
+      <circle cx="40" cy="80" r="3.5"/><circle cx="170" cy="30" r="3.5"/><circle cx="300" cy="65" r="3.5"/>
+      <circle cx="430" cy="10" r="3.5"/><circle cx="560" cy="50" r="3.5"/><circle cx="690" cy="-10" r="3.5"/>
+      <circle cx="820" cy="40" r="3.5"/><circle cx="950" cy="20" r="3.5"/>
+    </g>
+  </g>
+
+  <!-- Smoothstep panel -->
+  <g transform="translate(80 520)">
+    <text x="0" y="0" font-size="12" fill="#a0c0e0" font-weight="600">SMOOTHSTEP</text>
+    <text x="100" y="0" font-size="11" fill="#88aacc">s(t) = t² (3 − 2t)         · C¹-continuous at t=0 and t=1         · s'(0) = s'(1) = 0</text>
+    <text x="0" y="20" font-size="10" fill="#7090b0">Linear lerp would give a triangle wave whose derivative jumps at every integer — visible as kinks in the terrain silhouette.</text>
+    <text x="0" y="36" font-size="10" fill="#7090b0">Smoothstep removes the kinks for free, without needing actual gradient hashes (as Perlin noise does).</text>
+  </g>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" font-family="ui-monospace, monospace">
+  <rect width="1200" height="560" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">PAD EDGE BLENDING — SMOOTHSTEP RAMP</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">flat platform interpolated into surrounding terrain — no visible seam</text>
+
+  <!-- Naive vs blended comparison -->
+  <g>
+    <!-- Naive -->
+    <g transform="translate(80 120)">
+      <text x="0" y="-8" font-size="12" fill="#ff8888" font-weight="600">NAIVE — hard rectangular punch</text>
+      <rect width="500" height="160" rx="8" fill="#06121e" stroke="#ff4466" stroke-width="1.2"/>
+      <g transform="translate(20 120)">
+        <polyline points="0,-30 40,-26 80,-40 100,-30 150,-50 150,-10 350,-10 350,-50 380,-44 420,-30 460,-36"
+                  fill="none" stroke="#ff7799" stroke-width="1.8"/>
+        <line x1="150" y1="-10" x2="350" y2="-10" stroke="#44ff88" stroke-width="3"/>
+        <circle cx="150" cy="-10" r="3" fill="#ff4466"/>
+        <circle cx="350" cy="-10" r="3" fill="#ff4466"/>
+      </g>
+      <text x="250" y="148" text-anchor="middle" font-size="9" fill="#ff8899">visible cliff at the pad edges</text>
+    </g>
+
+    <!-- Blended -->
+    <g transform="translate(620 120)">
+      <text x="0" y="-8" font-size="12" fill="#88ff88" font-weight="600">SMOOTHSTEP — ramps into terrain</text>
+      <rect width="500" height="160" rx="8" fill="#06121e" stroke="#44ff88" stroke-width="1.4"/>
+      <g transform="translate(20 120)">
+        <polyline points="0,-30 40,-26 80,-40 100,-30 120,-22 135,-18 150,-12 150,-10 350,-10 350,-12 365,-18 380,-26 420,-30 460,-36"
+                  fill="none" stroke="#88ff88" stroke-width="2"/>
+        <line x1="150" y1="-10" x2="350" y2="-10" stroke="#44ff88" stroke-width="3"/>
+      </g>
+      <text x="250" y="148" text-anchor="middle" font-size="9" fill="#80c080">continuous slope · seamless</text>
+    </g>
+  </g>
+
+  <!-- Math panel -->
+  <g transform="translate(80 320)">
+    <rect width="1040" height="200" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="20" y="24" font-size="13" fill="#a0c0e0" font-weight="600">BLENDING FUNCTION</text>
+
+    <text x="20" y="60" font-size="12" fill="#bbccee">w(x) =</text>
+    <text x="80" y="50" font-size="11" fill="#88aacc">0                       if |x − pad.x| ≥ R</text>
+    <text x="80" y="68" font-size="11" fill="#88aacc">smoothstep( (|x − pad.x| − pad.w/2) / blendR )    if pad.w/2 ≤ |x − pad.x| &lt; R</text>
+    <text x="80" y="86" font-size="11" fill="#88aacc">1                       if |x − pad.x| &lt; pad.w/2</text>
+
+    <text x="20" y="120" font-size="12" fill="#bbccee">h_final(x) = lerp( h_terrain(x), padHeight, w(x) )</text>
+
+    <text x="20" y="156" font-size="10" fill="#7090b0">• w(x) is 1 on the platform, 0 far away, smooth in between</text>
+    <text x="20" y="172" font-size="10" fill="#7090b0">• since smoothstep has zero derivative at both endpoints, h_final has matching tangents at the seams</text>
+    <text x="20" y="188" font-size="10" fill="#7090b0">• blendR controls how aggressive the ramp is — short blend = steeper approach (looks dramatic) · long blend = gentle (more forgiving)</text>
+  </g>
+</svg>

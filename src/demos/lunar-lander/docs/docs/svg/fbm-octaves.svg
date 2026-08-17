@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" font-family="ui-monospace, monospace">
+  <rect width="1200" height="660" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">fBm — FRACTIONAL BROWNIAN MOTION</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">y(x) = Σ aᵢ · noise(fᵢ · x)     ·     aᵢ ∝ persistence^i     ·     fᵢ ∝ lacunarity^i</text>
+
+  <!-- 4 octaves stacked, then sum -->
+  <g font-size="10">
+    <!-- O0 -->
+    <g transform="translate(80 110)">
+      <text x="0" y="-8" fill="#88c8e0" font-weight="600">OCTAVE 0  · amp 1.00 · freq 1×</text>
+      <line x1="0" y1="40" x2="1040" y2="40" stroke="#3a5a80" stroke-width="0.5"/>
+      <path d="M 0 40 C 100 -10, 200 70, 300 30 S 500 60, 600 20 S 800 50, 900 30 S 1040 50, 1040 40"
+            fill="none" stroke="#00eeff" stroke-width="1.8"/>
+    </g>
+
+    <!-- O1 -->
+    <g transform="translate(80 220)">
+      <text x="0" y="-8" fill="#ff8844" font-weight="600">OCTAVE 1  · amp 0.50 · freq 2×</text>
+      <line x1="0" y1="40" x2="1040" y2="40" stroke="#3a5a80" stroke-width="0.5"/>
+      <path d="M 0 40 Q 60 20 120 40 T 240 40 T 360 40 T 480 40 T 600 40 T 720 40 T 840 40 T 960 40 T 1040 40"
+            fill="none" stroke="#ff8844" stroke-width="1.4"/>
+      <path d="M 0 40 Q 60 60 120 40 T 240 40 T 360 40 T 480 40 T 600 40 T 720 40 T 840 40 T 960 40 T 1040 40"
+            fill="none" stroke="#ff8844" stroke-width="1.4" opacity="0.5"/>
+    </g>
+
+    <!-- O2 -->
+    <g transform="translate(80 320)">
+      <text x="0" y="-8" fill="#ff66cc" font-weight="600">OCTAVE 2  · amp 0.25 · freq 4×</text>
+      <line x1="0" y1="40" x2="1040" y2="40" stroke="#3a5a80" stroke-width="0.5"/>
+      <path d="M 0 40 Q 30 30 60 40 Q 90 50 120 40 Q 150 30 180 40 Q 210 50 240 40 Q 270 30 300 40 Q 330 50 360 40 Q 390 30 420 40 Q 450 50 480 40 Q 510 30 540 40 Q 570 50 600 40 Q 630 30 660 40 Q 690 50 720 40 Q 750 30 780 40 Q 810 50 840 40 Q 870 30 900 40 Q 930 50 960 40 Q 990 30 1020 40 L 1040 40"
+            fill="none" stroke="#ff66cc" stroke-width="1.2"/>
+    </g>
+
+    <!-- O3 -->
+    <g transform="translate(80 420)">
+      <text x="0" y="-8" fill="#ffcc44" font-weight="600">OCTAVE 3  · amp 0.125 · freq 8×</text>
+      <line x1="0" y1="40" x2="1040" y2="40" stroke="#3a5a80" stroke-width="0.5"/>
+      <path d="M 0 40 Q 15 36 30 40 T 60 40 T 90 40 T 120 40 T 150 40 T 180 40 T 210 40 T 240 40 T 270 40 T 300 40 T 330 40 T 360 40 T 390 40 T 420 40 T 450 40 T 480 40 T 510 40 T 540 40 T 570 40 T 600 40 T 630 40 T 660 40 T 690 40 T 720 40 T 750 40 T 780 40 T 810 40 T 840 40 T 870 40 T 900 40 T 930 40 T 960 40 T 990 40 T 1020 40 L 1040 40"
+            fill="none" stroke="#ffcc44" stroke-width="1"/>
+    </g>
+
+    <!-- SUM -->
+    <g transform="translate(80 540)">
+      <text x="0" y="-8" fill="#bbffaa" font-weight="600">SUM  · combined silhouette</text>
+      <line x1="0" y1="50" x2="1040" y2="50" stroke="#3a5a80" stroke-width="0.5"/>
+      <path d="M 0 50 C 100 12, 200 70, 300 30 Q 340 28 380 38 Q 420 48 460 30 Q 500 20 540 38 Q 580 56 620 38 Q 660 22 700 28 Q 740 40 780 32 Q 820 26 860 36 Q 900 46 940 30 Q 980 22 1020 36 L 1040 38"
+            fill="none" stroke="#44ff88" stroke-width="2.2"/>
+    </g>
+  </g>
+
+  <!-- Right side power spectrum -->
+  <g transform="translate(940 100)">
+    <rect x="-20" y="-20" width="220" height="380" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="90" y="2" text-anchor="middle" font-size="11" fill="#a0c0e0" font-weight="600">SPECTRAL SHAPE</text>
+    <text x="90" y="20" text-anchor="middle" font-size="9" fill="#7090b0">P(f) ∝ 1 / f^β · pink noise</text>
+
+    <!-- Log-log box -->
+    <g transform="translate(10 50)">
+      <rect width="160" height="280" fill="#020610" stroke="#446080" stroke-width="0.8"/>
+      <line x1="0" y1="280" x2="160" y2="0" stroke="#ffcc44" stroke-width="1.6"/>
+      <text x="80" y="300" text-anchor="middle" font-size="9" fill="#7090b0">log f →</text>
+      <text x="-2" y="0" text-anchor="end" font-size="9" fill="#7090b0">↑ log P</text>
+      <text x="120" y="60" font-size="9" fill="#ffcc44">slope ≈ −β</text>
+    </g>
+  </g>
+</svg>

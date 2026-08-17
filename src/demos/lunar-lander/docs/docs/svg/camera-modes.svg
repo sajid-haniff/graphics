@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" font-family="ui-monospace, monospace">
+  <defs>
+    <marker id="arC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88aacc"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="560" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="5">CAMERA — ALTITUDE-DRIVEN ZOOM MODES</text>
+
+  <g font-size="11">
+    <!-- HIGH -->
+    <g transform="translate(80 110)">
+      <rect width="320" height="320" rx="10" fill="#040c1a" stroke="#5e7da0" stroke-width="1.2"/>
+      <text x="160" y="28" text-anchor="middle" font-size="14" fill="#a0c0e0" font-weight="600">HIGH ALTITUDE</text>
+      <text x="160" y="46" text-anchor="middle" font-size="10" fill="#6080a0">zoom = wide · h &gt; H₁</text>
+      <!-- Lander far up -->
+      <g transform="translate(160 100)">
+        <polygon points="-3,4 3,4 2,-4 -2,-4" fill="none" stroke="#00eeff" stroke-width="1.2"/>
+      </g>
+      <!-- Distant terrain -->
+      <path d="M 30 270 L 60 250 L 100 260 L 140 230 L 180 245 L 220 220 L 260 240 L 290 235 L 290 290 L 30 290 Z" fill="#0a1a30" stroke="#5588cc" stroke-width="1"/>
+      <!-- Horizon dashes -->
+      <line x1="30" y1="280" x2="290" y2="280" stroke="#3a5a80" stroke-width="0.5" stroke-dasharray="2 4"/>
+      <text x="160" y="305" text-anchor="middle" font-size="10" fill="#7090b0">whole horizon visible</text>
+    </g>
+
+    <!-- MID -->
+    <g transform="translate(440 110)">
+      <rect width="320" height="320" rx="10" fill="#040c1a" stroke="#bb88ff" stroke-width="1.4"/>
+      <text x="160" y="28" text-anchor="middle" font-size="14" fill="#bb88ff" font-weight="600">MID</text>
+      <text x="160" y="46" text-anchor="middle" font-size="10" fill="#a080c0">linear blend · H₂ &lt; h &lt; H₁</text>
+      <g transform="translate(160 150)">
+        <polygon points="-6,8 6,8 4,-8 -4,-8" fill="none" stroke="#bb88ff" stroke-width="1.5"/>
+        <line x1="0" y1="9" x2="0" y2="18" stroke="#ffcc44" stroke-width="2"/>
+      </g>
+      <path d="M 20 260 L 70 230 L 120 245 L 160 200 L 200 230 L 240 215 L 290 250 L 290 290 L 20 290 Z" fill="#1a0a30" stroke="#aa66cc" stroke-width="1.2"/>
+      <line x1="140" y1="200" x2="180" y2="200" stroke="#44ff88" stroke-width="2"/>
+      <text x="160" y="305" text-anchor="middle" font-size="10" fill="#9070a0">pad in sight · context preserved</text>
+    </g>
+
+    <!-- LOW -->
+    <g transform="translate(800 110)">
+      <rect width="320" height="320" rx="10" fill="#040c1a" stroke="#00eeff" stroke-width="1.4"/>
+      <text x="160" y="28" text-anchor="middle" font-size="14" fill="#00eeff" font-weight="600">LOW ALTITUDE</text>
+      <text x="160" y="46" text-anchor="middle" font-size="10" fill="#88c8e0">zoom = tight · h &lt; H₂</text>
+      <g transform="translate(160 170)">
+        <polygon points="-12,14 12,14 9,-14 -9,-14" fill="none" stroke="#00eeff" stroke-width="2"/>
+        <line x1="-12" y1="14" x2="-22" y2="26" stroke="#00eeff" stroke-width="1.8"/>
+        <line x1="12" y1="14" x2="22" y2="26" stroke="#00eeff" stroke-width="1.8"/>
+        <line x1="0" y1="16" x2="0" y2="36" stroke="#ffcc44" stroke-width="3"/>
+      </g>
+      <path d="M 30 230 L 80 222 L 130 230 L 150 230 L 210 230 L 240 232 L 290 220 L 290 290 L 30 290 Z" fill="#0a2030" stroke="#00eeff" stroke-width="1.5"/>
+      <line x1="130" y1="230" x2="210" y2="230" stroke="#44ff88" stroke-width="3"/>
+      <text x="170" y="248" text-anchor="middle" font-size="9" fill="#44ff88">PAD</text>
+      <text x="160" y="305" text-anchor="middle" font-size="10" fill="#6da4c0">precision touchdown</text>
+    </g>
+  </g>
+
+  <!-- Math panel -->
+  <g transform="translate(80 460)">
+    <rect width="1040" height="80" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="20" y="24" font-size="12" fill="#a0c0e0" font-weight="600">EXPONENTIAL SMOOTHING (frame-rate-independent)</text>
+    <text x="20" y="48" font-size="11" fill="#88aacc">α = 1 − exp(−k · dt)             camera ← camera + α · (target − camera)             zoom ← zoom + α_z · (zoomTarget − zoom)</text>
+    <text x="20" y="66" font-size="10" fill="#6080a0">k tuned per axis · stiffer for zoom than translation · target = lander.pos + lookahead(velocity)</text>
+  </g>
+</svg>

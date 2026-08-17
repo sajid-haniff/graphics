@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" font-family="ui-monospace, monospace">
+  <rect width="1200" height="620" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">LANDER ANATOMY — BODY-SPACE GEOMETRY</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">all vertices defined in local frame · rotate then translate to place in world</text>
+
+  <!-- Big lander on the left -->
+  <g transform="translate(420 340)">
+    <!-- coord axes (body frame) -->
+    <line x1="-200" y1="0" x2="200" y2="0" stroke="#446080" stroke-width="0.7" stroke-dasharray="3 3"/>
+    <line x1="0" y1="-220" x2="0" y2="220" stroke="#446080" stroke-width="0.7" stroke-dasharray="3 3"/>
+    <text x="208" y="-4" font-size="10" fill="#7090b0">+x_body</text>
+    <text x="8" y="-218" font-size="10" fill="#7090b0">+y_body (up)</text>
+
+    <!-- Lander, scaled up -->
+    <g stroke="#00eeff" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+      <!-- Hex body -->
+      <polygon points="-40,-72 40,-72 60,-12 40,64 -40,64 -60,-12"/>
+      <!-- Cockpit dome -->
+      <path d="M -22 -72 Q 0 -100 22 -72"/>
+      <!-- Legs L/R -->
+      <line x1="-40" y1="64" x2="-92" y2="120"/>
+      <line x1="40" y1="64" x2="92" y2="120"/>
+      <!-- Feet pads -->
+      <line x1="-110" y1="120" x2="-74" y2="120"/>
+      <line x1="74" y1="120" x2="110" y2="120"/>
+      <!-- Strut braces -->
+      <line x1="-58" y1="120" x2="-92" y2="120"/>
+      <line x1="58" y1="120" x2="92" y2="120"/>
+      <!-- Nozzles -->
+      <line x1="-12" y1="64" x2="-12" y2="92"/>
+      <line x1="12" y1="64" x2="12" y2="92"/>
+      <line x1="-18" y1="92" x2="18" y2="92"/>
+    </g>
+
+    <!-- Center marker -->
+    <circle r="3" fill="#ffcc44"/>
+    <text x="8" y="6" font-size="10" fill="#ffcc44">center  (state.x, state.y)</text>
+
+    <!-- Annotations with leader lines -->
+    <g font-size="10" fill="#ff66cc" stroke="#ff66cc">
+      <line x1="40" y1="-72" x2="170" y2="-110" fill="none" stroke-width="0.8"/>
+      <text x="174" y="-108" fill="#ff66cc" stroke="none">BODY_PTS</text>
+      <text x="174" y="-94" fill="#e0a0d8" stroke="none" font-size="9">hexagonal hull</text>
+    </g>
+    <g font-size="10" fill="#44ff88" stroke="#44ff88">
+      <line x1="-92" y1="120" x2="-200" y2="170" fill="none" stroke-width="0.8"/>
+      <text x="-206" y="172" text-anchor="end" fill="#44ff88" stroke="none">LEG_L</text>
+      <line x1="92" y1="120" x2="200" y2="170" fill="none" stroke-width="0.8"/>
+      <text x="206" y="172" fill="#44ff88" stroke="none">LEG_R</text>
+    </g>
+    <g font-size="10" fill="#ffcc00" stroke="#ffcc00">
+      <line x1="-92" y1="120" x2="-160" y2="210" fill="none" stroke-width="0.8"/>
+      <text x="-160" y="226" text-anchor="middle" fill="#ffcc00" stroke="none">FOOT_Y = +y of contact</text>
+      <line x1="0" y1="92" x2="160" y2="220" fill="none" stroke-width="0.8"/>
+      <text x="160" y="232" text-anchor="middle" fill="#ffcc00" stroke="none">NOZZLE_L / NOZZLE_R</text>
+    </g>
+  </g>
+
+  <!-- Right side: data shape -->
+  <g transform="translate(820 110)">
+    <rect width="320" height="460" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="160" y="26" text-anchor="middle" font-size="13" fill="#a0c0e0" font-weight="600">STATE — PLAIN OBJECT</text>
+
+    <g font-size="11" fill="#88aacc">
+      <text x="20" y="60" fill="#88c8e0">state = {</text>
+      <text x="40" y="78">x, y       // world position</text>
+      <text x="40" y="94">vx, vy     // velocity (m/s)</text>
+      <text x="40" y="110">θ          // orientation (rad)</text>
+      <text x="40" y="126">ω          // angular velocity</text>
+      <text x="40" y="142">fuel       // 0..1</text>
+      <text x="40" y="158">thrustOn   // bool — for SFX</text>
+      <text x="20" y="174" fill="#88c8e0">}</text>
+    </g>
+
+    <text x="160" y="210" text-anchor="middle" font-size="12" fill="#ff8844" font-weight="600">BODY CONSTANTS</text>
+    <g font-size="11" fill="#e0a070">
+      <text x="20" y="232">BODY_PTS  // [v0..v5]</text>
+      <text x="20" y="248">LEG_L     // [start, end]</text>
+      <text x="20" y="264">LEG_R     // [start, end]</text>
+      <text x="20" y="280">FOOT_L    // (x, y)</text>
+      <text x="20" y="296">FOOT_R    // (x, y)</text>
+      <text x="20" y="312">FOOT_Y    // min y_body</text>
+      <text x="20" y="328">NOZZLE_L  // (x, y)</text>
+      <text x="20" y="344">NOZZLE_R  // (x, y)</text>
+    </g>
+
+    <text x="160" y="380" text-anchor="middle" font-size="11" fill="#7090b0">local → world transform:</text>
+    <text x="160" y="402" text-anchor="middle" font-size="11" fill="#bbccee">p_world = R(θ) · p_body + (state.x, state.y)</text>
+    <text x="160" y="426" text-anchor="middle" font-size="9" fill="#5e7da0">applied identically when rendering and when</text>
+    <text x="160" y="440" text-anchor="middle" font-size="9" fill="#5e7da0">checking contact, particle emission, etc.</text>
+  </g>
+</svg>

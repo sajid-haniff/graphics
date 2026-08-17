@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 540" font-family="ui-monospace, monospace">
+  <rect width="1200" height="540" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">GAUSSIAN LANDFORMS — LOCAL, SMOOTH, COMPOSABLE</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">each landform j contributes  Aⱼ · exp(−(x − μⱼ)² / 2σⱼ²)  ; positive A = hill, negative A = valley</text>
+
+  <!-- Top: individual gaussians -->
+  <g transform="translate(80 110)">
+    <text x="0" y="-8" font-size="12" fill="#a0c0e0" font-weight="600">INDIVIDUAL CONTRIBUTIONS</text>
+    <line x1="0" y1="180" x2="1040" y2="180" stroke="#446080" stroke-width="0.8"/>
+
+    <!-- Big hill -->
+    <path d="M 60 180 Q 200 -20 340 180" fill="none" stroke="#00eeff" stroke-width="1.6"/>
+    <text x="200" y="40" text-anchor="middle" font-size="9" fill="#00eeff">A=+H, σ=med</text>
+
+    <!-- Narrow peak -->
+    <path d="M 420 180 Q 470 30 520 180" fill="none" stroke="#ff66cc" stroke-width="1.6"/>
+    <text x="470" y="60" text-anchor="middle" font-size="9" fill="#ff66cc">A=+H, σ=small</text>
+
+    <!-- Wide low ridge -->
+    <path d="M 540 180 Q 700 110 860 180" fill="none" stroke="#ffcc44" stroke-width="1.6"/>
+    <text x="700" y="120" text-anchor="middle" font-size="9" fill="#ffcc44">A=+½H, σ=wide</text>
+
+    <!-- Valley -->
+    <path d="M 880 180 Q 950 250 1020 180" fill="none" stroke="#44ff88" stroke-width="1.6"/>
+    <text x="950" y="244" text-anchor="middle" font-size="9" fill="#44ff88">A=-h, σ=med</text>
+  </g>
+
+  <!-- Middle: sum -->
+  <g transform="translate(80 360)">
+    <text x="0" y="-8" font-size="12" fill="#a0c0e0" font-weight="600">SUM</text>
+    <line x1="0" y1="80" x2="1040" y2="80" stroke="#446080" stroke-width="0.8"/>
+    <path d="M 0 80
+             Q 60 80 100 70
+             Q 200 -10 300 70
+             Q 360 80 420 70
+             Q 470 30 520 70
+             Q 580 60 640 50
+             Q 720 30 780 50
+             Q 840 70 880 75
+             Q 950 120 1020 75
+             L 1040 78"
+          fill="none" stroke="#44ff88" stroke-width="2.2"/>
+  </g>
+
+  <!-- Side: math panel -->
+  <g transform="translate(80 460)">
+    <rect width="1040" height="60" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="20" y="22" font-size="12" fill="#a0c0e0" font-weight="600">WHY GAUSSIANS</text>
+    <text x="20" y="42" font-size="10" fill="#7090b0">• C^∞ smooth — no kinks at the boundary like a tent or B-spline lump  · • compact-enough support — far from μ, contribution ≈ 0  · • amplitude is a single scalar to scale</text>
+    <text x="20" y="56" font-size="9" fill="#5e7da0">FWHM = 2σ · √(2 ln 2) ≈ 2.355 σ  — the "width at half-height" you actually see in the silhouette</text>
+  </g>
+</svg>

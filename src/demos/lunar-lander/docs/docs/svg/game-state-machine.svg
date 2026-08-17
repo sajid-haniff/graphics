@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" font-family="ui-monospace, monospace">
+  <defs>
+    <marker id="arS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a0c8ff"/>
+    </marker>
+    <marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#44ff88"/>
+    </marker>
+    <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff5566"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="600" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="5">GAME STATE MACHINE</text>
+  <text x="600" y="58" text-anchor="middle" font-size="11" fill="#6b8aa8">classifyTouchdown() decides between LANDED and CRASHED</text>
+
+  <!-- PLAYING -->
+  <g transform="translate(600 220)">
+    <circle r="92" fill="#0a1828" stroke="#00eeff" stroke-width="2.2"/>
+    <text y="-4" text-anchor="middle" font-size="20" fill="#00eeff" font-weight="700">PLAYING</text>
+    <text y="20" text-anchor="middle" font-size="11" fill="#88c8e0">physics live</text>
+    <text y="38" text-anchor="middle" font-size="11" fill="#88c8e0">input → state</text>
+  </g>
+
+  <!-- LANDED -->
+  <g transform="translate(240 440)">
+    <circle r="80" fill="#102818" stroke="#44ff88" stroke-width="2.2"/>
+    <text y="-6" text-anchor="middle" font-size="18" fill="#44ff88" font-weight="700">LANDED</text>
+    <text y="16" text-anchor="middle" font-size="10" fill="#80e0a0">score awarded</text>
+    <text y="32" text-anchor="middle" font-size="10" fill="#80e0a0">pad-pulses fire</text>
+  </g>
+
+  <!-- CRASHED -->
+  <g transform="translate(960 440)">
+    <circle r="80" fill="#280a0a" stroke="#ff4466" stroke-width="2.2"/>
+    <text y="-6" text-anchor="middle" font-size="18" fill="#ff4466" font-weight="700">CRASHED</text>
+    <text y="16" text-anchor="middle" font-size="10" fill="#ffaaaa">explosion plays</text>
+    <text y="32" text-anchor="middle" font-size="10" fill="#ffaaaa">life lost</text>
+  </g>
+
+  <!-- GAME OVER -->
+  <g transform="translate(600 520)">
+    <circle r="56" fill="#181020" stroke="#bb88ff" stroke-width="2"/>
+    <text y="-2" text-anchor="middle" font-size="14" fill="#bb88ff" font-weight="700">GAME OVER</text>
+    <text y="16" text-anchor="middle" font-size="9" fill="#a080c0">lives = 0</text>
+  </g>
+
+  <!-- Arrows: playing → landed / crashed -->
+  <g fill="none" stroke="#44ff88" stroke-width="1.8" marker-end="url(#arG)">
+    <path d="M 540 290 Q 400 350 300 380"/>
+  </g>
+  <text x="380" y="330" font-size="11" fill="#80e0a0">contact ∧ safe</text>
+  <text x="380" y="346" font-size="9" fill="#60a070" opacity="0.85">|vy|≤vSafe ∧ |vx|≤vxSafe ∧ |θ|≤θMax</text>
+
+  <g fill="none" stroke="#ff5566" stroke-width="1.8" marker-end="url(#arR)">
+    <path d="M 660 290 Q 800 350 900 380"/>
+  </g>
+  <text x="820" y="330" font-size="11" fill="#ff8899">contact ∧ unsafe</text>
+  <text x="820" y="346" font-size="9" fill="#c06070" opacity="0.85">any threshold violated</text>
+
+  <!-- landed → playing (next round, new seed) -->
+  <g fill="none" stroke="#a0c8ff" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#arS)">
+    <path d="M 280 380 Q 380 240 528 200"/>
+  </g>
+  <text x="340" y="270" font-size="11" fill="#90b8e8">SPACE / 3 s</text>
+  <text x="340" y="284" font-size="9" fill="#6080a0">new seed · score persists</text>
+
+  <!-- crashed → playing (same seed) -->
+  <g fill="none" stroke="#a0c8ff" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#arS)">
+    <path d="M 920 380 Q 820 240 672 200"/>
+  </g>
+  <text x="860" y="270" font-size="11" fill="#90b8e8">SPACE</text>
+  <text x="860" y="284" font-size="9" fill="#6080a0">same seed · score keeps</text>
+
+  <!-- crashed → game over -->
+  <g fill="none" stroke="#bb88ff" stroke-width="1.5" marker-end="url(#arS)">
+    <path d="M 900 488 Q 750 510 660 510"/>
+  </g>
+  <text x="780" y="498" font-size="10" fill="#a080c0">lives → 0</text>
+
+  <!-- game over → playing (full restart) -->
+  <g fill="none" stroke="#a0c8ff" stroke-width="1.6" stroke-dasharray="2 3" marker-end="url(#arS)">
+    <path d="M 600 464 Q 460 360 528 250"/>
+  </g>
+  <text x="430" y="430" font-size="10" fill="#90b8e8">SHIFT + R</text>
+  <text x="430" y="444" font-size="9" fill="#6080a0">full reset</text>
+
+  <!-- Notes panel -->
+  <g transform="translate(60 100)">
+    <rect width="240" height="200" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="120" y="22" text-anchor="middle" font-size="12" fill="#a0c0e0" font-weight="600">SAFE-LANDING PREDICATE</text>
+    <text x="14" y="48" font-size="10" fill="#88aacc">|vy| ≤ vSafe       (vertical)</text>
+    <text x="14" y="68" font-size="10" fill="#88aacc">|vx| ≤ vxSafe      (lateral)</text>
+    <text x="14" y="88" font-size="10" fill="#88aacc">|θ|  ≤ θMax        (upright)</text>
+    <text x="14" y="108" font-size="10" fill="#88aacc">|x - xPad| ≤ wPad/2 (on pad)</text>
+    <text x="14" y="138" font-size="11" fill="#7090b0">thresholds come from the</text>
+    <text x="14" y="152" font-size="11" fill="#7090b0">spawn-profile difficulty:</text>
+    <text x="14" y="172" font-size="10" fill="#5a8eb0">EASY · NORMAL · HARD · CHALLENGE</text>
+    <text x="14" y="188" font-size="9" fill="#446080" opacity="0.85">harder profile → tighter limits</text>
+  </g>
+
+  <!-- Scoring side note -->
+  <g transform="translate(900 100)">
+    <rect width="240" height="200" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="120" y="22" text-anchor="middle" font-size="12" fill="#a0c0e0" font-weight="600">ROUND CONTINUITY</text>
+    <text x="14" y="48" font-size="10" fill="#88aacc">• score persists across</text>
+    <text x="14" y="62" font-size="10" fill="#88aacc">  successive landings</text>
+    <text x="14" y="84" font-size="10" fill="#88aacc">• safe land → fresh seed</text>
+    <text x="14" y="98" font-size="10" fill="#88aacc">  (new terrain, new pads)</text>
+    <text x="14" y="120" font-size="10" fill="#88aacc">• crash → reload same seed</text>
+    <text x="14" y="134" font-size="10" fill="#88aacc">  (retry exact terrain)</text>
+    <text x="14" y="156" font-size="10" fill="#88aacc">• explosion plays out then</text>
+    <text x="14" y="170" font-size="10" fill="#88aacc">  the world resets</text>
+    <text x="14" y="190" font-size="9" fill="#446080" opacity="0.85">deterministic = fair retries</text>
+  </g>
+</svg>

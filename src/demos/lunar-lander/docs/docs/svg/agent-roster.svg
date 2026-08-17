@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="ui-monospace, monospace">
+  <rect width="1200" height="720" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">AGENTS — WHO'S ALIVE IN THE SCENE</text>
+  <text x="600" y="58" text-anchor="middle" font-size="11" fill="#6b8aa8">each agent owns its update + display · closure-scoped state · no shared mutable globals</text>
+
+  <!-- Central lander -->
+  <g transform="translate(600 380)">
+    <circle r="76" fill="#0a1828" stroke="#00eeff" stroke-width="2.4"/>
+    <g transform="translate(0 -8)" stroke="#00eeff" stroke-width="2" fill="none">
+      <polygon points="-14,16 14,16 12,-12 -12,-12"/>
+      <line x1="-14" y1="16" x2="-22" y2="28"/>
+      <line x1="14" y1="16" x2="22" y2="28"/>
+    </g>
+    <text y="52" text-anchor="middle" font-size="12" fill="#00eeff" font-weight="600">LANDER</text>
+    <text y="68" text-anchor="middle" font-size="9" fill="#88c8e0">plain data, not an agent</text>
+  </g>
+
+  <!-- Particles -->
+  <g transform="translate(220 200)">
+    <rect x="-100" y="-46" width="200" height="92" rx="8" fill="#28140a" stroke="#ff8844" stroke-width="1.6"/>
+    <text y="-22" text-anchor="middle" font-size="13" fill="#ff8844" font-weight="600">PARTICLES</text>
+    <text y="-4" text-anchor="middle" font-size="10" fill="#e0a070">plume · dust · pad pulses</text>
+    <text y="14" text-anchor="middle" font-size="9" fill="#c0a070">bounded ring · age-based removal</text>
+    <text y="30" text-anchor="middle" font-size="9" fill="#a87050">lunar-particles.js</text>
+  </g>
+
+  <!-- Explosion -->
+  <g transform="translate(980 200)">
+    <rect x="-100" y="-46" width="200" height="92" rx="8" fill="#280a0a" stroke="#ff4466" stroke-width="1.6"/>
+    <text y="-22" text-anchor="middle" font-size="13" fill="#ff4466" font-weight="600">EXPLOSION</text>
+    <text y="-4" text-anchor="middle" font-size="10" fill="#ff8899">vector fragment burst</text>
+    <text y="14" text-anchor="middle" font-size="9" fill="#c06070">spawned on crash, plays once</text>
+    <text y="30" text-anchor="middle" font-size="9" fill="#a85060">lander-explosion.js</text>
+  </g>
+
+  <!-- Env effects -->
+  <g transform="translate(180 380)">
+    <rect x="-100" y="-46" width="200" height="92" rx="8" fill="#102818" stroke="#44ff88" stroke-width="1.6"/>
+    <text y="-22" text-anchor="middle" font-size="13" fill="#44ff88" font-weight="600">ENV. EFFECTS</text>
+    <text y="-4" text-anchor="middle" font-size="10" fill="#80e0a0">aurora · debris orchestration</text>
+    <text y="14" text-anchor="middle" font-size="9" fill="#60a070">profile-driven · ambient</text>
+    <text y="30" text-anchor="middle" font-size="9" fill="#508060">environment-effects.js</text>
+  </g>
+
+  <!-- Neon debris -->
+  <g transform="translate(1020 380)">
+    <rect x="-100" y="-46" width="200" height="92" rx="8" fill="#181030" stroke="#bb88ff" stroke-width="1.6"/>
+    <text y="-22" text-anchor="middle" font-size="13" fill="#bb88ff" font-weight="600">NEON DEBRIS</text>
+    <text y="-4" text-anchor="middle" font-size="10" fill="#a080c0">hazards · projectiles</text>
+    <text y="14" text-anchor="middle" font-size="9" fill="#8070a0">collision with lander → crash</text>
+    <text y="30" text-anchor="middle" font-size="9" fill="#7060a0">neon-debris.js</text>
+  </g>
+
+  <!-- Starfield -->
+  <g transform="translate(380 580)">
+    <rect x="-100" y="-46" width="200" height="92" rx="8" fill="#02060c" stroke="#7090b8" stroke-width="1.4"/>
+    <text y="-22" text-anchor="middle" font-size="13" fill="#a0c0e0" font-weight="600">STARFIELD</text>
+    <text y="-4" text-anchor="middle" font-size="10" fill="#88aacc">parallax background</text>
+    <text y="14" text-anchor="middle" font-size="9" fill="#7090b0">multiple depth layers</text>
+    <text y="30" text-anchor="middle" font-size="9" fill="#5e7da0">starfield.js</text>
+  </g>
+
+  <!-- Terrain -->
+  <g transform="translate(820 580)">
+    <rect x="-100" y="-46" width="200" height="92" rx="8" fill="#1a0820" stroke="#ff66cc" stroke-width="1.4"/>
+    <text y="-22" text-anchor="middle" font-size="13" fill="#ff66cc" font-weight="600">TERRAIN</text>
+    <text y="-4" text-anchor="middle" font-size="10" fill="#e0a0d8">chunked · streaming</text>
+    <text y="14" text-anchor="middle" font-size="9" fill="#c080b8">ensure / prune by window</text>
+    <text y="30" text-anchor="middle" font-size="9" fill="#a070a0">terrain.js</text>
+  </g>
+
+  <!-- Connection lines (radial) -->
+  <g fill="none" stroke="#3a5a80" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.7">
+    <line x1="600" y1="380" x2="220" y2="200"/>
+    <line x1="600" y1="380" x2="980" y2="200"/>
+    <line x1="600" y1="380" x2="180" y2="380"/>
+    <line x1="600" y1="380" x2="1020" y2="380"/>
+    <line x1="600" y1="380" x2="380" y2="580"/>
+    <line x1="600" y1="380" x2="820" y2="580"/>
+  </g>
+
+  <!-- Bottom note -->
+  <g transform="translate(80 678)">
+    <text x="0" y="0" font-size="10" fill="#7090b0">Each agent exposes the same minimal interface: create(...) → { update(dt, ctx), display(sk) }. Composition is by direct call from the demo factory — not a generic system.</text>
+  </g>
+</svg>

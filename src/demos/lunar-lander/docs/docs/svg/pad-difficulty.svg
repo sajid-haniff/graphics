@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 540" font-family="ui-monospace, monospace">
+  <rect width="1200" height="540" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">PAD DIFFICULTY — WIDTH ↔ MULTIPLIER</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">narrower pads are harder to hit · score is multiplied twice by pad.mult</text>
+
+  <!-- Four pad panels -->
+  <g font-size="11">
+    <!-- 1X -->
+    <g transform="translate(80 120)">
+      <rect width="260" height="220" rx="8" fill="#06121e" stroke="#88aacc" stroke-width="1.4"/>
+      <text x="130" y="26" text-anchor="middle" font-size="20" fill="#88aacc" font-weight="700">1×</text>
+      <text x="130" y="46" text-anchor="middle" font-size="10" fill="#6b8aa8">widest · safe to aim for</text>
+      <!-- terrain mini -->
+      <g transform="translate(20 160)">
+        <polyline points="0,20 30,15 60,20 90,10 120,15 200,15 220,10 220,15" fill="none" stroke="#5e7da0" stroke-width="1.4"/>
+        <line x1="120" y1="15" x2="200" y2="15" stroke="#88aacc" stroke-width="4"/>
+      </g>
+      <text x="130" y="200" text-anchor="middle" font-size="10" fill="#7090b0">width ≈ 80 m</text>
+    </g>
+
+    <!-- 2X -->
+    <g transform="translate(370 120)">
+      <rect width="260" height="220" rx="8" fill="#06121e" stroke="#44ff88" stroke-width="1.4"/>
+      <text x="130" y="26" text-anchor="middle" font-size="20" fill="#44ff88" font-weight="700">2×</text>
+      <text x="130" y="46" text-anchor="middle" font-size="10" fill="#80c080">medium · standard challenge</text>
+      <g transform="translate(20 160)">
+        <polyline points="0,20 30,15 60,18 100,10 140,18 180,15 220,18 220,15" fill="none" stroke="#5e7da0" stroke-width="1.4"/>
+        <line x1="120" y1="14" x2="180" y2="14" stroke="#44ff88" stroke-width="4"/>
+      </g>
+      <text x="130" y="200" text-anchor="middle" font-size="10" fill="#80c080">width ≈ 60 m</text>
+    </g>
+
+    <!-- 3X -->
+    <g transform="translate(660 120)">
+      <rect width="260" height="220" rx="8" fill="#06121e" stroke="#ff66cc" stroke-width="1.4"/>
+      <text x="130" y="26" text-anchor="middle" font-size="20" fill="#ff66cc" font-weight="700">3×</text>
+      <text x="130" y="46" text-anchor="middle" font-size="10" fill="#e0a0d8">narrow · risky to thread</text>
+      <g transform="translate(20 160)">
+        <polyline points="0,20 30,15 60,18 100,8 140,18 180,15 220,18 220,15" fill="none" stroke="#5e7da0" stroke-width="1.4"/>
+        <line x1="130" y1="12" x2="170" y2="12" stroke="#ff66cc" stroke-width="4"/>
+      </g>
+      <text x="130" y="200" text-anchor="middle" font-size="10" fill="#e0a0d8">width ≈ 40 m</text>
+    </g>
+
+    <!-- 5X -->
+    <g transform="translate(950 120)">
+      <rect width="200" height="220" rx="8" fill="#06121e" stroke="#ffcc00" stroke-width="1.6"/>
+      <text x="100" y="26" text-anchor="middle" font-size="20" fill="#ffcc00" font-weight="700">5×</text>
+      <text x="100" y="46" text-anchor="middle" font-size="10" fill="#e8c870">elite · expert bonus</text>
+      <g transform="translate(10 160)">
+        <polyline points="0,22 30,18 60,20 100,8 140,20 180,18 180,15" fill="none" stroke="#5e7da0" stroke-width="1.4"/>
+        <line x1="80" y1="12" x2="110" y2="12" stroke="#ffcc00" stroke-width="4"/>
+      </g>
+      <text x="100" y="200" text-anchor="middle" font-size="10" fill="#e8c870">width ≈ 25 m</text>
+    </g>
+  </g>
+
+  <!-- Bottom math -->
+  <g transform="translate(80 380)">
+    <rect width="1070" height="140" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="20" y="24" font-size="13" fill="#a0c0e0" font-weight="600">SCORE FORMULA</text>
+    <text x="20" y="52" font-size="13" fill="#bbccee">score = round(  base · pad.mult · pad.mult · fuelBonus · gentleness  )</text>
+    <text x="20" y="78" font-size="11" fill="#88aacc">• base ........... constant per-landing reward                       • fuelBonus .... 1 + (fuel_remaining / fuel_initial)</text>
+    <text x="20" y="94" font-size="11" fill="#88aacc">• pad.mult² ..... DOUBLE multiplication — narrow pads pay quadratically  • gentleness ... 1 − clamp(|vy|/vSafe) · soft landing reward</text>
+    <text x="20" y="120" font-size="10" fill="#7090b0">Why squared multiplier? Linear scaling makes harder pads only modestly more attractive. Squaring sharpens the risk/reward curve so 5× pads feel genuinely special.</text>
+  </g>
+</svg>

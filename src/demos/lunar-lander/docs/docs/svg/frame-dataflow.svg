@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" font-family="ui-monospace, monospace">
+  <defs>
+    <marker id="arF1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88ddff"/>
+    </marker>
+    <marker id="arF2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#88c0a0"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="640" fill="#040810"/>
+  <text x="600" y="36" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">FRAME DATA FLOW — WHO READS WHAT</text>
+  <text x="600" y="58" text-anchor="middle" font-size="11" fill="#6b8aa8">solid blue = mutating call · dashed green = read-only reference</text>
+
+  <!-- Layered nodes -->
+  <g font-size="11">
+    <!-- Layer 1 -->
+    <g transform="translate(100 130)">
+      <rect width="180" height="50" rx="6" fill="#0a1828" stroke="#86a7d8" stroke-width="1.4"/>
+      <text x="90" y="20" text-anchor="middle" font-size="12" fill="#86a7d8" font-weight="600">INPUT</text>
+      <text x="90" y="38" text-anchor="middle" font-size="10" fill="#6b8aa8">keyboard → {thrust, rotL, rotR}</text>
+    </g>
+
+    <!-- Layer 2: physics -->
+    <g transform="translate(450 130)">
+      <rect width="200" height="50" rx="6" fill="#0a2030" stroke="#00eeff" stroke-width="1.6"/>
+      <text x="100" y="20" text-anchor="middle" font-size="12" fill="#00eeff" font-weight="600">DYNAMICS.step</text>
+      <text x="100" y="38" text-anchor="middle" font-size="10" fill="#88c8e0">mutates state · returns state'</text>
+    </g>
+
+    <!-- Layer 3: state object -->
+    <g transform="translate(800 130)">
+      <rect width="180" height="50" rx="6" fill="#181030" stroke="#bb88ff" stroke-width="1.6"/>
+      <text x="90" y="20" text-anchor="middle" font-size="12" fill="#bb88ff" font-weight="600">STATE</text>
+      <text x="90" y="38" text-anchor="middle" font-size="10" fill="#a080c0">x,y,vx,vy,θ,ω,fuel</text>
+    </g>
+
+    <!-- Layer 4 - agent updates -->
+    <g transform="translate(80 320)">
+      <rect width="160" height="60" rx="6" fill="#28140a" stroke="#ff8844" stroke-width="1.4"/>
+      <text x="80" y="22" text-anchor="middle" font-size="11" fill="#ff8844" font-weight="600">particles.update</text>
+      <text x="80" y="40" text-anchor="middle" font-size="9" fill="#e0a070">spawn from nozzles</text>
+      <text x="80" y="52" text-anchor="middle" font-size="9" fill="#e0a070">advect with wind</text>
+    </g>
+    <g transform="translate(270 320)">
+      <rect width="160" height="60" rx="6" fill="#181030" stroke="#bb88ff" stroke-width="1.4"/>
+      <text x="80" y="22" text-anchor="middle" font-size="11" fill="#bb88ff" font-weight="600">debris.update</text>
+      <text x="80" y="40" text-anchor="middle" font-size="9" fill="#a080c0">advect · age · cull</text>
+      <text x="80" y="52" text-anchor="middle" font-size="9" fill="#a080c0">test collision w/ lander</text>
+    </g>
+    <g transform="translate(460 320)">
+      <rect width="160" height="60" rx="6" fill="#102818" stroke="#44ff88" stroke-width="1.4"/>
+      <text x="80" y="22" text-anchor="middle" font-size="11" fill="#44ff88" font-weight="600">env.update</text>
+      <text x="80" y="40" text-anchor="middle" font-size="9" fill="#80e0a0">aurora phase</text>
+      <text x="80" y="52" text-anchor="middle" font-size="9" fill="#80e0a0">spawn hazards</text>
+    </g>
+    <g transform="translate(650 320)">
+      <rect width="160" height="60" rx="6" fill="#280a0a" stroke="#ff4466" stroke-width="1.4"/>
+      <text x="80" y="22" text-anchor="middle" font-size="11" fill="#ff4466" font-weight="600">explosion.update</text>
+      <text x="80" y="40" text-anchor="middle" font-size="9" fill="#ff8899">age fragments</text>
+      <text x="80" y="52" text-anchor="middle" font-size="9" fill="#ff8899">(only if active)</text>
+    </g>
+    <g transform="translate(840 320)">
+      <rect width="160" height="60" rx="6" fill="#02060c" stroke="#7090b8" stroke-width="1.4"/>
+      <text x="80" y="22" text-anchor="middle" font-size="11" fill="#a0c0e0" font-weight="600">starfield.update</text>
+      <text x="80" y="40" text-anchor="middle" font-size="9" fill="#88aacc">parallax shift</text>
+      <text x="80" y="52" text-anchor="middle" font-size="9" fill="#88aacc">twinkle</text>
+    </g>
+    <g transform="translate(1020 320)">
+      <rect width="160" height="60" rx="6" fill="#1a0820" stroke="#ff66cc" stroke-width="1.4"/>
+      <text x="80" y="22" text-anchor="middle" font-size="11" fill="#ff66cc" font-weight="600">terrain.ensure</text>
+      <text x="80" y="40" text-anchor="middle" font-size="9" fill="#e0a0d8">add/remove chunks</text>
+      <text x="80" y="52" text-anchor="middle" font-size="9" fill="#e0a0d8">based on camera x</text>
+    </g>
+
+    <!-- Layer 5: render pass -->
+    <g transform="translate(450 490)">
+      <rect width="300" height="56" rx="6" fill="#102818" stroke="#44ff88" stroke-width="1.6"/>
+      <text x="150" y="22" text-anchor="middle" font-size="12" fill="#44ff88" font-weight="600">RENDER PASS</text>
+      <text x="150" y="40" text-anchor="middle" font-size="10" fill="#80e0a0">reads everything · mutates nothing</text>
+    </g>
+  </g>
+
+  <!-- Mutation arrows -->
+  <g fill="none" stroke="#88ddff" stroke-width="1.6" marker-end="url(#arF1)">
+    <line x1="280" y1="155" x2="448" y2="155"/>
+    <line x1="650" y1="155" x2="800" y2="155"/>
+  </g>
+
+  <!-- Read arrows: state → all agents -->
+  <g fill="none" stroke="#88c0a0" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arF2)" opacity="0.85">
+    <line x1="890" y1="180" x2="160" y2="318"/>
+    <line x1="890" y1="180" x2="350" y2="318"/>
+    <line x1="890" y1="180" x2="540" y2="318"/>
+    <line x1="890" y1="180" x2="730" y2="318"/>
+    <line x1="890" y1="180" x2="920" y2="318"/>
+    <line x1="890" y1="180" x2="1100" y2="318"/>
+  </g>
+
+  <!-- Agents → render -->
+  <g fill="none" stroke="#88c0a0" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arF2)" opacity="0.85">
+    <line x1="160" y1="382" x2="500" y2="488"/>
+    <line x1="350" y1="382" x2="540" y2="488"/>
+    <line x1="540" y1="382" x2="580" y2="488"/>
+    <line x1="730" y1="382" x2="620" y2="488"/>
+    <line x1="920" y1="382" x2="660" y2="488"/>
+    <line x1="1100" y1="382" x2="700" y2="488"/>
+  </g>
+  <!-- state → render -->
+  <g fill="none" stroke="#88c0a0" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arF2)" opacity="0.85">
+    <line x1="890" y1="180" x2="600" y2="488"/>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(80 580)" font-size="10">
+    <text x="0" y="0" fill="#a0c0e0" font-weight="600">LEGEND</text>
+    <line x1="0" y1="18" x2="40" y2="18" stroke="#88ddff" stroke-width="1.6" marker-end="url(#arF1)"/>
+    <text x="50" y="22" fill="#88aacc">mutating call</text>
+    <line x1="180" y1="18" x2="220" y2="18" stroke="#88c0a0" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arF2)"/>
+    <text x="230" y="22" fill="#88c0a0">read-only reference</text>
+    <text x="0" y="42" fill="#7090b0">No agent writes to another agent's state. No agent writes to STATE. Only DYNAMICS.step mutates STATE; only the demo factory invokes step.</text>
+  </g>
+</svg>

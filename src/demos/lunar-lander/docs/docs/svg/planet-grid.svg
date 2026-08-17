@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" font-family="ui-monospace, monospace">
+  <defs>
+    <radialGradient id="moonG" cx="40%" cy="40%"><stop offset="0%" stop-color="#d8dde6"/><stop offset="100%" stop-color="#5a6275"/></radialGradient>
+    <radialGradient id="marsG" cx="40%" cy="40%"><stop offset="0%" stop-color="#ffaa66"/><stop offset="100%" stop-color="#8a3a18"/></radialGradient>
+    <radialGradient id="titanG" cx="40%" cy="40%"><stop offset="0%" stop-color="#ffd47a"/><stop offset="100%" stop-color="#7a5418"/></radialGradient>
+    <radialGradient id="ioG" cx="40%" cy="40%"><stop offset="0%" stop-color="#fff7a0"/><stop offset="100%" stop-color="#a05010"/></radialGradient>
+    <radialGradient id="europaG" cx="40%" cy="40%"><stop offset="0%" stop-color="#dff5ff"/><stop offset="100%" stop-color="#3a6b8a"/></radialGradient>
+    <filter id="bloom"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+  <rect width="1200" height="320" fill="#040810"/>
+  <g fill="#bbccee" opacity="0.7">
+    <circle cx="100" cy="40" r="0.8"/><circle cx="300" cy="60" r="1"/><circle cx="500" cy="30" r="0.7"/>
+    <circle cx="700" cy="55" r="0.9"/><circle cx="900" cy="35" r="1.1"/><circle cx="1100" cy="50" r="0.8"/>
+    <circle cx="200" cy="280" r="0.7"/><circle cx="450" cy="290" r="0.9"/><circle cx="800" cy="285" r="0.8"/>
+  </g>
+
+  <!-- Planet panels -->
+  <g>
+    <!-- Moon -->
+    <g transform="translate(120 160)">
+      <circle r="58" fill="url(#moonG)"/>
+      <circle cx="-20" cy="-12" r="6" fill="#3e4654" opacity="0.6"/>
+      <circle cx="14" cy="8" r="9" fill="#3e4654" opacity="0.6"/>
+      <circle cx="-10" cy="20" r="4" fill="#3e4654" opacity="0.6"/>
+      <text y="92" text-anchor="middle" font-size="18" fill="#a8c4ff" font-weight="600">MOON</text>
+      <text y="112" text-anchor="middle" font-size="11" fill="#6680a8">g = 1.62  drag = 0</text>
+      <text y="128" text-anchor="middle" font-size="10" fill="#446080" opacity="0.85">vacuum · sparse meteors</text>
+    </g>
+
+    <!-- Mars -->
+    <g transform="translate(340 160)">
+      <circle r="58" fill="url(#marsG)"/>
+      <path d="M -38 0 Q -20 -22 8 -10 T 42 -2" stroke="#5a2410" stroke-width="2" fill="none" opacity="0.5"/>
+      <path d="M -30 18 Q 0 24 30 14" stroke="#5a2410" stroke-width="2" fill="none" opacity="0.5"/>
+      <circle r="62" fill="none" stroke="#ff9966" stroke-width="0.7" opacity="0.35"/>
+      <text y="92" text-anchor="middle" font-size="18" fill="#ffaa66" font-weight="600">MARS</text>
+      <text y="112" text-anchor="middle" font-size="11" fill="#a87050">g = 3.71  drag = .045</text>
+      <text y="128" text-anchor="middle" font-size="10" fill="#a86040" opacity="0.85">dust haze · fireballs</text>
+    </g>
+
+    <!-- Titan -->
+    <g transform="translate(560 160)">
+      <circle r="64" fill="#9a7a30" opacity="0.4"/>
+      <circle r="58" fill="url(#titanG)"/>
+      <circle r="62" fill="none" stroke="#ffd47a" stroke-width="2" opacity="0.45"/>
+      <text y="92" text-anchor="middle" font-size="18" fill="#ffd47a" font-weight="600">TITAN</text>
+      <text y="112" text-anchor="middle" font-size="11" fill="#a88850">g = 1.35  drag = .18</text>
+      <text y="128" text-anchor="middle" font-size="10" fill="#806840" opacity="0.85">dense haze · ice rain · aurora</text>
+    </g>
+
+    <!-- Io -->
+    <g transform="translate(780 160)">
+      <circle r="58" fill="url(#ioG)"/>
+      <circle cx="-12" cy="-8" r="7" fill="#ff2a30" opacity="0.7"/>
+      <circle cx="18" cy="10" r="5" fill="#ff2a30" opacity="0.7"/>
+      <circle cx="-22" cy="22" r="4" fill="#ff2a30" opacity="0.7"/>
+      <circle cx="10" cy="-22" r="3" fill="#ff5a30" opacity="0.7"/>
+      <text y="92" text-anchor="middle" font-size="18" fill="#ff5544" font-weight="600">IO</text>
+      <text y="112" text-anchor="middle" font-size="11" fill="#cc6644">g = 1.80  drag = .010</text>
+      <text y="128" text-anchor="middle" font-size="10" fill="#aa5544" opacity="0.85">volcanic · meteor storms</text>
+    </g>
+
+    <!-- Europa -->
+    <g transform="translate(1000 160)">
+      <circle r="58" fill="url(#europaG)"/>
+      <g stroke="#ff66cc" stroke-width="0.7" fill="none" opacity="0.85">
+        <path d="M -50 -20 Q 0 -15 50 -22"/>
+        <path d="M -54 0 Q 0 6 54 -2"/>
+        <path d="M -48 22 Q 0 30 50 20"/>
+      </g>
+      <text y="92" text-anchor="middle" font-size="18" fill="#a0e8ff" font-weight="600">EUROPA</text>
+      <text y="112" text-anchor="middle" font-size="11" fill="#7090b0">g = 1.31  drag = .015</text>
+      <text y="128" text-anchor="middle" font-size="10" fill="#5078a0" opacity="0.85">ridged ice · aurora · crystals</text>
+    </g>
+  </g>
+
+  <text x="600" y="34" text-anchor="middle" font-size="16" fill="#bbccee" letter-spacing="4">FIVE PLANETARY PROFILES — DATA-DRIVEN PHYSICS &amp; HAZARDS</text>
+</svg>

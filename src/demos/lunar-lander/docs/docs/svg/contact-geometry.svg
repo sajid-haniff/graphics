@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 540" font-family="ui-monospace, monospace">
+  <rect width="1200" height="540" fill="#040810"/>
+  <text x="600" y="34" text-anchor="middle" font-size="18" fill="#bbccee" letter-spacing="4">CONTACT GEOMETRY — FOOT vs TERRAIN HEIGHT</text>
+  <text x="600" y="56" text-anchor="middle" font-size="11" fill="#6b8aa8">contact ⇔ y_foot ≤ height(x_lander)</text>
+
+  <!-- Terrain ground -->
+  <g>
+    <path d="M 60 400 L 140 380 L 220 395 L 310 360 L 400 380 L 490 340 L 580 360 L 670 330 L 760 360 L 860 380 L 940 350 L 1020 370 L 1100 360 L 1140 380 L 1140 480 L 60 480 Z"
+          fill="#0a1a30" stroke="#5588cc" stroke-width="1.6"/>
+
+    <!-- Pad highlight -->
+    <line x1="490" y1="340" x2="580" y2="360" stroke="#44ff88" stroke-width="3"/>
+    <text x="535" y="335" text-anchor="middle" font-size="10" fill="#44ff88">PAD</text>
+  </g>
+
+  <!-- Sample x lookup -->
+  <g>
+    <line x1="535" y1="120" x2="535" y2="350" stroke="#88aacc" stroke-width="0.8" stroke-dasharray="3 3"/>
+    <text x="540" y="120" font-size="10" fill="#88aacc">x_lander</text>
+  </g>
+
+  <!-- Lander geometry -->
+  <g transform="translate(535 280)">
+    <!-- Body -->
+    <polygon points="-18,30 18,30 14,-26 -14,-26" fill="#040810" stroke="#00eeff" stroke-width="2"/>
+    <!-- Top -->
+    <line x1="-14" y1="-26" x2="0" y2="-40" stroke="#00eeff" stroke-width="2"/>
+    <line x1="14" y1="-26" x2="0" y2="-40" stroke="#00eeff" stroke-width="2"/>
+    <!-- Legs -->
+    <line x1="-18" y1="30" x2="-30" y2="50" stroke="#00eeff" stroke-width="2"/>
+    <line x1="18" y1="30" x2="30" y2="50" stroke="#00eeff" stroke-width="2"/>
+    <!-- Feet -->
+    <line x1="-36" y1="50" x2="-24" y2="50" stroke="#00eeff" stroke-width="2.5"/>
+    <line x1="24" y1="50" x2="36" y2="50" stroke="#00eeff" stroke-width="2.5"/>
+    <!-- Center marker -->
+    <circle r="2" fill="#ffcc44"/>
+    <text x="6" y="4" font-size="9" fill="#ffcc44">center</text>
+    <!-- Foot point (deepest point) -->
+    <circle cx="0" cy="70" r="3" fill="#ff66cc"/>
+    <text x="6" y="74" font-size="9" fill="#ff66cc">y_foot (= FOOT_Y in body)</text>
+  </g>
+
+  <!-- y_foot horizontal line -->
+  <g>
+    <line x1="60" y1="350" x2="1140" y2="350" stroke="#ff66cc" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.7"/>
+    <text x="80" y="346" font-size="10" fill="#ff66cc">y_foot</text>
+  </g>
+
+  <!-- terrain height at x -->
+  <g>
+    <circle cx="535" cy="350" r="4" fill="#88ff88"/>
+    <text x="546" y="362" font-size="10" fill="#88ff88">height(x_lander)</text>
+  </g>
+
+  <!-- Math panel -->
+  <g transform="translate(60 100)">
+    <rect width="320" height="160" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="14" y="22" font-size="12" fill="#a0c0e0" font-weight="600">FOOT-WORLD MAPPING</text>
+    <text x="14" y="46" font-size="11" fill="#88aacc">y_foot = state.y + (cos θ · FOOT_Y)</text>
+    <text x="14" y="68" font-size="10" fill="#7090b0">(simplified — code uses</text>
+    <text x="14" y="82" font-size="10" fill="#7090b0">the full per-vertex rotation</text>
+    <text x="14" y="96" font-size="10" fill="#7090b0">and takes the min y of all</text>
+    <text x="14" y="110" font-size="10" fill="#7090b0">contact points)</text>
+    <text x="14" y="138" font-size="10" fill="#5e7da0">y_foot ≤ height(x)  ⇒  contact</text>
+    <text x="14" y="152" font-size="9" fill="#5e7da0">heightAt is piecewise-linear interpolation</text>
+  </g>
+
+  <!-- Resolution note -->
+  <g transform="translate(820 100)">
+    <rect width="320" height="160" rx="8" fill="#06121e" stroke="#2c4a6e" stroke-width="1"/>
+    <text x="14" y="22" font-size="12" fill="#a0c0e0" font-weight="600">RESOLUTION</text>
+    <text x="14" y="46" font-size="10" fill="#88aacc">y ← height(x_lander)</text>
+    <text x="14" y="62" font-size="10" fill="#88aacc">v ← (0, 0) if landed</text>
+    <text x="14" y="78" font-size="10" fill="#88aacc">classifyTouchdown(state, pad, P)</text>
+    <text x="14" y="106" font-size="10" fill="#7090b0">No iterative solver. No</text>
+    <text x="14" y="120" font-size="10" fill="#7090b0">continuous-collision sweep.</text>
+    <text x="14" y="134" font-size="10" fill="#7090b0">At dt=1/60 s and modest</text>
+    <text x="14" y="148" font-size="10" fill="#7090b0">descent rates this is plenty.</text>
+  </g>
+</svg>
